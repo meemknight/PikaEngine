@@ -7,6 +7,8 @@
 #include <gl2d/gl2d.h>
 gl2d::Renderer2D renderer;
 
+#include "assert/assert.h"
+
 int main()
 {
 
@@ -32,6 +34,8 @@ int main()
 
 	gl2d::init();
 	renderer.create();
+
+	pika::assert::assertFunctionInternal("abc", __FILE__, __LINE__);
 
 	while (!glfwWindowShouldClose(window))
 	{

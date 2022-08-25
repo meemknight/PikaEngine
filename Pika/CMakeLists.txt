@@ -42,9 +42,13 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_STD		CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOUR
 
 
 
-
 add_executable(pikaCore)
 set_property(TARGET pikaCore PROPERTY CXX_STANDARD 17)
-target_sources(pikaCore PRIVATE "${PIKA_SOURCES_CORE_RUNTIME}" )
+target_sources(pikaCore PRIVATE 
+	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" "${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}")
+target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
+target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
+target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
+target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype)
 
