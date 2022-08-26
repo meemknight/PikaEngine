@@ -2,6 +2,8 @@
 #include "assert.h"
 #include <cstdlib>
 #include <cstdio>
+#include <assert.h>
+
 
 
 namespace pika
@@ -10,7 +12,7 @@ namespace pika
 	namespace assert
 	{
 
-		void terminate()
+		void terminate(...)
 		{
 			std::exit(1);
 		}
@@ -20,7 +22,7 @@ namespace pika
 
 	#include <Windows.h>
 
-		void assertFunctionInternal(const char *expression, const char *file,
+		void assertFunctionDevelopment(const char *expression, const char *file,
 			int line, const char *comment)
 		{
 			char buffer[1024] = {};
@@ -106,6 +108,12 @@ namespace pika
 	#elif defined(PIKA_LINUX)
 
 
+		void assertFunctionDevelopment(const char *expression, const char *file,
+			int line, const char *comment)
+		{
+			terminate();
+		}
+
 		void assertFunctionProduction(const char *expression, const char *file,
 			int line, const char *comment)
 		{
@@ -115,6 +123,26 @@ namespace pika
 
 	#endif
 
+		void assertFunctionToLog(const char *expression, const char *file, int line, const char *comment)
+		{
+
+			char buffer[1024] = {};
+
+			std::snprintf(buffer, sizeof(buffer),
+				"Assertion failed\n"
+				"Expression: \n%s\n"
+				"File: %s\n"
+				"Line: %d\n"
+				"Comment: \n%s\n"
+				, expression
+				, file
+				, line
+				, comment
+			);
+
+			//todo(vlod): log to a file
+
+		}
 
 	}
 

@@ -35,7 +35,7 @@ int main()
 	gl2d::init();
 	renderer.create();
 
-	pika::assert::assertFunctionInternal("abc", __FILE__, __LINE__);
+	PIKA_PERMA_ASSERT(0, "abc");
 
 	while (!glfwWindowShouldClose(window))
 	{

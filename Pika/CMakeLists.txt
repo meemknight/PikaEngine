@@ -40,9 +40,13 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_STD		CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOUR
 
 
 
-
-
+#pikaCore
 add_executable(pikaCore)
+
+#add defines
+target_compile_definitions(pikaCore PUBLIC PIKA_DEVELOPMENT)
+
+
 set_property(TARGET pikaCore PROPERTY CXX_STANDARD 17)
 target_sources(pikaCore PRIVATE 
 	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" "${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}")

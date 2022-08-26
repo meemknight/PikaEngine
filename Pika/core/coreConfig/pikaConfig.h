@@ -1,22 +1,46 @@
 #pragma once
+//////////////////////////////////////////
+//pikaConfig.h
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
 
 
-#pragma region Platform
+
+//////////////////////////////////////////
+//All macros
+//////////////////////////////////////////
+//
+//constants
+//
+//PIKA_WINDOWS
+//PIKA_LINUX
+//PIKA_DEVELOPMENT
+//PIKA_PRODUCTION
+// 
+//  
+//////////////////////////////////////////
+//
+//functions
+//
+// PIKA_PERMA_ASSERT
+// PIKA_DEVELOPMENT_ONLY_ASSERT
+//
+//
+//////////////////////////////////////////
 
 
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(__NT__)
+///chose the assert function to be run on perma assert in production code
 
-#define PIKA_WINDOWS 1
+//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionProduction
+#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionDevelopment
+//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionToLog
+//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::terminate
+//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION //remove all asserts in production
 
-#elif defined(__linux__)
 
-#define PIKA_LINUX 1
 
-#else
 
-#error "Pika supports only windows and linux"
 
-#endif
-
-#pragma endregion
+#include <pikaConfigInternal.h>
