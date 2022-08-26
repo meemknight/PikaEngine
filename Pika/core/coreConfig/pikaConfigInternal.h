@@ -19,3 +19,9 @@
 #endif
 
 #pragma endregion
+
+#ifdef PIKA_DEVELOPMENT
+#define PIKA_API extern "C" __declspec(dllexport)
+#elif defined(PIKA_PRODUCTION)
+#define PIKA_API
+#endif

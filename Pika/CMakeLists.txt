@@ -10,7 +10,8 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
 #declare projects
 project(pikaCore)
-
+project(pikaGameplay)
+project(pikaProduction)
 
 
 #set glfw to NOT use dynamic runtime and not build unnecessary stuff
@@ -37,15 +38,14 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_CONFIG	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SO
 file(GLOB_RECURSE PIKA_SOURCES_CORE_EDITOR	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_CORE_RUNTIME CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_CORE_STD		CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/*.cpp")
+file(GLOB_RECURSE PIKA_SOURCES_GAMEPLAY		CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/*.cpp")
 
 
 
-#pikaCore
+#pikaCore ############################################
 add_executable(pikaCore)
 
-#add defines
 target_compile_definitions(pikaCore PUBLIC PIKA_DEVELOPMENT)
-
 
 set_property(TARGET pikaCore PROPERTY CXX_STANDARD 17)
 target_sources(pikaCore PRIVATE 
@@ -55,4 +55,40 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pik
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype)
+#################^^^^^^^^#############################
 
+
+#pikaGameplay ###########################################
+add_library(pikaGameplay SHARED)
+
+target_compile_definitions(pikaGameplay PUBLIC PIKA_DEVELOPMENT)
+set_property(TARGET pikaGameplay PROPERTY CXX_STANDARD 17)
+target_sources(pikaGameplay PRIVATE "${PIKA_SOURCES_CORE_CONFIG}" 
+	"${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}")
+target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
+target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
+target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
+#################^^^^^^^^^^^^^^############################
+
+
+
+#pikaProduction ###########################################
+add_executable(pikaProduction)
+
+target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
+set_property(TARGET pikaProduction PROPERTY CXX_STANDARD 17)
+
+target_sources(pikaProduction PRIVATE 
+	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" 
+	"${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
+
+target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_truetype)
+
+
+
+#################^^^^^^^^^^^^^^############################

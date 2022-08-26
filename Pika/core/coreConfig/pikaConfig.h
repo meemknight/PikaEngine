@@ -21,6 +21,13 @@
 //  
 //////////////////////////////////////////
 //
+//macros
+// 
+//PIKA_API
+// 
+//////////////////////////////////////////
+// 
+// 
 //functions
 //
 // PIKA_PERMA_ASSERT
@@ -38,8 +45,6 @@
 //#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionToLog
 //#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::terminate
 //#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION //remove all asserts in production
-
-
 
 
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdio>
+#include <filesystem>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,9 +9,19 @@
 gl2d::Renderer2D renderer;
 
 #include "assert/assert.h"
+#include "dllLoader/dllLoader.h"
+
 
 int main()
 {
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	
+	
+	testPrint_t *testPrint = {};
+
+	PIKA_PERMA_ASSERT(pika::loadDll(currentPath, &testPrint), "Couldn't load dll");
+	
+	testPrint();
 
 	if (!glfwInit())
 	{
@@ -35,7 +46,6 @@ int main()
 	gl2d::init();
 	renderer.create();
 
-	PIKA_PERMA_ASSERT(0, "abc");
 
 	while (!glfwWindowShouldClose(window))
 	{
