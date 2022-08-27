@@ -9,7 +9,7 @@
 gl2d::Renderer2D renderer;
 
 
-PIKA_API void testStart(pika::ImguiAndGlfwContext pikaContext)
+PIKA_API void testStart(pika::PikaContext pikaContext)
 {
 	
 	//PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw from dll");
@@ -35,7 +35,7 @@ void userFree(void *ptr, void *)
 	free(ptr);
 }
 
-PIKA_API void testUpdate(pika::ImguiAndGlfwContext pikaContext)
+PIKA_API void testUpdate(pika::PikaContext pikaContext)
 {
 	gl2d::enableNecessaryGLFeatures();
 	renderer.updateWindowMetrics(640, 480);

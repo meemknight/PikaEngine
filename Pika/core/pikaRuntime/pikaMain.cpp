@@ -24,7 +24,7 @@ int main()
 
 	//glfwSetErrorCallback(error_callback); todo
 
-	pika::ImguiAndGlfwContext context = {};
+	pika::PikaContext context = {};
 
 	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
 	if (!context.wind)
@@ -53,11 +53,6 @@ int main()
 
 		pika::imguiEndFrame(context);
 
-		//pika::setContext(context);
-		//pika::imguiStartFrame();
-		//ImGui::Begin("test");
-		//ImGui::End();
-		//pika::imguiEndFrame(window);
 
 
 		glfwPollEvents();

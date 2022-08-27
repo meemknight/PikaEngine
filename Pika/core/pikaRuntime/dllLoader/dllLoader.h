@@ -4,12 +4,12 @@
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
 
-#define TESTSTART(x) void x(pika::ImguiAndGlfwContext pikaContext)
+#define TESTSTART(x) void x(pika::PikaContext pikaContext)
 typedef TESTSTART(testStart_t);
 //extern "C" __declspec(dllexport) TESTPRINT(gameLogic);
 #undef TESTSTART
 
-#define TESTUPDATE(x) void x(pika::ImguiAndGlfwContext pikaContext)
+#define TESTUPDATE(x) void x(pika::PikaContext pikaContext)
 typedef TESTUPDATE(testUpdate_t);
 #undef TESTUPDATE
 

@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <pikaImgui/pikaImgui.h>
 
-ImGuiContext *pika::initImgui(ImguiAndGlfwContext imguiAndGlfwContext)
+ImGuiContext *pika::initImgui(PikaContext pikaContext)
 {
 	auto context = ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
@@ -23,20 +23,20 @@ ImGuiContext *pika::initImgui(ImguiAndGlfwContext imguiAndGlfwContext)
 		style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 	}
 	
-	ImGui_ImplGlfw_InitForOpenGL(imguiAndGlfwContext.wind, true);
+	ImGui_ImplGlfw_InitForOpenGL(pikaContext.wind, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
 	return context;
 }
 
-void pika::setContext(ImguiAndGlfwContext imguiAndGlfwContext)
+void pika::setContext(PikaContext pikaContext)
 {
-	ImGui::SetCurrentContext(imguiAndGlfwContext.ImGuiContext);
+	ImGui::SetCurrentContext(pikaContext.ImGuiContext);
 }
 
-void pika::imguiStartFrame(ImguiAndGlfwContext imguiAndGlfwContext)
+void pika::imguiStartFrame(PikaContext pikaContext)
 {
-	setContext(imguiAndGlfwContext);
+	setContext(pikaContext);
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -44,12 +44,12 @@ void pika::imguiStartFrame(ImguiAndGlfwContext imguiAndGlfwContext)
 }
 
 
-void pika::imguiEndFrame(ImguiAndGlfwContext imguiAndGlfwContext)
+void pika::imguiEndFrame(PikaContext pikaContext)
 {
-	setContext(imguiAndGlfwContext);
+	setContext(pikaContext);
 	ImGui::Render();
 	int display_w = 0, display_h = 0;
-	glfwGetFramebufferSize(imguiAndGlfwContext.wind, &display_w, &display_h);
+	glfwGetFramebufferSize(pikaContext.wind, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -67,8 +67,7 @@ void pika::imguiEndFrame(ImguiAndGlfwContext imguiAndGlfwContext)
 
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		imguiAndGlfwContext.glfwMakeContextCurrentPtr(imguiAndGlfwContext.wind); //idea create a class with some functions
-
+		pikaContext.glfwMakeContextCurrentPtr(pikaContext.wind); //idea create a class with some functions
 	
 	}
 }

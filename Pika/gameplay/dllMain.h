@@ -4,5 +4,5 @@
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
 
-PIKA_API void testStart(pika::ImguiAndGlfwContext pikaContext);
-PIKA_API void testUpdate(pika::ImguiAndGlfwContext pikaContext);
+PIKA_API void testStart(pika::PikaContext pikaContext);
+PIKA_API void testUpdate(pika::PikaContext pikaContext);
