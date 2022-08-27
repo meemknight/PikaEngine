@@ -143,7 +143,8 @@
 #define IMGL3W_IMPL
 #include "imgui_impl_opengl3_loader.h"
 #else
-#include <glad/glad.h>
+//#include <glad/glad.h>
+#include <glew/glew.h>
 #endif
 
 

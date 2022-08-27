@@ -24,6 +24,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 #add third party libraries
 add_subdirectory(thirdparty/glfw-3.3.2)
 add_subdirectory(thirdparty/glad)
+add_subdirectory(thirdparty/glew)
 add_subdirectory(thirdparty/gl2d)
 add_subdirectory(thirdparty/glm)
 add_subdirectory(thirdparty/stb_image)
@@ -45,6 +46,7 @@ file(GLOB_RECURSE PIKA_SOURCES_GAMEPLAY		CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOUR
 add_executable(pikaCore)
 
 target_compile_definitions(pikaCore PUBLIC PIKA_DEVELOPMENT)
+target_compile_definitions(pikaCore PUBLIC GLEW_STATIC)
 
 set_property(TARGET pikaCore PROPERTY CXX_STANDARD 17)
 target_sources(pikaCore PRIVATE 
@@ -53,7 +55,7 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/cor
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
-target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
+target_link_libraries(pikaCore PRIVATE glew glfw gl2d glm stb_image stb_truetype imgui)
 #################^^^^^^^^#############################
 
 
@@ -61,6 +63,7 @@ target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype
 add_library(pikaGameplay SHARED)
 
 target_compile_definitions(pikaGameplay PUBLIC PIKA_DEVELOPMENT)
+target_compile_definitions(pikaGameplay PUBLIC GLEW_STATIC)
 set_property(TARGET pikaGameplay PROPERTY CXX_STANDARD 17)
 target_sources(pikaGameplay PRIVATE "${PIKA_SOURCES_CORE_CONFIG}" 
 	"${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_RUNTIME}")
@@ -68,7 +71,7 @@ target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
-target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
+target_link_libraries(pikaGameplay PRIVATE glew glfw gl2d glm stb_image stb_truetype imgui)
 #################^^^^^^^^^^^^^^############################
 
 
@@ -77,6 +80,8 @@ target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d glm stb_image stb_true
 add_executable(pikaProduction)
 
 target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
+target_compile_definitions(pikaProduction PUBLIC GLEW_STATIC)
+
 set_property(TARGET pikaProduction PROPERTY CXX_STANDARD 17)
 
 target_sources(pikaProduction PRIVATE 
@@ -88,7 +93,7 @@ target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/co
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 
-target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
+target_link_libraries(pikaProduction PRIVATE glew glfw gl2d glm stb_image stb_truetype imgui)
 
 
 

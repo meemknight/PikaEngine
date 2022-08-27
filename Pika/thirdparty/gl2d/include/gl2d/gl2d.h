@@ -53,7 +53,7 @@
 #define GL2D_Renderer2D_Max_Triangle_Capacity 4200
 #define GL2D_DefaultTextureCoords (glm::vec4{ 0, 1, 1, 0 })
 
-#include <glad/glad.h>
+#include <glew/glew.h>
 #include <glm/glm.hpp>
 #include <random>
 #include <stb_image/stb_image.h>

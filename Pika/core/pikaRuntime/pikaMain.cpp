@@ -2,11 +2,12 @@
 #include <cstdio>
 #include <filesystem>
 
-#include <glad/glad.h>
+//#include <glad/glad.h>
+#include <glew/glew.h>
+#include <gl2d/gl2d.h>
+
 #include <GLFW/glfw3.h>
 
-#include <gl2d/gl2d.h>
-gl2d::Renderer2D renderer;
 
 #include "assert/assert.h"
 #include "dllLoader/dllLoader.h"
@@ -22,6 +23,7 @@ int main()
 
 	PIKA_PERMA_ASSERT(pika::loadDll(currentPath, &testStart, &testUpdate), "Couldn't load dll");
 	
+#pragma region window loader
 	PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw");
 
 	//glfwSetErrorCallback(error_callback); todo
@@ -31,13 +33,18 @@ int main()
 	{
 		std::cout << "problem initializing window";
 	}
-
 	glfwMakeContextCurrent(window);
+#pragma endregion
 
-	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
-	gl2d::init();
-	renderer.create();
+#pragma region opengl loader
+
+	//PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
+	PIKA_PERMA_ASSERT(glewInit() == GLEW_OK, "Problem initializing glew");
+
+#pragma endregion
+
+
 
 	pika::initImgui(window);
 
@@ -48,11 +55,6 @@ int main()
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		pika::imguiStartFrame();
-
-		gl2d::enableNecessaryGLFeatures();
-		renderer.updateWindowMetrics(640, 480);
-		renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
-		renderer.flush();
 
 		testUpdate(window);
 
