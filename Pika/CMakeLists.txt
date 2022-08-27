@@ -28,8 +28,7 @@ add_subdirectory(thirdparty/gl2d)
 add_subdirectory(thirdparty/glm)
 add_subdirectory(thirdparty/stb_image)
 add_subdirectory(thirdparty/stb_truetype)
-
-
+add_subdirectory(thirdparty/imgui-docking)
 
 
 
@@ -54,7 +53,7 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/cor
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
-target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype)
+target_link_libraries(pikaCore PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
 #################^^^^^^^^#############################
 
 
@@ -64,10 +63,12 @@ add_library(pikaGameplay SHARED)
 target_compile_definitions(pikaGameplay PUBLIC PIKA_DEVELOPMENT)
 set_property(TARGET pikaGameplay PROPERTY CXX_STANDARD 17)
 target_sources(pikaGameplay PRIVATE "${PIKA_SOURCES_CORE_CONFIG}" 
-	"${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}")
+	"${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_RUNTIME}")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
+target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
+target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
 #################^^^^^^^^^^^^^^############################
 
 
@@ -87,7 +88,7 @@ target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/co
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 
-target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_truetype)
+target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
 
 
 

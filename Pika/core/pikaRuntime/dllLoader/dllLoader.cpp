@@ -14,7 +14,8 @@
 	
 	
 	//todo error reporting with strings
-	bool pika::loadDll(std::filesystem::path path, testPrint_t **testPrint)
+	bool pika::loadDll(std::filesystem::path path, 
+		testStart_t **testStart, testUpdate_t **testUpdate)
 	{
 		path /= "pikaGameplay.dll";
 	
@@ -22,10 +23,11 @@
 	
 		if (!dllHand) { return false; }
 	
-		*testPrint = (testPrint_t *)GetProcAddress(dllHand, "testPrint");
+		*testStart = (testStart_t *)GetProcAddress(dllHand, "testStart");
+		*testUpdate = (testUpdate_t *)GetProcAddress(dllHand, "testUpdate");
 	
-		if (!testPrint) { return false; }
-	
+		if (!testStart) { return false; }
+		if (!testUpdate) { return false; }
 	
 		return	true;
 	}
@@ -40,10 +42,12 @@
 
 	#include <dllMain.h>
 
-	bool pika::loadDll(std::filesystem::path path, testPrint_t **testPrint_)
+	bool pika::loadDll(std::filesystem::path path,
+		testStart_t **testStart_, testUpdate_t **testUpdate_)
 	{
 		
-		*testPrint_ = testPrint;
+		*testStart_ = testStart;
+		*testUpdate_ = testUpdate;
 	
 		return	true;
 	}

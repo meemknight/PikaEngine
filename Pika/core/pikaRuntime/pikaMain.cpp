@@ -10,23 +10,19 @@ gl2d::Renderer2D renderer;
 
 #include "assert/assert.h"
 #include "dllLoader/dllLoader.h"
-
+#include "pikaImgui/pikaImgui.h"
 
 int main()
 {
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	
 	
-	testPrint_t *testPrint = {};
+	testStart_t *testStart = {};
+	testUpdate_t *testUpdate = {};
 
-	PIKA_PERMA_ASSERT(pika::loadDll(currentPath, &testPrint), "Couldn't load dll");
+	PIKA_PERMA_ASSERT(pika::loadDll(currentPath, &testStart, &testUpdate), "Couldn't load dll");
 	
-	testPrint();
-
-	if (!glfwInit())
-	{
-		std::cout << "problem initializing glfw";
-	}
+	PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw");
 
 	//glfwSetErrorCallback(error_callback); todo
 
@@ -38,24 +34,30 @@ int main()
 
 	glfwMakeContextCurrent(window);
 
-	if (!gladLoadGL())
-	{
-		std::cout << "problem initializing glad";
-	}
+	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
 	gl2d::init();
 	renderer.create();
 
+	pika::initImgui(window);
+
+	testStart(window);
 
 	while (!glfwWindowShouldClose(window))
 	{
 
 		glClear(GL_COLOR_BUFFER_BIT);
+		pika::imguiStartFrame();
 
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(640, 480);
 		renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
 		renderer.flush();
+
+		testUpdate(window);
+
+
+		pika::imguiEndFrame(window);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
