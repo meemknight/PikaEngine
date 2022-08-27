@@ -2,13 +2,14 @@
 #include <filesystem>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <pikaImgui/pikaImgui.h>
 
-#define TESTSTART(x) void x(GLFWwindow *wind, ImGuiContext *imguiContext)
+#define TESTSTART(x) void x(pika::ImguiAndGlfwContext pikaContext)
 typedef TESTSTART(testStart_t);
 //extern "C" __declspec(dllexport) TESTPRINT(gameLogic);
 #undef TESTSTART
 
-#define TESTUPDATE(x) void x(GLFWwindow *wind)
+#define TESTUPDATE(x) void x(pika::ImguiAndGlfwContext pikaContext)
 typedef TESTUPDATE(testUpdate_t);
 #undef TESTUPDATE
 

@@ -8,9 +8,8 @@
 #include <gl2d/gl2d.h>
 gl2d::Renderer2D renderer;
 
-ImGuiContext *imguiContextGlobal = 0;
 
-PIKA_API void testStart(GLFWwindow *wind, ImGuiContext *imguiContext)
+PIKA_API void testStart(pika::ImguiAndGlfwContext pikaContext)
 {
 	
 	//PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw from dll");
@@ -18,29 +17,38 @@ PIKA_API void testStart(GLFWwindow *wind, ImGuiContext *imguiContext)
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
 	//printf("%s\n", glGetString(GL_VERSION));
-	//pika::initImgui(wind);
+	//pika::initImgui(pikaContext);
 
-	imguiContextGlobal = imguiContext;
-	ImGui::SetCurrentContext(imguiContextGlobal);
-	//ImGui::SetAllocatorFunctions()
 
 	gl2d::init();
 	renderer.create();
 
 }
 
+void *userMalloc(size_t sz, void *)
+{
+	return malloc(sz);
+}
 
-PIKA_API void testUpdate(GLFWwindow *wind)
+void userFree(void *ptr, void *)
+{
+	free(ptr);
+}
+
+PIKA_API void testUpdate(pika::ImguiAndGlfwContext pikaContext)
 {
 	gl2d::enableNecessaryGLFeatures();
 	renderer.updateWindowMetrics(640, 480);
 	renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
 	renderer.flush();
 
-	ImGui::SetCurrentContext(imguiContextGlobal);
+	//ImGui::SetCurrentContext(imguiContextGlobal);
 
-	pika::imguiStartFrame();
+//	ImGui::SetAllocatorFunctions(userMalloc, userFree);
+
+	pika::setContext(pikaContext);
+
 	ImGui::Begin("test");
 	ImGui::End();
-	pika::imguiEndFrame(wind);
+
 }

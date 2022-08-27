@@ -24,27 +24,36 @@ int main()
 
 	//glfwSetErrorCallback(error_callback); todo
 
-	GLFWwindow *window = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
-	if (!window)
+	pika::ImguiAndGlfwContext context = {};
+
+	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
+	if (!context.wind)
 	{
 		std::cout << "problem initializing window";
 	}
 
-	glfwMakeContextCurrent(window);
+	glfwMakeContextCurrent(context.wind);
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
-	auto imguiContext = pika::initImgui(window);
+	context.ImGuiContext = pika::initImgui(context);
 
-	testStart(window, imguiContext);
+	context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
 
-	while (!glfwWindowShouldClose(window))
+	testStart(context);
+
+	while (!glfwWindowShouldClose(context.wind))
 	{
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		testUpdate(window);
+		pika::imguiStartFrame(context);
 
+		testUpdate(context);
+
+		pika::imguiEndFrame(context);
+
+		//pika::setContext(context);
 		//pika::imguiStartFrame();
 		//ImGui::Begin("test");
 		//ImGui::End();
@@ -52,7 +61,7 @@ int main()
 
 
 		glfwPollEvents();
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(context.wind);
 	}
 
 

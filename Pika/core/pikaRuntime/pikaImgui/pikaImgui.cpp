@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <pikaImgui/pikaImgui.h>
 
-ImGuiContext *pika::initImgui(GLFWwindow *wind)
+ImGuiContext *pika::initImgui(ImguiAndGlfwContext imguiAndGlfwContext)
 {
 	auto context = ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
@@ -23,14 +23,20 @@ ImGuiContext *pika::initImgui(GLFWwindow *wind)
 		style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 	}
 	
-	ImGui_ImplGlfw_InitForOpenGL(wind, true);
+	ImGui_ImplGlfw_InitForOpenGL(imguiAndGlfwContext.wind, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
 	return context;
 }
 
-void pika::imguiStartFrame()
+void pika::setContext(ImguiAndGlfwContext imguiAndGlfwContext)
 {
+	ImGui::SetCurrentContext(imguiAndGlfwContext.ImGuiContext);
+}
+
+void pika::imguiStartFrame(ImguiAndGlfwContext imguiAndGlfwContext)
+{
+	setContext(imguiAndGlfwContext);
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -38,11 +44,12 @@ void pika::imguiStartFrame()
 }
 
 
-void pika::imguiEndFrame(GLFWwindow *wind)
+void pika::imguiEndFrame(ImguiAndGlfwContext imguiAndGlfwContext)
 {
+	setContext(imguiAndGlfwContext);
 	ImGui::Render();
 	int display_w = 0, display_h = 0;
-	glfwGetFramebufferSize(wind, &display_w, &display_h);
+	glfwGetFramebufferSize(imguiAndGlfwContext.wind, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -58,10 +65,9 @@ void pika::imguiEndFrame(GLFWwindow *wind)
 		//ImGui::RenderPlatformWindowsDefault();
 		//glfwMakeContextCurrent(backup_current_context);
 
-		GLFWwindow *backup_current_context = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(backup_current_context);
+		imguiAndGlfwContext.glfwMakeContextCurrentPtr(imguiAndGlfwContext.wind); //idea create a class with some functions
 
 	
 	}
