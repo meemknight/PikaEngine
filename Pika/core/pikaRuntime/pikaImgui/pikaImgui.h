@@ -13,7 +13,7 @@ namespace pika
 {
 
 
-	void initImgui(GLFWwindow *wind);
+	ImGuiContext *initImgui(GLFWwindow *wind);
 	void imguiStartFrame();
 	void imguiEndFrame(GLFWwindow *wind);
 

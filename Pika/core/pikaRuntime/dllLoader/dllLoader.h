@@ -1,8 +1,9 @@
 #pragma once
 #include <filesystem>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
-#define TESTSTART(x) void x(GLFWwindow *wind)
+#define TESTSTART(x) void x(GLFWwindow *wind, ImGuiContext *imguiContext)
 typedef TESTSTART(testStart_t);
 //extern "C" __declspec(dllexport) TESTPRINT(gameLogic);
 #undef TESTSTART
@@ -15,7 +16,6 @@ typedef TESTUPDATE(testUpdate_t);
 
 namespace pika
 {
-
 
 bool loadDll(std::filesystem::path path, 
 	testStart_t** testPrint, testUpdate_t** testUpdate);

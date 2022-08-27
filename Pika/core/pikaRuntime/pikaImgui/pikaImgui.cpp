@@ -1,9 +1,9 @@
+#include <glad/glad.h>
 #include <pikaImgui/pikaImgui.h>
 
-
-void pika::initImgui(GLFWwindow *wind)
+ImGuiContext *pika::initImgui(GLFWwindow *wind)
 {
-	ImGui::CreateContext();
+	auto context = ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
 	imguiThemes::embraceTheDarkness();
 	
@@ -26,6 +26,7 @@ void pika::initImgui(GLFWwindow *wind)
 	ImGui_ImplGlfw_InitForOpenGL(wind, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
+	return context;
 }
 
 void pika::imguiStartFrame()
@@ -52,9 +53,16 @@ void pika::imguiEndFrame(GLFWwindow *wind)
 	//  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
+		//GLFWwindow *backup_current_context = glfwGetCurrentContext();
+		//ImGui::UpdatePlatformWindows();
+		//ImGui::RenderPlatformWindowsDefault();
+		//glfwMakeContextCurrent(backup_current_context);
+
 		GLFWwindow *backup_current_context = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 		glfwMakeContextCurrent(backup_current_context);
+
+	
 	}
 }

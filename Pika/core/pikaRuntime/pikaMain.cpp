@@ -5,8 +5,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <gl2d/gl2d.h>
-gl2d::Renderer2D renderer;
 
 #include "assert/assert.h"
 #include "dllLoader/dllLoader.h"
@@ -36,28 +34,22 @@ int main()
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
-	gl2d::init();
-	renderer.create();
+	auto imguiContext = pika::initImgui(window);
 
-	pika::initImgui(window);
-
-	testStart(window);
+	testStart(window, imguiContext);
 
 	while (!glfwWindowShouldClose(window))
 	{
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		pika::imguiStartFrame();
-
-		gl2d::enableNecessaryGLFeatures();
-		renderer.updateWindowMetrics(640, 480);
-		renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
-		renderer.flush();
 
 		testUpdate(window);
 
+		//pika::imguiStartFrame();
+		//ImGui::Begin("test");
+		//ImGui::End();
+		//pika::imguiEndFrame(window);
 
-		pika::imguiEndFrame(window);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
