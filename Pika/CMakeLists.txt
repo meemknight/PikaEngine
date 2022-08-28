@@ -31,7 +31,6 @@ add_subdirectory(thirdparty/stb_truetype)
 add_subdirectory(thirdparty/imgui-docking)
 
 
-
 #Define some macros for the project sources
 file(GLOB_RECURSE PIKA_SOURCES_CORE_CONFIG	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_CORE_EDITOR	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/*.cpp")
