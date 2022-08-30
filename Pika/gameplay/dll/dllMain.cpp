@@ -36,7 +36,7 @@ PIKA_API void destructContainer(Container **c, pika::memory::MemoryArena *arena)
 }
 
 
-
+//used to initialize libraries 
 PIKA_API void gameplayStart(pika::PikaContext pikaContext)
 {
 	//todo user should have functions to specify this

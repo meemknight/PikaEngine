@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 struct ContainerInformation
 {
@@ -8,6 +9,6 @@ struct ContainerInformation
 	const char *containerName):containerStructBaseSize(containerStructBaseSize), containerName(containerName) {};
 
 	size_t containerStructBaseSize = 0;
-	std::string containerName = 0;
+	std::string containerName = "";
 
 };

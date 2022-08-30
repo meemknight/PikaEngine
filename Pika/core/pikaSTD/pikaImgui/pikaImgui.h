@@ -14,7 +14,7 @@ namespace pika
 {
 
 
-	ImGuiContext *initImgui(PikaContext pikaContext);
+	void initImgui(PikaContext &pikaContext);
 	void setImguiContext(PikaContext pikaContext);
 	void imguiStartFrame(PikaContext pikaContext);
 	void imguiEndFrame(PikaContext pikaContext);

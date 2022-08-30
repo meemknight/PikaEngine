@@ -2,7 +2,7 @@
 #include <pikaImgui/pikaImgui.h>
 #include <GLFW/glfw3.h>
 
-ImGuiContext *pika::initImgui(PikaContext pikaContext)
+void pika::initImgui(PikaContext &pikaContext)
 {
 	auto context = ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
@@ -27,7 +27,7 @@ ImGuiContext *pika::initImgui(PikaContext pikaContext)
 	ImGui_ImplGlfw_InitForOpenGL(pikaContext.wind, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
-	return context;
+	pikaContext.ImGuiContext = context;
 }
 
 void pika::setImguiContext(PikaContext pikaContext)

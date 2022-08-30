@@ -12,9 +12,8 @@
 namespace pika
 {
 
-namespace allocator
+namespace memory
 {
-
 
 
 	#ifdef PIKA_WINDOWS

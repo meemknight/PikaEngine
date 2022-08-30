@@ -9,7 +9,7 @@ namespace pika
 	{
 
 		//arguments don't do anything here
-		void terminate(...);
+		inline void terminate(...);
 
 		void assertFunctionDevelopment(
 			const char *expression, 

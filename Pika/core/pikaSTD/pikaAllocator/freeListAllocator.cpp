@@ -16,7 +16,7 @@
 namespace pika
 {
 
-namespace allocator
+namespace memory
 {
 
 	const uint64_t GUARD_VALUE = 0xff'ff'ff'ff'ff'ff'ff'ff;

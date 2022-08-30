@@ -3,7 +3,7 @@
 #include <filesystem>
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <windowSystemm/window.h>
 
 
 #include "assert/assert.h"
@@ -11,71 +11,63 @@
 #include "pikaImgui/pikaImgui.h"
 
 #include <pikaAllocator/memoryArena.h>
+#include <runtimeContainer/runtimeContainer.h>
 
 int main()
 {
+
+#pragma region load dll
 	std::filesystem::path currentPath = std::filesystem::current_path();
+	pika::DllLoader dllLoader;
+	PIKA_PERMA_ASSERT(dllLoader.loadDll(currentPath), "Couldn't load dll");
+#pragma endregion
 	
-	
-	gameplayStart_t *gameplayStart = {};
-	gameplayUpdate_t *gameplayUpdate = {};
-	getContainersInfo_t *getContainersInfo = {};
-	constructContainer_t *constructContainer = {};
-	destructContainer_t *destrContainer = {};
-
-	PIKA_PERMA_ASSERT(pika::loadDll(currentPath, &gameplayStart, &gameplayUpdate, &getContainersInfo,
-		&constructContainer, &destrContainer), "Couldn't load dll");
-	
+#pragma region init window opengl imgui and context
 	PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw");
-
 	//glfwSetErrorCallback(error_callback); todo
-
-	pika::PikaContext context = {};
-
-	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
-	if (!context.wind)
-	{
-		std::cout << "problem initializing window";
-	}
-
-	glfwMakeContextCurrent(context.wind);
+	pika::PikaWindow window = {};
+	window.create();
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
-	context.ImGuiContext = pika::initImgui(context);
+	pika::initImgui(window.context);
 
-	context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
+	window.context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
+#pragma endregion
+
+#pragma region init dll reaml
+	dllLoader.gameplayStart_(window.context);
 
 	std::vector<ContainerInformation> loadedContainers;
 	//todo validate stuff
-	getContainersInfo(loadedContainers);
-	pika::memory::MemoryArena arena = {};
+	dllLoader.getContainersInfo_(loadedContainers);
+#pragma endregion
 
-	arena.containerStructMemory.size = loadedContainers[0].containerStructBaseSize;
-	arena.containerStructMemory.block = malloc(loadedContainers[0].containerStructBaseSize);
 
-	gameplayStart(context);
 
-	Container *gameCode = 0;
-	constructContainer(&gameCode, &arena, "Gameplay");
-	gameCode->create();
 
-	while (!glfwWindowShouldClose(context.wind))
+
+
+	RuntimeContainer container;
+	container.arena.allocateStaticMemory(loadedContainers[0]);
+
+	dllLoader.constructRuntimeContainer(container, "Gameplay");
+	container.pointer->create();
+
+	while (!window.shouldClose())
 	{
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		pika::imguiStartFrame(context);
+		pika::imguiStartFrame(window.context);
 
 		//gameplayUpdate(context);
-		gameCode->update();
+		container.pointer->update();
 
-		pika::imguiEndFrame(context);
+		pika::imguiEndFrame(window.context);
 
 
-
-		glfwPollEvents();
-		glfwSwapBuffers(context.wind);
+		window.update();
 	}
 
 

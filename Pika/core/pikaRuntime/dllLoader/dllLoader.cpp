@@ -11,31 +11,28 @@
 	
 	
 	static HMODULE dllHand;
-	
-	
+
 	//todo error reporting with strings
-	bool pika::loadDll(std::filesystem::path path, 
-		gameplayStart_t **gameplayStart, gameplayUpdate_t **gameplayUpdate, getContainersInfo_t **getContainersInfo
-		,constructContainer_t **constructContainer, destructContainer_t **destructContainer)
+	bool pika::DllLoader::loadDll(std::filesystem::path path)
 	{
 		path /= "pikaGameplay.dll";
-	
+
 		dllHand = LoadLibraryA(path.string().c_str());
-	
+
 		if (!dllHand) { return false; }
-	
-		*gameplayStart = (gameplayStart_t *)GetProcAddress(dllHand, "gameplayStart");
-		*gameplayUpdate = (gameplayUpdate_t *)GetProcAddress(dllHand, "gameplayUpdate");
-		*getContainersInfo = (getContainersInfo_t *)GetProcAddress(dllHand, "getContainersInfo");
-		*constructContainer = (constructContainer_t *)GetProcAddress(dllHand, "constructContainer");
-		*destructContainer = (destructContainer_t *)GetProcAddress(dllHand, "destructContainer");
-	
-		if (!gameplayStart) { return false; }
-		if (!gameplayUpdate) { return false; }
-		if (!getContainersInfo) { return false; }
-		if (!constructContainer) { return false; }
-		if (!destructContainer) { return false; }
-	
+
+		gameplayStart_ = (gameplayStart_t *)GetProcAddress(dllHand, "gameplayStart");
+		gameplayUpdate_ = (gameplayUpdate_t *)GetProcAddress(dllHand, "gameplayUpdate");
+		getContainersInfo_ = (getContainersInfo_t *)GetProcAddress(dllHand, "getContainersInfo");
+		constructContainer_ = (constructContainer_t *)GetProcAddress(dllHand, "constructContainer");
+		destructContainer_ = (destructContainer_t *)GetProcAddress(dllHand, "destructContainer");
+
+		if (!gameplayStart_) { return false; }
+		if (!gameplayUpdate_) { return false; }
+		if (!getContainersInfo_) { return false; }
+		if (!constructContainer_) { return false; }
+		if (!destructContainer_) { return false; }
+
 		return	true;
 	}
 	
@@ -49,20 +46,23 @@
 
 	#include <dll/dllMain.h>
 
-	bool pika::loadDll(std::filesystem::path path,
-		gameplayStart_t **gameplayStart_, gameplayUpdate_t **gameplayUpdate_, getContainersInfo_t **getContainersInfo_
-		,constructContainer_t **constructContainer_, destructContainer_t **destructContainer_)
+	bool pika::DllLoader::loadDll(std::filesystem::path path)
 	{
 		
-		*gameplayStart_ = gameplayStart;
-		*gameplayUpdate_ = gameplayUpdate;
-		*getContainersInfo_ = getContainersInfo;
-		*constructContainer_ = constructContainer;
-		*destructContainer_ = destructContainer;
+		gameplayStart_ = gameplayStart;
+		gameplayUpdate_ = gameplayUpdate;
+		getContainersInfo_ = getContainersInfo;
+		constructContainer_ = constructContainer;
+		destructContainer_ = destructContainer;
 
 		return	true;
 	}
 
+	
 
 #endif
 
+	void pika::DllLoader::constructRuntimeContainer(RuntimeContainer &c, const char *name)
+	{
+		constructContainer_(&c.pointer, &c.arena, name);
+	}

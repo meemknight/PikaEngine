@@ -12,9 +12,10 @@ namespace pika
 	namespace assert
 	{
 
-		void terminate(...)
+		inline void terminate(...)
 		{
 			std::exit(1);
+			__assume(0); //optimize code after the exit
 		}
 
 

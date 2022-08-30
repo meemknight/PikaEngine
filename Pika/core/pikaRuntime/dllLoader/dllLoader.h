@@ -7,6 +7,7 @@
 #include <vector>
 #include <baseContainer.h>
 #include <pikaAllocator/memoryArena.h>
+#include <runtimeContainer/runtimeContainer.h>
 
 #define GAMEPLAYSTART(x) void x(pika::PikaContext pikaContext)
 typedef GAMEPLAYSTART(gameplayStart_t);
@@ -34,9 +35,19 @@ typedef DESTRUCTCONTAINER(destructContainer_t);
 namespace pika
 {
 
-bool loadDll(std::filesystem::path path, 
-	gameplayStart_t** testPrint, gameplayUpdate_t** testUpdate, 
-	getContainersInfo_t** getContainersInfo, constructContainer_t** constructContainer,
-	destructContainer_t** destructContainer);
+//this will have only one instance open at a time for now
+struct DllLoader
+{
+	gameplayStart_t *gameplayStart_ = {};
+	gameplayUpdate_t *gameplayUpdate_ = {};
+	getContainersInfo_t *getContainersInfo_ = {};
+	constructContainer_t *constructContainer_ = {};
+	destructContainer_t *destructContainer_ = {};
+
+	bool loadDll(std::filesystem::path path);
+	void constructRuntimeContainer(RuntimeContainer &c, const char *name);
+
+};
+
 
 };

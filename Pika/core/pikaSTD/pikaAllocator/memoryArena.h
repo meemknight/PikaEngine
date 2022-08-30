@@ -1,5 +1,5 @@
 #pragma once
-
+#include <dllLoader/containerInformation.h>
 
 namespace pika
 {
@@ -20,7 +20,9 @@ namespace memory
 		//this is used to allocate the static memory of the container (struct member data)
 		MemoryBlock containerStructMemory = {};
 
-
+		//todo this will request an allocator probably in the future
+		void allocateStaticMemory(const ContainerInformation &containerInfo);
+		void dealocateStaticMemory();
 	};
 
 
