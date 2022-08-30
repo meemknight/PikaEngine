@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <pikaImgui/pikaImgui.h>
+#include <GLFW/glfw3.h>
 
 ImGuiContext *pika::initImgui(PikaContext pikaContext)
 {
@@ -29,14 +30,14 @@ ImGuiContext *pika::initImgui(PikaContext pikaContext)
 	return context;
 }
 
-void pika::setContext(PikaContext pikaContext)
+void pika::setImguiContext(PikaContext pikaContext)
 {
 	ImGui::SetCurrentContext(pikaContext.ImGuiContext);
 }
 
 void pika::imguiStartFrame(PikaContext pikaContext)
 {
-	setContext(pikaContext);
+	setImguiContext(pikaContext);
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -46,7 +47,7 @@ void pika::imguiStartFrame(PikaContext pikaContext)
 
 void pika::imguiEndFrame(PikaContext pikaContext)
 {
-	setContext(pikaContext);
+	setImguiContext(pikaContext);
 	ImGui::Render();
 	int display_w = 0, display_h = 0;
 	glfwGetFramebufferSize(pikaContext.wind, &display_w, &display_h);

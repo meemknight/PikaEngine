@@ -15,7 +15,8 @@
 	
 	//todo error reporting with strings
 	bool pika::loadDll(std::filesystem::path path, 
-		testStart_t **testStart, testUpdate_t **testUpdate)
+		gameplayStart_t **gameplayStart, gameplayUpdate_t **gameplayUpdate, getContainersInfo_t **getContainersInfo
+		,constructContainer_t **constructContainer, destructContainer_t **destructContainer)
 	{
 		path /= "pikaGameplay.dll";
 	
@@ -23,11 +24,17 @@
 	
 		if (!dllHand) { return false; }
 	
-		*testStart = (testStart_t *)GetProcAddress(dllHand, "testStart");
-		*testUpdate = (testUpdate_t *)GetProcAddress(dllHand, "testUpdate");
+		*gameplayStart = (gameplayStart_t *)GetProcAddress(dllHand, "gameplayStart");
+		*gameplayUpdate = (gameplayUpdate_t *)GetProcAddress(dllHand, "gameplayUpdate");
+		*getContainersInfo = (getContainersInfo_t *)GetProcAddress(dllHand, "getContainersInfo");
+		*constructContainer = (constructContainer_t *)GetProcAddress(dllHand, "constructContainer");
+		*destructContainer = (destructContainer_t *)GetProcAddress(dllHand, "destructContainer");
 	
-		if (!testStart) { return false; }
-		if (!testUpdate) { return false; }
+		if (!gameplayStart) { return false; }
+		if (!gameplayUpdate) { return false; }
+		if (!getContainersInfo) { return false; }
+		if (!constructContainer) { return false; }
+		if (!destructContainer) { return false; }
 	
 		return	true;
 	}
@@ -40,15 +47,19 @@
 
 #elif defined(PIKA_PRODUCTION)
 
-	#include <dllMain.h>
+	#include <dll/dllMain.h>
 
 	bool pika::loadDll(std::filesystem::path path,
-		testStart_t **testStart_, testUpdate_t **testUpdate_)
+		gameplayStart_t **gameplayStart_, gameplayUpdate_t **gameplayUpdate_, getContainersInfo_t **getContainersInfo_
+		,constructContainer_t **constructContainer_, destructContainer_t **destructContainer_)
 	{
 		
-		*testStart_ = testStart;
-		*testUpdate_ = testUpdate;
-	
+		*gameplayStart_ = gameplayStart;
+		*gameplayUpdate_ = gameplayUpdate;
+		*getContainersInfo_ = getContainersInfo;
+		*constructContainer_ = constructContainer;
+		*destructContainer_ = destructContainer;
+
 		return	true;
 	}
 
