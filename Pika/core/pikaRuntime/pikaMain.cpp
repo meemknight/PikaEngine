@@ -65,7 +65,7 @@ int main()
 		pika::imguiStartFrame(window.context);
 
 		//gameplayUpdate(context);
-		container.pointer->update();
+		container.pointer->update(window.input);
 
 		pika::imguiEndFrame(window.context);
 

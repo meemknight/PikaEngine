@@ -17,11 +17,22 @@ struct Gameplay : public Container
 	}
 
 
-	void update()
+	void update(pika::Input input)
 	{
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(640, 480);
+
 		renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
+
+		if (input.lMouse.pressed())
+		{
+			std::cout << "pressed\n";
+		}
+		if (input.lMouse.released())
+		{
+			std::cout << "released\n";
+		}
+
 		renderer.flush();
 
 		//ImGui::SetAllocatorFunctions(userMalloc, userFree);

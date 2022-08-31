@@ -1,7 +1,8 @@
 #pragma once
+#include <glad/glad.h> //so we don't have conflicts
 #include <GLFW/glfw3.h>
 #include <pikaContext.h>
-
+#include "input.h"
 
 namespace pika
 {
@@ -10,6 +11,8 @@ namespace pika
 	struct PikaWindow
 	{
 		pika::PikaContext context = {};
+
+		Input input = {};
 
 		//this doesn't return error codes because it will do the asserts for you
 		void create();
