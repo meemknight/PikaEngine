@@ -45,9 +45,6 @@ int main()
 
 
 
-
-
-
 	RuntimeContainer container;
 	container.arena.allocateStaticMemory(loadedContainers[0]);
 
@@ -56,6 +53,12 @@ int main()
 
 	while (!window.shouldClose())
 	{
+
+		if (dllLoader.reloadDll())
+		{
+			dllLoader.gameplayReload_(window.context);
+		}
+
 
 		glClear(GL_COLOR_BUFFER_BIT);
 

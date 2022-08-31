@@ -51,9 +51,16 @@ PIKA_API void gameplayStart(pika::PikaContext pikaContext)
 #pragma endregion
 }
 
-//todo: can remove
-PIKA_API void gameplayUpdate(pika::PikaContext pikaContext)
-{
-	
 
+//this won't be ever called in production so we can remove the code
+PIKA_API void gameplayReload(pika::PikaContext pikaContext)
+{
+#ifdef PIKA_DEVELOPMENT	
+
+	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
+	pika::setImguiContext(pikaContext);
+
+	gl2d::init();
+
+#endif
 }
