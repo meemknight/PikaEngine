@@ -4,3 +4,5 @@
 
 
 void mouseCallback(GLFWwindow *window, int key, int action, int mods);
+void windowFocusCallback(GLFWwindow *window, int focused);
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);

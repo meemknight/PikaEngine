@@ -7,6 +7,6 @@ struct Container
 
 	virtual void create() = 0;
 
-	virtual void update(pika::Input input) = 0;
+	virtual void update(pika::Input input, float deltaTime, pika::WindowState windowState) = 0;
 
 };

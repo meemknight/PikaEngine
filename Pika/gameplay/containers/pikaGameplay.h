@@ -17,21 +17,30 @@ struct Gameplay : public Container
 	}
 
 
-	void update(pika::Input input)
+	void update(pika::Input input, float deltaTime, pika::WindowState windowState)
 	{
+
+
 		gl2d::enableNecessaryGLFeatures();
-		renderer.updateWindowMetrics(640, 480);
+		renderer.updateWindowMetrics(windowState.w, windowState.h);
 
-		renderer.renderRectangle({10,10, 100, 100}, Colors_Magenta);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Magenta);
 
-		if (input.lMouse.pressed())
+		//if (input.lMouse.pressed())
+		//{
+		//	std::cout << "pressed\n";
+		//}
+		//if (input.lMouse.released())
+		//{
+		//	std::cout << "released\n";
+		//}
+
+		if (input.lMouse.typed())
 		{
-			std::cout << "pressed\n";
+			std::cout << "typed\n";
 		}
-		if (input.lMouse.released())
-		{
-			std::cout << "released\n";
-		}
+
+		//std::cout << state.deltaTime << "\n";
 
 		renderer.flush();
 

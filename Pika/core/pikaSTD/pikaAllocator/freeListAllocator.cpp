@@ -10,7 +10,7 @@
 #include <algorithm>
 
 
-#include <assert/assert.h>
+#include <logs/assert.h>
 
 
 namespace pika

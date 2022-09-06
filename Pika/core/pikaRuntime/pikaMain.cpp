@@ -6,15 +6,22 @@
 #include <windowSystemm/window.h>
 
 
-#include "assert/assert.h"
+#include "logs/assert.h"
 #include "dllLoader/dllLoader.h"
 #include "pikaImgui/pikaImgui.h"
 
 #include <pikaAllocator/memoryArena.h>
 #include <runtimeContainer/runtimeContainer.h>
 
+#include <logs/log.h>
+
 int main()
 {
+
+#pragma region log
+	pika::LogManager logs;
+	logs.init("logs.txt");
+#pragma endregion
 
 #pragma region load dll
 	std::filesystem::path currentPath = std::filesystem::current_path();
@@ -43,16 +50,17 @@ int main()
 	dllLoader.getContainersInfo_(loadedContainers);
 #pragma endregion
 
-
+	logs.log("test");
 
 	RuntimeContainer container;
-	container.arena.allocateStaticMemory(loadedContainers[0]);
+	container.arena.allocateStaticMemory(loadedContainers[0]); //this just allocates the memory
 
-	dllLoader.constructRuntimeContainer(container, "Gameplay");
-	container.pointer->create();
+	dllLoader.constructRuntimeContainer(container, "Gameplay"); //this calls the constructors
+	container.pointer->create();	//this calls create()
 
 	while (!window.shouldClose())
 	{
+
 
 		if (dllLoader.reloadDll())
 		{
@@ -65,7 +73,7 @@ int main()
 		pika::imguiStartFrame(window.context);
 
 		//gameplayUpdate(context);
-		container.pointer->update(window.input);
+		container.pointer->update(window.input, window.deltaTime, window.windowState);
 
 		pika::imguiEndFrame(window.context);
 

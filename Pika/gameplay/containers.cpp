@@ -1,5 +1,5 @@
 #include <containers.h>
-#include <assert/assert.h>
+#include <logs/assert.h>
 
 
 Container *getContainer(const char *name, pika::memory::MemoryArena *memoryArena)

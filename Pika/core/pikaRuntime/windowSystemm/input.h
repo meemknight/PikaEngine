@@ -40,17 +40,34 @@ namespace pika
 		//last state of the button (last frame)
 		PIKA_ADD_FLAG(lastState, setLastState, 5);
 
+		enum
+		{
+			A = 0,
+			B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+			NR0, NR1, NR2, NR3, NR4, NR5, NR6, NR7, NR8, NR9,
+			Space, Enter, Escape,
+			Up, Down, Left, Right,
+			LeftCtrl, Tab,
+			BUTTONS_COUNT, //
+		};
+
 	};
 
 	struct Input
 	{
-
 		Button lMouse = {};
 		Button rMouse = {};
 
+		//mouse position relevant to window
+		int mouseX = 0;
+		int mouseY = 0;
 
+		Button buttons[Button::BUTTONS_COUNT] = {};
 
 	};
+
+	
+
 
 
 

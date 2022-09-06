@@ -1,6 +1,6 @@
 #include "dllLoader.h"
 #include "pikaConfig.h"
-#include <assert/assert.h>
+#include <logs/assert.h>
 
 #ifdef PIKA_DEVELOPMENT
 
@@ -129,9 +129,9 @@
 
 #endif
 
-	void pika::DllLoader::constructRuntimeContainer(RuntimeContainer &c, const char *name)
-	{
-		constructContainer_(&c.pointer, &c.arena, name);
-	}
+void pika::DllLoader::constructRuntimeContainer(RuntimeContainer &c, const char *name)
+{
+	constructContainer_(&c.pointer, &c.arena, name);
+}
 
 	
