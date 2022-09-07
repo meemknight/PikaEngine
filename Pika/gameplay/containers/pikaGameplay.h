@@ -46,7 +46,7 @@ struct Gameplay : public Container
 
 		//ImGui::SetAllocatorFunctions(userMalloc, userFree);
 
-		ImGui::Begin("test");
+		ImGui::Begin("window from gameplay");
 		ImGui::End();
 	}
 

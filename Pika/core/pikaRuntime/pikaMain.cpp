@@ -14,6 +14,7 @@
 #include <runtimeContainer/runtimeContainer.h>
 
 #include <logs/log.h>
+#include <logWindow.h>
 
 int main()
 {
@@ -21,6 +22,10 @@ int main()
 #pragma region log
 	pika::LogManager logs;
 	logs.init("logs.txt");
+
+	pika::LogWindow logWindow;
+	logWindow.init();
+
 #pragma endregion
 
 #pragma region load dll
@@ -61,21 +66,51 @@ int main()
 	while (!window.shouldClose())
 	{
 
-
+	#pragma region reload dll
 		if (dllLoader.reloadDll())
 		{
 			dllLoader.gameplayReload_(window.context);
 		}
+	#pragma endregion
 
-
-		glClear(GL_COLOR_BUFFER_BIT);
-
+	#pragma region start imgui
 		pika::imguiStartFrame(window.context);
+	#pragma endregion
 
-		//gameplayUpdate(context);
+	#pragma region clear screen
+		glClear(GL_COLOR_BUFFER_BIT);
+	#pragma endregion
+
+	#pragma region editor stuff
+
+		if (ImGui::BeginMenuBar())
+		{
+
+			if (ImGui::BeginMenu("Open..."))
+			{
+
+				ImGui::Text("menu text");
+
+				ImGui::EndMenu();
+			}
+
+
+			ImGui::EndMenuBar();
+		}
+
+		logWindow.update(logs);
+
+	#pragma endregion
+
+	
+
+
+
 		container.pointer->update(window.input, window.deltaTime, window.windowState);
 
+	#pragma region end imgui frame
 		pika::imguiEndFrame(window.context);
+	#pragma endregion
 
 
 		window.update();
