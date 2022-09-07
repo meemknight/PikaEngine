@@ -3,7 +3,7 @@
 #include <glad/glad.h> //used to not conflict with glfw
 #include <GLFW/glfw3.h>
 #include <pikaImgui/pikaImgui.h>
-#include <dllLoader/containerInformation.h>
+#include <containerInformation.h>
 #include <vector>
 #include <baseContainer.h>
 #include <pikaAllocator/memoryArena.h>

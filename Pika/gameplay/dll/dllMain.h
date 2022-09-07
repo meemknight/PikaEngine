@@ -3,9 +3,8 @@
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
 #include <containers.h>
-#include <dllLoader/containerInformation.h>
+#include <containerInformation.h>
 #include <vector>
-#include <dllLoader/dllLoader.h>
 #include <pikaAllocator/memoryArena.h>	
 
 PIKA_API void gameplayStart(pika::PikaContext pikaContext);

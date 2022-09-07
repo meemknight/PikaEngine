@@ -1,5 +1,5 @@
 #pragma once
-#include <dllLoader/containerInformation.h>
+#include <containerInformation.h>
 
 namespace pika
 {

@@ -83,20 +83,20 @@ int main()
 
 	#pragma region editor stuff
 
-		if (ImGui::BeginMenuBar())
-		{
-
-			if (ImGui::BeginMenu("Open..."))
-			{
-
-				ImGui::Text("menu text");
-
-				ImGui::EndMenu();
-			}
-
-
-			ImGui::EndMenuBar();
-		}
+		//if (ImGui::BeginMenuBar())
+		//{
+		//
+		//	if (ImGui::BeginMenu("Open..."))
+		//	{
+		//
+		//		ImGui::Text("menu text");
+		//
+		//		ImGui::EndMenu();
+		//	}
+		//
+		//
+		//	ImGui::EndMenuBar();
+		//}
 
 		logWindow.update(logs);
 
