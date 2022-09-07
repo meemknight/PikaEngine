@@ -14,7 +14,9 @@
 #include <runtimeContainer/runtimeContainer.h>
 
 #include <logs/log.h>
-#include <logWindow.h>
+#include <logs/logWindow.h>
+
+#include <editor/editor.h>
 
 int main()
 {
@@ -55,6 +57,13 @@ int main()
 	dllLoader.getContainersInfo_(loadedContainers);
 #pragma endregion
 
+#pragma region editor
+	pika::Editor editor;
+	editor.init();
+#pragma endregion
+
+
+
 	logs.log("test");
 
 	RuntimeContainer container;
@@ -83,20 +92,7 @@ int main()
 
 	#pragma region editor stuff
 
-		//if (ImGui::BeginMenuBar())
-		//{
-		//
-		//	if (ImGui::BeginMenu("Open..."))
-		//	{
-		//
-		//		ImGui::Text("menu text");
-		//
-		//		ImGui::EndMenu();
-		//	}
-		//
-		//
-		//	ImGui::EndMenuBar();
-		//}
+		editor.update();
 
 		logWindow.update(logs);
 
