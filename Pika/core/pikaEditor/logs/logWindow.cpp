@@ -8,12 +8,12 @@ void pika::LogWindow::init()
 
 }
 
-void pika::LogWindow::update(pika::LogManager &logManager)
+void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 {
 	//todo push pop id
 
 
-	if (ImGui::Begin(ICON_NAME))
+	if (ImGui::Begin(ICON_NAME, &open))
 	{
 
 

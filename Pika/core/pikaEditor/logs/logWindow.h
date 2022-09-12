@@ -11,8 +11,7 @@ namespace pika
 
 		void init();
 
-		void update(pika::LogManager &logManager);
-
+		void update(pika::LogManager &logManager, bool &open);
 
 		static constexpr char *ICON = ICON_FK_COMMENT_O;
 		static constexpr char *NAME = "logs";

@@ -4,47 +4,55 @@
 #include <unordered_map>
 #include <set>
 #include <imgui.h>
+#include <imgui.h>
 
-std::unordered_map<std::string, int> buttonMapping =
+struct Mapping
 {
-	{"a", pika::Button::A},
-	{ "b", pika::Button::B },
-	{ "c", pika::Button::C },
-	{ "d", pika::Button::D },
-	{ "e", pika::Button::E },
-	{ "f", pika::Button::F },
-	{ "g", pika::Button::G },
-	{ "h", pika::Button::H },
-	{ "i", pika::Button::I },
-	{ "j", pika::Button::J },
-	{ "k", pika::Button::K },
-	{ "l", pika::Button::L },
-	{ "m", pika::Button::M },
-	{ "n", pika::Button::N },
-	{ "o", pika::Button::O },
-	{ "p", pika::Button::P },
-	{ "q", pika::Button::Q },
-	{ "r", pika::Button::R },
-	{ "s", pika::Button::S },
-	{ "t", pika::Button::T },
-	{ "u", pika::Button::U },
-	{ "v", pika::Button::V },
-	{ "w", pika::Button::W },
-	{ "x", pika::Button::X },
-	{ "y", pika::Button::Y },
-	{ "z", pika::Button::Z },
-	{ "0", pika::Button::NR0 }, { "1", pika::Button::NR1 }, { "2", pika::Button::NR2 }, { "3", pika::Button::NR3 },
-	{ "4", pika::Button::NR4 }, { "5", pika::Button::NR5 }, { "6", pika::Button::NR6 }, { "7", pika::Button::NR7 },
-	{ "8", pika::Button::NR8 }, { "9", pika::Button::NR9 },
-	{ "space", pika::Button::Space },
-	{ "enter", pika::Button::Enter },
-	{ "escape", pika::Button::Escape },
-	{ "up", pika::Button::Up },
-	{ "down", pika::Button::Down },
-	{ "left", pika::Button::Left },
-	{ "right", pika::Button::Right },
-	{ "ctrl", pika::Button::LeftCtrl },
-	{ "tab", pika::Button::Tab },
+	short normal = 0;
+	short imgui = 0;
+};
+
+std::unordered_map<std::string, Mapping> buttonMapping =
+{
+	{"a", {pika::Button::A, ImGuiKey_A}},
+	{ "b", {pika::Button::B, ImGuiKey_B} },
+	{ "c", {pika::Button::C, ImGuiKey_C} },
+	{ "d", {pika::Button::D, ImGuiKey_D} },
+	{ "e", {pika::Button::E, ImGuiKey_E} },
+	{ "f", {pika::Button::F, ImGuiKey_F} },
+	{ "g", {pika::Button::G, ImGuiKey_G} },
+	{ "h", {pika::Button::H, ImGuiKey_H} },
+	{ "i", {pika::Button::I, ImGuiKey_I} },
+	{ "j", {pika::Button::J, ImGuiKey_J} },
+	{ "k", {pika::Button::K, ImGuiKey_K} },
+	{ "l", {pika::Button::L, ImGuiKey_L} },
+	{ "m", {pika::Button::M, ImGuiKey_M} },
+	{ "n", {pika::Button::N, ImGuiKey_N} },
+	{ "o", {pika::Button::O, ImGuiKey_O} },
+	{ "p", {pika::Button::P, ImGuiKey_P} },
+	{ "q", {pika::Button::Q, ImGuiKey_Q} },
+	{ "r", {pika::Button::R, ImGuiKey_R} },
+	{ "s", {pika::Button::S, ImGuiKey_S} },
+	{ "t", {pika::Button::T, ImGuiKey_T} },
+	{ "u", {pika::Button::U, ImGuiKey_U} },
+	{ "v", {pika::Button::V, ImGuiKey_V} },
+	{ "w", {pika::Button::W, ImGuiKey_W} },
+	{ "x", {pika::Button::X, ImGuiKey_X} },
+	{ "y", {pika::Button::Y, ImGuiKey_Y} },
+	{ "z", {pika::Button::Z, ImGuiKey_Z} },
+	{ "0", {pika::Button::NR0, ImGuiKey_0}}, { "1", {pika::Button::NR1, ImGuiKey_1} }, { "2", {pika::Button::NR2, ImGuiKey_2} }, { "3", {pika::Button::NR3, ImGuiKey_3} },
+	{ "4", {pika::Button::NR4, ImGuiKey_0}}, { "5", {pika::Button::NR5, ImGuiKey_5} }, { "6", {pika::Button::NR6, ImGuiKey_6} }, { "7", {pika::Button::NR7, ImGuiKey_7} },
+	{ "8", {pika::Button::NR8, ImGuiKey_8}}, { "9", {pika::Button::NR9, ImGuiKey_9} },
+	{ "space", {pika::Button::Space , ImGuiKey_Space}},
+	{ "enter", {pika::Button::Enter, ImGuiKey_Enter} },
+	{ "escape", {pika::Button::Escape, ImGuiKey_Escape} },
+	{ "up", {pika::Button::Up, ImGuiKey_UpArrow} },
+	{ "down", {pika::Button::Down , ImGuiKey_DownArrow}},
+	{ "left", {pika::Button::Left , ImGuiKey_LeftArrow}},
+	{ "right", {pika::Button::Right , ImGuiKey_RightArrow}},
+	{ "ctrl", {pika::Button::LeftCtrl , ImGuiKey_LeftCtrl}},
+	{ "tab", {pika::Button::Tab , ImGuiKey_Tab}},
+	{ "alt", {pika::Button::LeftAlt , ImGuiKey_LeftAlt}},
 
 };
 
@@ -103,9 +111,11 @@ std::string normalizeShortcutName(const char *shortcut)
 	std::string ret = "";
 	for (int i = 0; i < t.size(); i++)
 	{
+		t[i][0] = std::toupper(t[i][0]);
+
 		ret += t[i];
 
-		if (i < t.size())
+		if (i < t.size()-1)
 		{
 			ret += "+";
 		}
@@ -114,30 +124,55 @@ std::string normalizeShortcutName(const char *shortcut)
 	return ret;
 }
 
+
+//todo shortcut should rely on glfw backend when imgui is disabeled in production build
 bool shortcut(const pika::Input &input, const char *shortcut)
 {
-	
 	auto token = tokenizeShortcutSimple(shortcut);
+	
+	if (token.empty()) { return 0; }
+
 
 	bool pressed = false;
 
-	for (auto &t : token)
-	{
-
-		auto it = buttonMapping.find(t);
-
-		if (it != buttonMapping.end())
+	if (0)
+	{	//noraml implementation
+		for (auto &t : token)
 		{
-			if (input.buttons[it->second].pressed())
+			auto it = buttonMapping.find(t);
+			if (it != buttonMapping.end())
 			{
-				pressed = true;
-			}
-			else if (!input.buttons[it->second].held())
-			{
-				return false;
+				if (input.buttons[it->second.normal].pressed())
+				{
+					pressed = true;
+				}
+				else if (!input.buttons[it->second.normal].held())
+				{
+					return false;
+				}
 			}
 		}
 	}
+	else
+	{	//imgui backend
+		for (auto &t : token)
+		{
+			auto it = buttonMapping.find(t);
+			if (it != buttonMapping.end())
+			{
+				if (ImGui::IsKeyPressed(it->second.imgui, false))
+				{
+					pressed = true;
+				}
+				else if (!ImGui::IsKeyDown(it->second.imgui))
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+
 
 	return pressed;
 }
@@ -158,21 +193,38 @@ void ShortcutManager::update(const pika::Input &input)
 {
 	for (auto &i : registeredShortcuts)
 	{
-		if (shortcut(input, i.first.c_str()))
+		if (shortcut(input, i.second.shortcut.c_str()))
 		{
-			*i.second = !*i.second;
+			*i.second.toggle = !*i.second.toggle;
 		}
+	}
+
+}
+
+void ShortcutManager::registerShortcut(const char *name, const char *s, bool *toggle)
+{
+
+
+	if (registeredShortcuts.find(name) != registeredShortcuts.end())
+	{
+		//todo log error
+	}
+	else
+	{
+		registeredShortcuts[name] 
+			= Shortcut{std::move(normalizeShortcutName(s)), toggle};
 	}
 
 
 }
 
-void ShortcutManager::registerShortcut(const char *s, bool *toggle)
+const char *ShortcutManager::getShortcut(const char *name)
 {
+	auto it = registeredShortcuts.find(name);
 
-	auto normalized = normalizeShortcutName(s);
-
-	registeredShortcuts[normalized] = toggle;
+	if (it == registeredShortcuts.end()) { return ""; }
+	else 
+	{ return it->second.shortcut.c_str(); };
 
 }
 

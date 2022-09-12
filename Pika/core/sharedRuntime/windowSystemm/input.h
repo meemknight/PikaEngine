@@ -47,7 +47,7 @@ namespace pika
 			NR0, NR1, NR2, NR3, NR4, NR5, NR6, NR7, NR8, NR9,
 			Space, Enter, Escape,
 			Up, Down, Left, Right,
-			LeftCtrl, Tab,
+			LeftCtrl, Tab, LeftAlt,
 			BUTTONS_COUNT, //
 		};
 

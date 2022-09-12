@@ -89,10 +89,14 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		if (key == GLFW_KEY_LEFT_CONTROL)
 		{
 			processAButton(pikaWindow.input.buttons[pika::Button::LeftCtrl], action);
-		}
+		}else
 		if (key == GLFW_KEY_TAB)
 		{
 			processAButton(pikaWindow.input.buttons[pika::Button::Tab], action);
+		}else
+		if (key == GLFW_KEY_LEFT_ALT)
+		{
+			processAButton(pikaWindow.input.buttons[pika::Button::LeftAlt], action);
 		}
 	}
 

@@ -27,9 +27,6 @@ int main()
 	pika::LogManager logs;
 	logs.init("logs.txt");
 
-	pika::LogWindow logWindow;
-	logWindow.init();
-
 #pragma endregion
 
 #pragma region load dll
@@ -98,15 +95,12 @@ int main()
 
 	#pragma region editor stuff
 
-		editor.update(window.input);
+		editor.update(window.input, shortcutManager, logs);
 
-		logWindow.update(logs);
 
 	#pragma endregion
 
 	
-
-
 
 		container.pointer->update(window.input, window.deltaTime, window.windowState);
 

@@ -4,6 +4,7 @@
 #include <logs/logWindow.h>
 #include <windowSystemm/input.h>
 #include <shortcutApi/shortcutApi.h>
+#include <editShortcuts/editShortcuts.h>
 
 namespace pika
 {
@@ -13,7 +14,8 @@ namespace pika
 
 		void init(pika::ShortcutManager &shortcutManager);
 
-		void update(const pika::Input &input);
+		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
+			,pika::LogManager &logs);
 
 		struct
 		{
@@ -22,9 +24,12 @@ namespace pika
 
 		struct
 		{
-			bool logsWindow;
+			bool logsWindow = 0;
+			bool editShortcutsWindow = 0;
 		}windowFlags;
 
+		pika::LogWindow logWindow;
+		pika::EditShortcutsWindow editShortcutsWindow;
 	};
 
 
