@@ -371,7 +371,7 @@ namespace imguiThemes
         style.PopupBorderSize = 1;
         style.FrameBorderSize = 1;
         style.TabBorderSize = 1;
-        style.WindowRounding = 7;
+        style.WindowRounding = 0;
         style.ChildRounding = 4;
         style.FrameRounding = 3;
         style.PopupRounding = 4;

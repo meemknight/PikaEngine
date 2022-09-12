@@ -27,7 +27,7 @@ namespace pika
 		std::string name = "";
 		bool firstLog = 0;
 
-		std::vector<std::string> internalLogs;
+		std::vector<std::string> internalLogs; //todo reing buffer here
 
 	private:
 		//used only interally.

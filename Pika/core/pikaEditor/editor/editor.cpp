@@ -1,10 +1,20 @@
 #include "editor.h"
+#include <iostream>
+#include "IconsForkAwesome.h"
+#include "shortcutApi/shortcutApi.h"
 
-void pika::Editor::init()
+void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 {
+
+	shortcutManager.registerShortcut("Ctrl+Alt+D", &optionsFlags.dockMainWindow);
+	shortcutManager.registerShortcut("Ctrl+L", &windowFlags.logsWindow);
+
+
 }
 
-void pika::Editor::update()
+
+
+void pika::Editor::update(const pika::Input &input)
 {
 	ImGuiWindowFlags mainWindowFlags = ImGuiWindowFlags_MenuBar;
 	if (optionsFlags.dockMainWindow)
@@ -14,6 +24,7 @@ void pika::Editor::update()
 			ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoCollapse |
 			ImGuiWindowFlags_NoBringToFrontOnFocus |
+			ImGuiWindowFlags_NoBackground |
 			ImGuiWindowFlags_NoTitleBar;
 
 		ImVec2 vWindowSize = ImGui::GetMainViewport()->Size;
@@ -22,6 +33,9 @@ void pika::Editor::update()
 		ImGui::SetNextWindowSize(ImVec2((float)vWindowSize.x, (float)vWindowSize.y), 0);
 	}
 
+
+	//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
+	
 	//todo imgui push pop id for main window
 	if (ImGui::Begin(
 		"Main window",
@@ -30,6 +44,8 @@ void pika::Editor::update()
 		)
 		)
 	{
+		//ImGui::PopStyleColor();
+
 
 		if (optionsFlags.dockMainWindow)
 		{
@@ -38,7 +54,7 @@ void pika::Editor::update()
 			ImGui::DockSpace(dockSpace, ImVec2(0.0f, 0.0f), dockspaceFlags);
 		}
 
-
+	#pragma region menu
 		if (ImGui::BeginMenuBar())
 		{
 
@@ -53,15 +69,29 @@ void pika::Editor::update()
 			if (ImGui::BeginMenu("Options"))
 			{
 
-				ImGui::Checkbox("Dock main window", &optionsFlags.dockMainWindow);
+
+				ImGui::MenuItem(ICON_FK_WINDOW_RESTORE " Dock main window", "Ctrl+Alt+D", &optionsFlags.dockMainWindow);
 
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Windows"))
+			{
+				ImGui::MenuItem(pika::LogWindow::ICON_NAME, "Ctrl+L", &windowFlags.logsWindow);
+
+
+				ImGui::EndMenu();
+
+			}
 
 			ImGui::EndMenuBar();
 		}
+	#pragma endregion
 
+	}
+	else
+	{
+		//ImGui::PopStyleColor();
 	}
 	ImGui::End();
 

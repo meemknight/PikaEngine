@@ -17,6 +17,8 @@
 #include <logs/logWindow.h>
 
 #include <editor/editor.h>
+#include <shortcutApi/shortcutApi.h>
+
 
 int main()
 {
@@ -57,9 +59,13 @@ int main()
 	dllLoader.getContainersInfo_(loadedContainers);
 #pragma endregion
 
+#pragma region shortcuts
+	pika::ShortcutManager shortcutManager;
+#pragma endregion
+
 #pragma region editor
 	pika::Editor editor;
-	editor.init();
+	editor.init(shortcutManager);
 #pragma endregion
 
 
@@ -92,7 +98,7 @@ int main()
 
 	#pragma region editor stuff
 
-		editor.update();
+		editor.update(window.input);
 
 		logWindow.update(logs);
 
@@ -110,6 +116,7 @@ int main()
 
 
 		window.update();
+		shortcutManager.update(window.input);
 	}
 
 

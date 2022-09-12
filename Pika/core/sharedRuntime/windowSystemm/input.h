@@ -3,7 +3,7 @@
 
 
 #define PIKA_ADD_FLAG(NAME, SETNAME, VALUE)	\
-	bool NAME() {return (flags & ((std::uint32_t)1<<VALUE)); } \
+	bool NAME() const {return (flags & ((std::uint32_t)1<<VALUE)); } \
 	void SETNAME(bool s) { \
 		if (s) { flags = flags | ((std::uint32_t)1 << VALUE); }	\
 			else { flags = flags & ~((std::uint32_t)1 << VALUE); }	\

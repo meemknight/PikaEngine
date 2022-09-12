@@ -19,14 +19,15 @@ void pika::LogManager::log(const char *l, int type)
 {
 
 #ifdef PIKA_DEVELOPMENT
-
+	logInternally(l, type);
+	logToFile(l, type);
 #endif
 
 #ifdef PIKA_PRODUCTION
+	logToFile(l, type); //todo enum settings
 
 #endif
 
-	logToFile(l, type);
 }
 
 std::stringstream pika::LogManager::formatLog(const char *l, int type)
