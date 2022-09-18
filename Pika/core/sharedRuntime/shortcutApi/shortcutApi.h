@@ -11,13 +11,14 @@ namespace pika
 		{
 			std::string shortcut = "";
 			bool *toggle = 0;
+			bool editable = true;
 		};
 
 		void update(const pika::Input &input);
 
 		std::unordered_map<std::string, Shortcut> registeredShortcuts;
 
-		bool registerShortcut(const char *name, const char *s, bool *toggle);
+		bool registerShortcut(const char *name, const char *s, bool *toggle, bool editable = 1);
 
 		const char *getShortcut(const char *name);
 	};

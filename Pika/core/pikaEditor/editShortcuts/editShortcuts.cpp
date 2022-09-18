@@ -39,9 +39,15 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 				char input[256] = {};
 				std::strncpy(input, shortcut.second.shortcut.c_str(), sizeof(input));
 				
+				int flags = ImGuiInputTextFlags_EnterReturnsTrue;
+				if (!shortcut.second.editable)
+				{
+					flags = flags | ImGuiInputTextFlags_ReadOnly;
+				}
+
 				if (
 					ImGui::InputText(("##" + shortcut.first).c_str(),
-					input, sizeof(input), ImGuiInputTextFlags_EnterReturnsTrue)
+					input, sizeof(input), flags)
 					)
 				{
 					shortcut.second.shortcut = pika::normalizeShortcutName(input);

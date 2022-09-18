@@ -20,7 +20,7 @@ namespace pika
 
 		struct
 		{
-			bool dockMainWindow = 1;
+			bool hideMainWindow = 0;
 		}optionsFlags;
 
 		struct
@@ -31,7 +31,9 @@ namespace pika
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
-		pika::PushNotificationManager pushNotificationManager;
+		pika::PushNotificationManager pushNotificationManager; //todo move this from editor so we can have it in the game without the editor
+	
+		bool lastHideWindowState = optionsFlags.hideMainWindow;
 	};
 
 

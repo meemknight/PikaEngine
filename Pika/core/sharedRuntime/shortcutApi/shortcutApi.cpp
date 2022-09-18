@@ -208,7 +208,7 @@ void ShortcutManager::update(const pika::Input &input)
 
 }
 
-bool ShortcutManager::registerShortcut(const char *name, const char *s, bool *toggle)
+bool ShortcutManager::registerShortcut(const char *name, const char *s, bool *toggle, bool editable)
 {
 
 	if (registeredShortcuts.find(name) != registeredShortcuts.end())
@@ -219,7 +219,7 @@ bool ShortcutManager::registerShortcut(const char *name, const char *s, bool *to
 	else
 	{
 		registeredShortcuts[name] 
-			= Shortcut{std::move(normalizeShortcutName(s)), toggle};
+			= Shortcut{std::move(normalizeShortcutName(s)), toggle, editable};
 		return 1;
 	}
 

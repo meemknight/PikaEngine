@@ -82,6 +82,8 @@ int main()
 #pragma region editor
 	pika::Editor editor;
 	editor.init(shortcutManager);
+
+	logs.pushNotificationManager = &editor.pushNotificationManager;
 #pragma endregion
 
 	
@@ -127,11 +129,6 @@ int main()
 
 		window.update();
 		shortcutManager.update(window.input);
-
-		if (window.input.buttons[pika::Button::Q].released())
-		{
-			editor.pushNotificationManager.pushNotification("hello");
-		}
 
 	}
 

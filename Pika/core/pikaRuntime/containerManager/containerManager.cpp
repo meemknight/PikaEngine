@@ -17,7 +17,7 @@ bool pika::ContainerManager::createContainer
 	pika::RuntimeContainer container;
 	container.arena.allocateStaticMemory(containerInformation); //this just allocates the memory
 
-	container.allocator.init(malloc(100000), 100000); //todo 
+	container.allocator.init(malloc(10000), 10000); //todo 
 
 	dllLoader.bindAllocatorDllRealm(&container.allocator);
 	 //this calls the constructors (from the dll realm)
@@ -88,6 +88,5 @@ void pika::ContainerManager::destroyAllContainers(pika::DllLoader &dllLoader)
 	for (auto &c : runningContainers)
 	{
 		destroyContainer(c.first, dllLoader);
-
 	}
 }

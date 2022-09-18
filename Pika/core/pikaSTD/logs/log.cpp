@@ -21,11 +21,12 @@ void pika::LogManager::log(const char *l, int type)
 #ifdef PIKA_DEVELOPMENT
 	logInternally(l, type);
 	logToFile(l, type);
+	logToPushNotification(l, type);
 #endif
 
 #ifdef PIKA_PRODUCTION
-	logToFile(l, type); //todo enum settings
-
+	logToFile(l, type); //todo enum settings flags (what to keep to logs)
+	logToPushNotification(l, type);
 #endif
 
 }
@@ -57,4 +58,13 @@ void pika::LogManager::logToFile(const char *l, int type)
 void pika::LogManager::logInternally(const char *l, int type)
 {
 	internalLogs.push_back(formatLog(l, type).str());
+}
+
+void pika::LogManager::logToPushNotification(const char *l, int type)
+{
+	if (pushNotificationManager)
+	{
+		pushNotificationManager->pushNotification(l);
+	}
+
 }

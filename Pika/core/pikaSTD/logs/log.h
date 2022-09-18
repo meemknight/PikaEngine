@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <pushNotification/pushNotification.h>
 
 namespace pika
 {
@@ -27,13 +28,16 @@ namespace pika
 		std::string name = "";
 		bool firstLog = 0;
 
-		std::vector<std::string> internalLogs; //todo reing buffer here
+		std::vector<std::string> internalLogs; //todo ring buffer here
 
+		//todo flag to remove this in release build
+		PushNotificationManager *pushNotificationManager = 0;
 	private:
 		//used only interally.
 		std::stringstream formatLog(const char *l, int type = logNormal);
 		void logToFile(const char *l, int type = logNormal);
 		void logInternally(const char *l, int type = logNormal);
+		void logToPushNotification(const char *l, int type = logNormal);
 
 	};
 

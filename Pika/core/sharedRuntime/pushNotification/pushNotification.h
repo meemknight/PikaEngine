@@ -17,7 +17,7 @@ namespace pika
 		Notification() {};
 	};
 
-
+	//todo flag to remove this in release build
 	struct PushNotificationManager
 	{
 
