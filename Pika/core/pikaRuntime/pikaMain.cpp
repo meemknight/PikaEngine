@@ -10,7 +10,7 @@
 #include "dllLoader/dllLoader.h"
 #include "pikaImgui/pikaImgui.h"
 
-#include <pikaAllocator/memoryArena.h>
+#include <memoryArena/memoryArena.h>
 #include <runtimeContainer/runtimeContainer.h>
 
 #include <logs/log.h>
@@ -18,10 +18,19 @@
 
 #include <editor/editor.h>
 #include <shortcutApi/shortcutApi.h>
+#include <globalAllocator/globalAllocator.h>
 
+#include <containerManager/containerManager.h>
+
+extern int n;
 
 int main()
 {
+
+#pragma region init global variables stuff
+	pika::initShortcutApi();
+#pragma endregion
+
 
 #pragma region log
 	pika::LogManager logs;
@@ -51,10 +60,20 @@ int main()
 #pragma region init dll reaml
 	dllLoader.gameplayStart_(window.context);
 
-	std::vector<ContainerInformation> loadedContainers;
+	std::vector<pika::ContainerInformation> loadedContainers;
+	loadedContainers.reserve(100);
 	//todo validate stuff
 	dllLoader.getContainersInfo_(loadedContainers);
 #pragma endregion
+
+#pragma region container manager
+
+	pika::ContainerManager containerManager;
+
+	containerManager.init();
+
+#pragma endregion
+
 
 #pragma region shortcuts
 	pika::ShortcutManager shortcutManager;
@@ -65,15 +84,13 @@ int main()
 	editor.init(shortcutManager);
 #pragma endregion
 
-
-
+	
 	logs.log("test");
 
-	RuntimeContainer container;
-	container.arena.allocateStaticMemory(loadedContainers[0]); //this just allocates the memory
 
-	dllLoader.constructRuntimeContainer(container, "Gameplay"); //this calls the constructors
-	container.pointer->create();	//this calls create()
+	containerManager.createContainer("Main level",
+		loadedContainers[0], dllLoader);
+
 
 	while (!window.shouldClose())
 	{
@@ -100,9 +117,8 @@ int main()
 
 	#pragma endregion
 
-	
+		containerManager.update(dllLoader, window.input, window.deltaTime, window.windowState);
 
-		container.pointer->update(window.input, window.deltaTime, window.windowState);
 
 	#pragma region end imgui frame
 		pika::imguiEndFrame(window.context);
@@ -111,9 +127,15 @@ int main()
 
 		window.update();
 		shortcutManager.update(window.input);
+
+		if (window.input.buttons[pika::Button::Q].released())
+		{
+			editor.pushNotificationManager.pushNotification("hello");
+		}
+
 	}
 
-
+	containerManager.destroyAllContainers(dllLoader);
 
 	return 0;
 }

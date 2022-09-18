@@ -5,6 +5,7 @@
 #include <windowSystemm/input.h>
 #include <shortcutApi/shortcutApi.h>
 #include <editShortcuts/editShortcuts.h>
+#include <pushNotification/pushNotification.h>
 
 namespace pika
 {
@@ -30,6 +31,7 @@ namespace pika
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
+		pika::PushNotificationManager pushNotificationManager;
 	};
 
 

@@ -6,18 +6,27 @@
 #include <baseContainer.h>
 #include <shortcutApi/shortcutApi.h>
 
+struct Test
+{
+	int *ptr = 0;
+	Test() { ptr = new int(5); }
+};
+
 struct Gameplay : public Container
 {
 
 	gl2d::Renderer2D renderer;
 
+	float *r =0;
+
+
 	void create()
 	{
 		renderer.create();
-
+		//pika::initShortcutApi();
+		r = new float(0);
 	}
 
-	float r = 0;
 
 	void update(pika::Input input, float deltaTime, pika::WindowState windowState)
 	{
@@ -31,9 +40,9 @@ struct Gameplay : public Container
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(windowState.w, windowState.h);
 
-		r += deltaTime * 3.f;
+		*r += deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Magenta, {}, r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{
@@ -58,7 +67,7 @@ struct Gameplay : public Container
 		//ImGui::Begin("window from gameplay");
 		//ImGui::End();
 		
-		//ImGui::ShowDemoWindow();
+		ImGui::ShowDemoWindow();
 	}
 
 };

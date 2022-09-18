@@ -17,16 +17,17 @@ namespace pika
 
 		std::unordered_map<std::string, Shortcut> registeredShortcuts;
 
-		void registerShortcut(const char *name, const char *s, bool *toggle);
+		bool registerShortcut(const char *name, const char *s, bool *toggle);
 
 		const char *getShortcut(const char *name);
 	};
-
 
 bool shortcut(const pika::Input &input, const char *shortcut);
 
 bool MenuItem(const pika::Input &input, const char *label, const char *shortcut, bool *p_selected, bool enabled = true);
 
 std::string normalizeShortcutName(const char *shortcut);
+
+void initShortcutApi();
 
 }

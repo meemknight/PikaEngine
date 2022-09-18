@@ -10,29 +10,40 @@
 #include "containers/pikaGameplay.h"
 #include <containers.h>
 
-#include <pikaAllocator/memoryArena.h>
+#include <memoryArena/memoryArena.h>
+#include <globalAllocator/globalAllocator.h>
 
+#define PIKA_MAKE_CONTAINER_INFO(x) pika::ContainerInformation(sizeof(x), #x)
 
-#define PIKA_MAKE_CONTAINER_INFO(x) ContainerInformation(sizeof(x), #x)
-
-PIKA_API void getContainersInfo(std::vector<ContainerInformation> &info)
+PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 {
-	info.clear();
+	info.clear();//todo reserve before or use static buffer????
 	info.push_back(PIKA_MAKE_CONTAINER_INFO(Gameplay));
 }
 
-PIKA_API void constructContainer(Container **c, pika::memory::MemoryArena *arena, const char *name)
+//this should not allocate memory
+PIKA_API bool constructContainer(Container **c, pika::memory::MemoryArena *arena, const char *name)
 {
 	*c = getContainer(name, arena);
-	PIKA_PERMA_ASSERT(*c, "coultn't create container(probably invalid name)");
-	return;
-
+	return *c != 0;
 
 }
 
 PIKA_API void destructContainer(Container **c, pika::memory::MemoryArena *arena)
 {
-	//placement delete here
+	//no need to call delete.
+	(*c)->~Container();
+
+}
+
+PIKA_API void bindAllocator(pika::memory::FreeListAllocator *arena)
+{
+	pika::memory::setGlobalAllocator(arena);
+}
+
+PIKA_API void resetAllocator()
+{
+	pika::memory::setGlobalAllocatorToStandard();
 }
 
 

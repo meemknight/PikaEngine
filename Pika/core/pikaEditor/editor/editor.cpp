@@ -16,9 +16,9 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 	shortcutManager.registerShortcut(EDIT_SHORTCUTS, "", &windowFlags.editShortcutsWindow);
 
 
-
 	logWindow.init();
 	editShortcutsWindow.init();
+	pushNotificationManager.init();
 }
 
 
@@ -134,6 +134,11 @@ void pika::Editor::update(const pika::Input &input,
 		editShortcutsWindow.update(shortcutManager, windowFlags.editShortcutsWindow);
 	}
 
+#pragma endregion
+
+#pragma region push notification
+	static bool open = true;
+	pushNotificationManager.update(open);
 #pragma endregion
 
 

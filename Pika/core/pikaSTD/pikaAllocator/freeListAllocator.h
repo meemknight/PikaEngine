@@ -30,7 +30,11 @@ namespace memory
 			void* semaphore;
 		
 			~FreeListAllocatorMutex();
-		
+			
+			FreeListAllocatorMutex(FreeListAllocatorMutex &other) = delete;
+			FreeListAllocatorMutex(FreeListAllocatorMutex &&other) = delete;
+			FreeListAllocatorMutex &operator=(const FreeListAllocatorMutex &other) = delete;
+
 		};
 	
 	#elif defined(PIKA_LINUX)
@@ -44,6 +48,7 @@ namespace memory
 	struct FreeListAllocator
 	{
 		char* baseMemory = 0;
+		void* originalBaseMemory = 0;
 	
 		FreeListAllocator() = default;
 		FreeListAllocator(void* baseMemory, size_t memorySize)
@@ -57,9 +62,8 @@ namespace memory
 	
 		void free(void* mem);
 	
-		void* threadSafeAllocate(size_t size);
-	
-		void threadSafeFree(void* mem);
+		//void* threadSafeAllocate(size_t size);
+		//void threadSafeFree(void* mem);
 	
 		//available memory is the free memory
 		//biggest block is how large is the biggest free memory block
@@ -76,7 +80,7 @@ namespace memory
 	
 		void* end = 0;
 	
-		FreeListAllocatorMutex mu;
+		//FreeListAllocatorMutex mu;
 	
 		size_t getEnd()
 		{

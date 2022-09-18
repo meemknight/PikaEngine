@@ -1,7 +1,7 @@
 #include <containers.h>
 #include <logs/assert.h>
 
-
+//this should not allocate memory
 Container *getContainer(const char *name, pika::memory::MemoryArena *memoryArena)
 {
 

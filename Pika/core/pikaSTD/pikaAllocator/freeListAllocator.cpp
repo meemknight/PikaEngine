@@ -41,6 +41,7 @@ namespace memory
 
 	void FreeListAllocator::init(void *baseMemory, size_t memorySize)
 		{
+			originalBaseMemory = baseMemory;
 			end = (void *)((size_t)baseMemory + memorySize);
 
 			static_assert(sizeof(FreeBlock) == sizeof(AllocatedBlock), "");
@@ -414,27 +415,27 @@ namespace memory
 
 		}
 
-	void *FreeListAllocator::threadSafeAllocate(size_t size)
-		{
-			mu.lock();
-
-			auto a = this->allocate(size);
-
-			mu.unlock();
-
-			return a;
-		}
-
-	void FreeListAllocator::threadSafeFree(void *mem)
-		{
-			if (mem == nullptr) { return; }
-
-			mu.lock();
-
-			this->free(mem);
-
-			mu.unlock();
-		}
+	//void *FreeListAllocator::threadSafeAllocate(size_t size)
+	//	{
+	//		mu.lock();
+	//
+	//		auto a = this->allocate(size);
+	//
+	//		mu.unlock();
+	//
+	//		return a;
+	//	}
+	//
+	//void FreeListAllocator::threadSafeFree(void *mem)
+	//	{
+	//		if (mem == nullptr) { return; }
+	//
+	//		mu.lock();
+	//
+	//		this->free(mem);
+	//
+	//		mu.unlock();
+	//	}
 
 	void FreeListAllocator::calculateMemoryMetrics(size_t &availableMemory, size_t &biggestBlock, int &freeBlocks)
 		{

@@ -51,12 +51,17 @@
 		getContainersInfo_ = (getContainersInfo_t *)GetProcAddress(dllHand, "getContainersInfo");
 		constructContainer_ = (constructContainer_t *)GetProcAddress(dllHand, "constructContainer");
 		destructContainer_ = (destructContainer_t *)GetProcAddress(dllHand, "destructContainer");
+		bindAllocator_ = (bindAllocator_t *)GetProcAddress(dllHand, "bindAllocator");;
+		resetAllocator_ = (resetAllocator_t *)GetProcAddress(dllHand, "resetAllocator");;
+		
 
 		if (!gameplayStart_) { return false; }
 		if (!gameplayReload_) { return false; }
 		if (!getContainersInfo_) { return false; }
 		if (!constructContainer_) { return false; }
 		if (!destructContainer_) { return false; }
+		if (!bindAllocator_) { return false; }
+		if (!resetAllocator_) { return false; }
 
 		return	true;
 	}
@@ -113,6 +118,8 @@
 		getContainersInfo_ = getContainersInfo;
 		constructContainer_ = constructContainer;
 		destructContainer_ = destructContainer;
+		bindAllocator_ = bindAllocator;
+		resetAllocator_ = resetAllocator;
 
 		return	true;
 	}
@@ -129,9 +136,19 @@
 
 #endif
 
-void pika::DllLoader::constructRuntimeContainer(RuntimeContainer &c, const char *name)
+bool pika::DllLoader::constructRuntimeContainer(RuntimeContainer &c, const char *name)
 {
-	constructContainer_(&c.pointer, &c.arena, name);
+	return constructContainer_(&c.pointer, &c.arena, name);
+}
+
+void pika::DllLoader::bindAllocatorDllRealm(pika::memory::FreeListAllocator *allocator)
+{
+	bindAllocator_(allocator);
+}
+
+void pika::DllLoader::resetAllocatorDllRealm()
+{
+	resetAllocator_();
 }
 
 	
