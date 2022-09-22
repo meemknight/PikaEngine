@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <deque>
 #include <sstream>
 #include <pushNotification/pushNotification.h>
 
@@ -10,6 +10,8 @@ namespace pika
 
 	struct LogManager
 	{
+
+		static constexpr const char *DefaultLogFile = "logs.txt";
 
 		//a null name will just log to a internal structure
 		void init(std::string name);
@@ -28,13 +30,13 @@ namespace pika
 		std::string name = "";
 		bool firstLog = 0;
 
-		std::vector<std::string> internalLogs; //todo ring buffer here
+		std::deque<std::string> internalLogs;
+		static constexpr int maxInternalLogCount = 200;
 
-		//todo flag to remove this in release build
+		
 		PushNotificationManager *pushNotificationManager = 0;
 	private:
 		//used only interally.
-		std::stringstream formatLog(const char *l, int type = logNormal);
 		void logToFile(const char *l, int type = logNormal);
 		void logInternally(const char *l, int type = logNormal);
 		void logToPushNotification(const char *l, int type = logNormal);
@@ -42,7 +44,7 @@ namespace pika
 	};
 
 
-
+	void logToFile(const char *fileName, const char *l, int type = LogManager::logNormal);
 
 
 }

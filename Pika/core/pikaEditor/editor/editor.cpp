@@ -69,8 +69,8 @@ void pika::Editor::update(const pika::Input &input,
 		//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
 	
 	
+		ImGui::PushID(pika::EditorImguiIds::mainEditorWindow);
 
-		//todo imgui push pop id for main window
 		if (ImGui::Begin(
 			"Main window",
 			/*p_open=*/nullptr,
@@ -78,7 +78,6 @@ void pika::Editor::update(const pika::Input &input,
 			)
 			)
 		{
-			//ImGui::PopStyleColor();
 
 
 			//if (optionsFlags.dockMainWindow)
@@ -134,12 +133,9 @@ void pika::Editor::update(const pika::Input &input,
 		#pragma endregion
 
 		}
-		else
-		{
-			//ImGui::PopStyleColor();
-		}
 		ImGui::End();
 
+		ImGui::PopID();
 
 	#pragma endregion
 

@@ -1,5 +1,6 @@
 #include "editShortcuts.h"
 #include <imgui.h>
+#include <pikaImgui/pikaImgui.h>
 
 void pika::EditShortcutsWindow::init()
 {
@@ -8,9 +9,10 @@ void pika::EditShortcutsWindow::init()
 void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, bool &open)
 {
 
-	//todo push pop id
 
 	ImGui::SetNextWindowSize({400, 500});
+
+	ImGui::PushID(pika::EditorImguiIds::editShortcutWindow);
 
 	if (ImGui::Begin(ICON_NAME, &open,
 		ImGuiWindowFlags_NoDocking | 
@@ -66,6 +68,8 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 
 	}
 	ImGui::End();
+
+	ImGui::PopID();
 
 }
 

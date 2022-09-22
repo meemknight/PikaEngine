@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <assert.h>
-
+#include <logs/log.h>
 
 
 namespace pika
@@ -14,7 +14,7 @@ namespace pika
 
 		inline void terminate(...)
 		{
-			std::exit(1);
+			std::abort();
 			__assume(0); //optimize code after the exit
 		}
 
@@ -141,7 +141,7 @@ namespace pika
 				, comment
 			);
 
-			//todo(vlod): log to a file
+			pika::logToFile(pika::LogManager::DefaultLogFile, buffer);
 
 		}
 

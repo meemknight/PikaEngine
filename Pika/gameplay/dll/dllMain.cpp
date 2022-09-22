@@ -13,11 +13,13 @@
 #include <memoryArena/memoryArena.h>
 #include <globalAllocator/globalAllocator.h>
 
-#define PIKA_MAKE_CONTAINER_INFO(x) pika::ContainerInformation(sizeof(x), #x)
+//todo use a global static array that can be accessed from other cpps and the macro will create an instance of a struct 
+//that will push that container
+#define PIKA_MAKE_CONTAINER_INFO(x) pika::ContainerInformation(sizeof(x), #x, x::containerInfo())
 
 PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 {
-	info.clear();//todo reserve before or use static buffer????
+	info.clear();
 	info.push_back(PIKA_MAKE_CONTAINER_INFO(Gameplay));
 }
 

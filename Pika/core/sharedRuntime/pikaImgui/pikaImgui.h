@@ -19,5 +19,16 @@ namespace pika
 	void imguiStartFrame(PikaContext pikaContext);
 	void imguiEndFrame(PikaContext pikaContext);
 
+	namespace EditorImguiIds
+	{
+		enum
+		{
+			mainEditorWindow = 100,
+			editShortcutWindow = 200,
+			
+			
+			idsCount = 4000
+		};
+	}
 
 };

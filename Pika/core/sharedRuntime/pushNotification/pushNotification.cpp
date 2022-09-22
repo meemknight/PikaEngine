@@ -1,7 +1,28 @@
 #include "pushNotification.h"
 #include <imgui.h>
 #include <iostream>
+#include <pikaConfig.h>
 
+
+#ifdef PIKA_PRODUCTION and 
+#if PIKA_REMOVE_PUSH_NOTIFICATIONS_IN_PRODUCTION
+
+#define PIKA_NOT_IMPLEMENT
+
+
+void pika::PushNotificationManager::init()
+{}
+
+void pika::PushNotificationManager::update(bool &open)
+{}
+
+void pika::PushNotificationManager::pushNotification(const char *content)
+{}
+
+#endif
+#endif
+
+#ifndef PIKA_NOT_IMPLEMENT
 
 void pika::PushNotificationManager::init()
 {
@@ -20,7 +41,7 @@ void pika::PushNotificationManager::update(bool &open)
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
 		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
 		| ImGuiWindowFlags_AlwaysAutoResize;
-	
+
 	//set popup pos
 	{
 		const float PADX = 10.0f;
@@ -37,28 +58,22 @@ void pika::PushNotificationManager::update(bool &open)
 		ImGui::SetNextWindowViewport(viewport->ID);
 		window_flags |= ImGuiWindowFlags_NoMove;
 	}
-	
-	ImGui::SetNextWindowBgAlpha(0.30f); // Transparent background
-	if (ImGui::Begin("Example: Simple overlay", &open, window_flags))
+
+	ImGui::SetNextWindowBgAlpha(0.30f);
+	if (ImGui::Begin("Notification content", &open, window_flags))
 	{
 
 		for (auto i = 0; i < notificationQue.size(); i++)
 		{
-			if (i!=0)
+			if (i != 0)
 			{
 				ImGui::Separator();
 			}
-			
-			//ImGui::PushID(i);
-			ImGui::Text(notificationQue[i].content.c_str(), i);
-			//ImGui::PopID();
-		}
 
-		//ImGui::Text("adfgh");
-		//ImGui::Separator();
-		//ImGui::Text("adfgh");
-		//ImGui::Separator();
-		//ImGui::Text("adfgh");
+			
+			ImGui::Text(notificationQue[i].content.c_str(), i);
+			
+		}
 
 
 
@@ -74,7 +89,7 @@ void pika::PushNotificationManager::update(bool &open)
 	}
 	ImGui::End();
 
-	
+
 	while (!notificationQue.empty() && notificationQue.front().startTime +
 		std::chrono::seconds(5) < std::chrono::steady_clock::now())
 	{
@@ -87,5 +102,13 @@ void pika::PushNotificationManager::update(bool &open)
 void pika::PushNotificationManager::pushNotification(const char *content)
 {
 	notificationQue.push_back
-		(Notification(std::string(content), std::chrono::steady_clock::now()));
+	(Notification(std::string(content), std::chrono::steady_clock::now()));
 }
+
+#endif
+ 
+
+
+
+
+

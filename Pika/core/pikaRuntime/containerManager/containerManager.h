@@ -21,7 +21,7 @@ namespace pika
 
 		bool createContainer(
 			std::string name, pika::ContainerInformation containerInformation,
-			pika::DllLoader &dllLoader);
+			pika::DllLoader &dllLoader, pika::LogManager &logManager);
 
 		void init();
 
@@ -31,9 +31,11 @@ namespace pika
 			float deltaTime,
 			pika::WindowState windowState);
 
-		bool destroyContainer(std::string name, pika::DllLoader &dllLoader);
+		bool destroyContainer(std::string name, pika::DllLoader &dllLoader,
+			pika::LogManager &logManager);
 
-		void destroyAllContainers(pika::DllLoader &dllLoader);
+		void destroyAllContainers(pika::DllLoader &dllLoader,
+			pika::LogManager &logManager);
 	};
 
 

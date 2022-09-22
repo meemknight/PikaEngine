@@ -22,7 +22,6 @@
 
 #include <containerManager/containerManager.h>
 
-extern int n;
 
 int main()
 {
@@ -31,10 +30,9 @@ int main()
 	pika::initShortcutApi();
 #pragma endregion
 
-
 #pragma region log
 	pika::LogManager logs;
-	logs.init("logs.txt");
+	logs.init(pika::LogManager::DefaultLogFile);
 
 #pragma endregion
 
@@ -62,8 +60,8 @@ int main()
 
 	std::vector<pika::ContainerInformation> loadedContainers;
 	loadedContainers.reserve(100);
-	//todo validate stuff
-	dllLoader.getContainersInfo_(loadedContainers);
+	
+	dllLoader.getContainerInfoAndCheck(loadedContainers, logs);
 #pragma endregion
 
 #pragma region container manager
@@ -80,23 +78,26 @@ int main()
 #pragma endregion
 
 #pragma region editor
-	pika::Editor editor;
+	pika::Editor editor; //todo remove editor in production
 	editor.init(shortcutManager);
 
 	logs.pushNotificationManager = &editor.pushNotificationManager;
 #pragma endregion
 
 	
-	logs.log("test");
+	logs.log("test log");
 
 
 	containerManager.createContainer("Main level",
-		loadedContainers[0], dllLoader);
+		loadedContainers[0], dllLoader, logs);
 
+	containerManager.createContainer("Main level",
+		loadedContainers[0], dllLoader, logs);
 
 	while (!window.shouldClose())
 	{
 
+		//todo move this in container manager so we can check for collisions
 	#pragma region reload dll
 		if (dllLoader.reloadDll())
 		{
@@ -119,20 +120,33 @@ int main()
 
 	#pragma endregion
 
+	#pragma region container manager
 		containerManager.update(dllLoader, window.input, window.deltaTime, window.windowState);
-
+	#pragma endregion
 
 	#pragma region end imgui frame
 		pika::imguiEndFrame(window.context);
 	#pragma endregion
 
-
+	#pragma region window update
 		window.update();
+	#pragma endregion
+
+	#pragma region shortcut manager update
 		shortcutManager.update(window.input);
+	#pragma endregion
+	
+		if (window.input.buttons[pika::Button::Q].released())
+		{
+			static int i = 0;
+			i++;
+			logs.log((std::string("test log: ") + std::to_string(i)).c_str());
+		}
+
 
 	}
 
-	containerManager.destroyAllContainers(dllLoader);
+	containerManager.destroyAllContainers(dllLoader, logs);
 
 	return 0;
 }

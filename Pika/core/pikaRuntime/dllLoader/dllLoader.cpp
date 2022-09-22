@@ -1,6 +1,7 @@
 #include "dllLoader.h"
 #include "pikaConfig.h"
 #include <logs/assert.h>
+#include <unordered_set>
 
 #ifdef PIKA_DEVELOPMENT
 
@@ -29,7 +30,7 @@
 		return(time);
 	}
 
-	//todo error reporting with strings
+	
 	bool pika::DllLoader::loadDll(std::filesystem::path path)
 	{
 		p = path;
@@ -149,6 +150,48 @@ void pika::DllLoader::bindAllocatorDllRealm(pika::memory::FreeListAllocator *all
 void pika::DllLoader::resetAllocatorDllRealm()
 {
 	resetAllocator_();
+}
+
+void pika::DllLoader::getContainerInfoAndCheck(std::vector<pika::ContainerInformation> &info, pika::LogManager &logs)
+{
+
+	
+	getContainersInfo_(info);
+	
+	//todo check for valid containers
+
+	std::unordered_set<std::string> uniqueNames = {};
+
+	for (int i = 0; i < info.size(); i++)
+	{
+		if (uniqueNames.find(info[i].containerName) == uniqueNames.end())
+		{
+			uniqueNames.insert(info[i].containerName);
+		}
+		else
+		{
+			std::string l = "Duplicate container name: " + info[i].containerName;
+			logs.log(l.c_str(), logs.logError);
+
+			info.erase(info.begin() + i);
+			i--;
+			continue;
+		}
+
+		if (info[i].containerStaticInfo.defaultHeapMemorySize < 100)
+		{
+			std::string l = "Too little heap memory for container: " + info[i].containerName;
+			logs.log(l.c_str(), logs.logError);
+
+			info.erase(info.begin() + i);
+			i--;
+			continue;
+		}
+
+	}
+
+
+
 }
 
 	

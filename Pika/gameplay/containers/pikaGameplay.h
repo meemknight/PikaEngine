@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <baseContainer.h>
 #include <shortcutApi/shortcutApi.h>
+#include <pikaSizes.h>
 
 struct Test
 {
@@ -20,11 +21,22 @@ struct Gameplay : public Container
 	float *r =0;
 
 
+	static ContainerStaticInfo containerInfo()
+	{
+		ContainerStaticInfo info = {};
+		info.defaultHeapMemorySize = pika::MB(10);
+
+		return info;
+	}
+
+
 	void create()
 	{
 		renderer.create();
 		//pika::initShortcutApi();
 		r = new float(0);
+
+		//void *test = new char[pika::MB(10)]; //todo let the allocator tell the engine somehow that it is out of memory
 	}
 
 

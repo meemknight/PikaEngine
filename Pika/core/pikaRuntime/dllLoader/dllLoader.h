@@ -8,6 +8,7 @@
 #include <baseContainer.h>
 #include <memoryArena/memoryArena.h>
 #include <runtimeContainer/runtimeContainer.h>
+#include <logs/log.h>
 
 #define GAMEPLAYSTART(x) void x(pika::PikaContext pikaContext)
 typedef GAMEPLAYSTART(gameplayStart_t);
@@ -64,6 +65,8 @@ struct DllLoader
 	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);
 	void bindAllocatorDllRealm(pika::memory::FreeListAllocator *allocator);
 	void resetAllocatorDllRealm();
+
+	void getContainerInfoAndCheck(std::vector<pika::ContainerInformation> &info, pika::LogManager &logs);
 
 	void unloadDll();
 

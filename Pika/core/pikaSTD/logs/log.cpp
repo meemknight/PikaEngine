@@ -5,14 +5,10 @@
 
 void pika::LogManager::init(std::string name)
 {
-	if (name == "")
-	{
-		internalLogs.reserve(10);
-	}
 
 	this->name = name;
 	bool firstLog = 0;
-	//this might do some other things in the future
+	
 }
 
 void pika::LogManager::log(const char *l, int type)
@@ -25,13 +21,20 @@ void pika::LogManager::log(const char *l, int type)
 #endif
 
 #ifdef PIKA_PRODUCTION
-	logToFile(l, type); //todo enum settings flags (what to keep to logs)
+
+	#if !PIKA_REMOVE_LOGS_TO_FILE_IN_PRODUCTION
+	logToFile(l, type);
+	#endif
+
+	#if !PIKA_REMOVE_LOGS_TO_NOTIFICATIONS_IN_PRODUCTION
 	logToPushNotification(l, type);
+	#endif
+
 #endif
 
 }
 
-std::stringstream pika::LogManager::formatLog(const char *l, int type)
+std::stringstream formatLog(const char *l, int type)
 {
 	auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::stringstream s;
@@ -46,17 +49,20 @@ void pika::LogManager::logToFile(const char *l, int type)
 	if (!firstLog)
 	{
 		firstLog = 1;
-		std::ofstream file(name);
+		std::ofstream file(name);	//no need to check here
 		file.close(); //clear the file content
 	}
 
-	std::ofstream file(name, std::ofstream::app);
-	file << formatLog(l, type).rdbuf();
-	file.close();
+	pika::logToFile(name.c_str(), l, type);
 }
 
 void pika::LogManager::logInternally(const char *l, int type)
 {
+	if (internalLogs.size() >= maxInternalLogCount)
+	{
+		internalLogs.pop_front();
+	}
+
 	internalLogs.push_back(formatLog(l, type).str());
 }
 
@@ -67,4 +73,13 @@ void pika::LogManager::logToPushNotification(const char *l, int type)
 		pushNotificationManager->pushNotification(l);
 	}
 
+}
+
+void pika::logToFile(const char *fileName, const char *l, int type)
+{
+	std::ofstream file(fileName, std::ofstream::app);
+	if (!file.is_open()) { return; }
+
+	file << formatLog(l, type).rdbuf();
+	file.close();
 }
