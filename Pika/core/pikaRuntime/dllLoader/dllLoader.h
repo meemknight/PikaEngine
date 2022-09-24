@@ -39,9 +39,11 @@ typedef RESETALLOCATOR(resetAllocator_t)
 #undef RESETALLOCATOR
 
 //todo remove windows include 
+#ifdef PIKA_WINDOWS
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#endif
 
 namespace pika
 {
@@ -58,8 +60,11 @@ struct DllLoader
 	resetAllocator_t *resetAllocator_ = {};
 
 	std::filesystem::path p = {};
+
+#ifdef PIKA_WINDOWS
 	FILETIME filetime = {};
 	HMODULE dllHand = {};
+#endif
 
 	bool loadDll(std::filesystem::path path);
 	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);

@@ -1,0 +1,3 @@
+#2022-09-24 16:30:37: test log
+#2022-09-24 16:30:37[warning]: warning log
+#2022-09-24 16:30:37[error]: error log

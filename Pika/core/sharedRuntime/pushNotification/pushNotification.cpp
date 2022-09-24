@@ -2,7 +2,8 @@
 #include <imgui.h>
 #include <iostream>
 #include <pikaConfig.h>
-
+#include <IconsForkAwesome.h>
+#include <pikaImgui/pikaImgui.h>
 
 #ifdef PIKA_PRODUCTION and 
 #if PIKA_REMOVE_PUSH_NOTIFICATIONS_IN_PRODUCTION
@@ -16,7 +17,7 @@ void pika::PushNotificationManager::init()
 void pika::PushNotificationManager::update(bool &open)
 {}
 
-void pika::PushNotificationManager::pushNotification(const char *content)
+void pika::PushNotificationManager::pushNotification(const char *content, int logType)
 {}
 
 #endif
@@ -70,9 +71,21 @@ void pika::PushNotificationManager::update(bool &open)
 				ImGui::Separator();
 			}
 
+			if (notificationQue[i].notificationType == pika::logError)
+			{
+				pika::addErrorSymbol();
+				ImGui::SameLine();
+			}
+
+			if (notificationQue[i].notificationType == pika::logWarning)
+			{
+				pika::addWarningSymbol();
+				ImGui::SameLine();
+			}
 			
 			ImGui::Text(notificationQue[i].content.c_str(), i);
-			
+		
+
 		}
 
 
@@ -99,10 +112,10 @@ void pika::PushNotificationManager::update(bool &open)
 
 }
 
-void pika::PushNotificationManager::pushNotification(const char *content)
+void pika::PushNotificationManager::pushNotification(const char *content, int logType)
 {
 	notificationQue.push_back
-	(Notification(std::string(content), std::chrono::steady_clock::now()));
+	( Notification(std::string(content), std::chrono::steady_clock::now(), logType) );
 }
 
 #endif

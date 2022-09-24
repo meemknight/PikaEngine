@@ -1,4 +1,9 @@
 #pragma once
+//////////////////////////////////////////
+//editor.h
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
 
 #include <pikaImgui/pikaImgui.h>
 #include <logs/logWindow.h>
@@ -16,7 +21,7 @@ namespace pika
 		void init(pika::ShortcutManager &shortcutManager);
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
-			,pika::LogManager &logs);
+			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager);
 
 		struct
 		{
@@ -31,7 +36,6 @@ namespace pika
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
-		pika::PushNotificationManager pushNotificationManager; //todo move this from editor so we can have it in the game without the editor
 	
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 	};

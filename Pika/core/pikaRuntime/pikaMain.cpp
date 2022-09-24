@@ -21,7 +21,7 @@
 #include <globalAllocator/globalAllocator.h>
 
 #include <containerManager/containerManager.h>
-
+#include <staticVector.h>
 
 int main()
 {
@@ -42,6 +42,19 @@ int main()
 	PIKA_PERMA_ASSERT(dllLoader.loadDll(currentPath), "Couldn't load dll");
 #pragma endregion
 	
+#pragma region pika imgui id manager
+	pika::ImGuiIdsManager imguiIdsManager;
+#pragma endregion
+
+#pragma region push notification manager
+#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION)
+	pika::PushNotificationManager pushNotificationManager; 
+	pushNotificationManager.init();
+	logs.pushNotificationManager = &pushNotificationManager;
+#endif
+#pragma endregion
+
+
 #pragma region init window opengl imgui and context
 	PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw");
 	//glfwSetErrorCallback(error_callback); todo
@@ -78,18 +91,16 @@ int main()
 #pragma endregion
 
 #pragma region editor
+#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
 	pika::Editor editor; //todo remove editor in production
 	editor.init(shortcutManager);
-
-	logs.pushNotificationManager = &editor.pushNotificationManager;
+#endif
 #pragma endregion
 
 	
 	logs.log("test log");
-
-
-	containerManager.createContainer("Main level",
-		loadedContainers[0], dllLoader, logs);
+	logs.log("warning log", pika::logWarning);
+	logs.log("error log", pika::logError);
 
 	containerManager.createContainer("Main level",
 		loadedContainers[0], dllLoader, logs);
@@ -114,10 +125,17 @@ int main()
 	#pragma endregion
 
 	#pragma region editor stuff
+	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
+		editor.update(window.input, shortcutManager, logs, 
+			pushNotificationManager);
+	#endif
+	#pragma endregion
 
-		editor.update(window.input, shortcutManager, logs);
-
-
+	#pragma region push notification
+	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION)
+		static bool pushNoticicationOpen = true;
+		pushNotificationManager.update(pushNoticicationOpen);
+	#endif
 	#pragma endregion
 
 	#pragma region container manager
@@ -136,14 +154,6 @@ int main()
 		shortcutManager.update(window.input);
 	#pragma endregion
 	
-		if (window.input.buttons[pika::Button::Q].released())
-		{
-			static int i = 0;
-			i++;
-			logs.log((std::string("test log: ") + std::to_string(i)).c_str());
-		}
-
-
 	}
 
 	containerManager.destroyAllContainers(dllLoader, logs);

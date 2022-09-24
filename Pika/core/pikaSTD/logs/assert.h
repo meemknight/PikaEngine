@@ -39,7 +39,7 @@ namespace pika
 
 #define PIKA_PERMA_ASSERT(expression, comment) (void)(			\
 			(!!(expression)) ||									\
-			(PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION(#expression,			\
+			(PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION(#expression,	\
 				__FILE__, __LINE__, comment), 0)				\
 )
 

@@ -38,7 +38,18 @@ std::stringstream formatLog(const char *l, int type)
 {
 	auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::stringstream s;
-	s << "#" << std::put_time(std::localtime(&time), "%Y-%m-%d %X") << ": ";
+	s << "#" << std::put_time(std::localtime(&time), "%Y-%m-%d %X");
+	
+	if (type == pika::logWarning)
+	{
+		s << "[warning]";
+	}
+	else if (type == pika::logError)
+	{
+		s << "[error]";
+	}
+	
+	s << ": ";
 	s << l << "\n";
 	return s;
 }
@@ -70,7 +81,7 @@ void pika::LogManager::logToPushNotification(const char *l, int type)
 {
 	if (pushNotificationManager)
 	{
-		pushNotificationManager->pushNotification(l);
+		pushNotificationManager->pushNotification(l, type);
 	}
 
 }

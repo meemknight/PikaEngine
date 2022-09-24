@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imguiThemes.h"
+#include <IconsForkAwesome.h>
 
 
 #include <pikaContext.h>
@@ -25,10 +26,25 @@ namespace pika
 		{
 			mainEditorWindow = 100,
 			editShortcutWindow = 200,
-			
+			logWindow = 300,
 			
 			idsCount = 4000
 		};
 	}
+
+	struct ImGuiIdsManager
+	{
+		int counter = EditorImguiIds::idsCount + 1;
+
+		//returns the first id. (count) ids will be reserved.
+		//if you want 5 ids and the function returns 10, then ids 10 11 12 13 14 will be reserved.
+		int getImguiIds(unsigned int count = 1)
+		{
+			return counter + count;
+		}
+	};
+
+	void addErrorSymbol();
+	void addWarningSymbol();
 
 };

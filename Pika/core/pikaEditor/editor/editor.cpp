@@ -1,3 +1,9 @@
+//////////////////////////////////////////
+//editor.cpp
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
+
 #include "editor.h"
 #include <iostream>
 #include "IconsForkAwesome.h"
@@ -5,8 +11,8 @@
 #include <editShortcuts/editShortcuts.h>
 
 #define DOCK_MAIN_WINDOW_SHORTCUT ICON_FK_EYE_SLASH " Hide main window"
-#define LOGS_SHORTCUT "Logs window"
-#define EDIT_SHORTCUTS "Edit shortcuts window"
+#define LOGS_SHORTCUT ICON_FK_COMMENT_O " Logs window"
+#define EDIT_SHORTCUTS ICON_FK_PENCIL_SQUARE " Edit shortcuts window"
 
 void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 {
@@ -18,13 +24,13 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 
 	logWindow.init();
 	editShortcutsWindow.init();
-	pushNotificationManager.init();
 }
 
 
 
 void pika::Editor::update(const pika::Input &input,
-	pika::ShortcutManager &shortcutManager, pika::LogManager &logs)
+	pika::ShortcutManager &shortcutManager, pika::LogManager &logs, 
+	pika::PushNotificationManager &pushNotificationManager)
 {
 
 #pragma region push notification if hide window
@@ -156,10 +162,7 @@ void pika::Editor::update(const pika::Input &input,
 
 #pragma endregion
 
-#pragma region push notification
-	static bool open = true;
-	pushNotificationManager.update(open);
-#pragma endregion
+
 
 
 }

@@ -39,6 +39,10 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_STD				CONFIGURE_DEPENDS "${CMAKE_CURRENT_SO
 file(GLOB_RECURSE PIKA_SOURCES_GAMEPLAY				CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_CORE_SHARED_RUNTIME	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/*.cpp")
 
+add_compile_definitions(PIKA_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/") 
+#add_compile_definitions(PIKA_RESOURCES_PATH="./resources/")
+
+
 
 
 #pikaCore ############################################

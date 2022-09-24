@@ -20,7 +20,7 @@ struct Gameplay : public Container
 
 	float *r =0;
 
-
+	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -30,7 +30,7 @@ struct Gameplay : public Container
 	}
 
 
-	void create()
+	void create(RequestedContainerInfo &requestedInfo)
 	{
 		renderer.create();
 		//pika::initShortcutApi();
@@ -39,8 +39,8 @@ struct Gameplay : public Container
 		//void *test = new char[pika::MB(10)]; //todo let the allocator tell the engine somehow that it is out of memory
 	}
 
-
-	void update(pika::Input input, float deltaTime, pika::WindowState windowState)
+	void update(pika::Input input, float deltaTime, pika::WindowState windowState,
+		RequestedContainerInfo &requestedInfo)
 	{
 
 		if (pika::shortcut(input, "Ctrl + S"))
@@ -68,6 +68,11 @@ struct Gameplay : public Container
 		if (input.lMouse.typed())
 		{
 			std::cout << "typed\n";
+		}
+
+		if (input.buttons[pika::Button::E].doublePressed())
+		{
+			std::cout << "double pressed\n";
 		}
 
 		//std::cout << state.deltaTime << "\n";

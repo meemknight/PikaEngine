@@ -1,4 +1,9 @@
 #pragma once
+//////////////////////////////////////////
+//pikaConfigInternal.h
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
 
 #pragma region Platform
 

@@ -1,4 +1,10 @@
 #pragma once
+//////////////////////////////////////////
+//dllMain.h
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
+
 #include <pikaConfig.h>
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>

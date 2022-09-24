@@ -96,3 +96,17 @@ void pika::imguiEndFrame(PikaContext pikaContext)
 	
 	}
 }
+
+void pika::addErrorSymbol()
+{
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+	ImGui::Text(ICON_FK_TIMES_CIRCLE " ");
+	ImGui::PopStyleColor();
+}
+
+void pika::addWarningSymbol()
+{
+	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
+	ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " ");
+	ImGui::PopStyleColor();
+}

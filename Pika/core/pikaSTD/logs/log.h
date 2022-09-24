@@ -11,20 +11,15 @@ namespace pika
 	struct LogManager
 	{
 
-		static constexpr const char *DefaultLogFile = "logs.txt";
+		static constexpr const char *DefaultLogFile = PIKA_RESOURCES_PATH "logs.txt";
 
 		//a null name will just log to a internal structure
 		void init(std::string name);
 
-		enum : int
-		{
-			logNormal = 0,
-			logWarning,
-			logError
-		};
+		
 
 		//this will be dependent on the configuration of the project. 
-		void log(const char *l, int type = logNormal);
+		void log(const char *l, int type = pika::logNormal);
 		
 
 		std::string name = "";
@@ -34,17 +29,17 @@ namespace pika
 		static constexpr int maxInternalLogCount = 200;
 
 		
-		PushNotificationManager *pushNotificationManager = 0;
+		pika::PushNotificationManager *pushNotificationManager = 0;
 	private:
 		//used only interally.
-		void logToFile(const char *l, int type = logNormal);
-		void logInternally(const char *l, int type = logNormal);
-		void logToPushNotification(const char *l, int type = logNormal);
+		void logToFile(const char *l, int type = pika::logNormal);
+		void logInternally(const char *l, int type = pika::logNormal);
+		void logToPushNotification(const char *l, int type = pika::logNormal);
 
 	};
 
 
-	void logToFile(const char *fileName, const char *l, int type = LogManager::logNormal);
+	void logToFile(const char *fileName, const char *l, int type = pika::logNormal);
 
 
 }

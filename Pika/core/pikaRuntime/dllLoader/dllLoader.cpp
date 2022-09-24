@@ -103,7 +103,7 @@
 	}
 	
 	#else
-	#error "pika load dll works only on windows."
+	#error "pika load dll works only on windows, change configuration to pikaProduction"
 	#endif
 
 
@@ -155,7 +155,6 @@ void pika::DllLoader::resetAllocatorDllRealm()
 void pika::DllLoader::getContainerInfoAndCheck(std::vector<pika::ContainerInformation> &info, pika::LogManager &logs)
 {
 
-	
 	getContainersInfo_(info);
 	
 	//todo check for valid containers
@@ -164,27 +163,34 @@ void pika::DllLoader::getContainerInfoAndCheck(std::vector<pika::ContainerInform
 
 	for (int i = 0; i < info.size(); i++)
 	{
+		auto signalError = [&](const char *e)
+		{
+			std::string l = e + info[i].containerName;
+			logs.log(l.c_str(), pika::logError);
+
+			info.erase(info.begin() + i);
+			i--;
+		};
+
 		if (uniqueNames.find(info[i].containerName) == uniqueNames.end())
 		{
 			uniqueNames.insert(info[i].containerName);
 		}
 		else
 		{
-			std::string l = "Duplicate container name: " + info[i].containerName;
-			logs.log(l.c_str(), logs.logError);
+			signalError("Duplicate container name: ");
+			continue;
+		}
 
-			info.erase(info.begin() + i);
-			i--;
+		if (info[i].containerStaticInfo._internalNotImplemented)
+		{
+			signalError("Container did not implement containerInfo function: ");
 			continue;
 		}
 
 		if (info[i].containerStaticInfo.defaultHeapMemorySize < 100)
 		{
-			std::string l = "Too little heap memory for container: " + info[i].containerName;
-			logs.log(l.c_str(), logs.logError);
-
-			info.erase(info.begin() + i);
-			i--;
+			signalError("Too little heap memory for container: ");
 			continue;
 		}
 

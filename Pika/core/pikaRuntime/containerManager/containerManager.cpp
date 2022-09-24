@@ -7,10 +7,10 @@ bool pika::ContainerManager::createContainer
 (std::string name, pika::ContainerInformation containerInformation,
 	pika::DllLoader &dllLoader, pika::LogManager &logManager)
 {
-
+	//todo containers should have an id rather than name
 	if (runningContainers.find(name) != runningContainers.end())
 	{
-		logManager.log((std::string("Container name already exists: ") + name).c_str(), pika::LogManager::logError);
+		logManager.log((std::string("Container name already exists: ") + name).c_str(), pika::logError);
 		return false;
 	}
 
@@ -28,7 +28,7 @@ bool pika::ContainerManager::createContainer
 	{
 		dllLoader.resetAllocatorDllRealm();
 
-		logManager.log((std::string("Couldn't construct container: ") + name).c_str(), pika::LogManager::logError);
+		logManager.log((std::string("Couldn't construct container: ") + name).c_str(), pika::logError);
 
 		container.arena.dealocateStaticMemory(); //static memory
 		free(container.allocator.originalBaseMemory); //heap memory
@@ -37,9 +37,16 @@ bool pika::ContainerManager::createContainer
 	}
 	dllLoader.resetAllocatorDllRealm();
 
+
+#pragma region setup requested container info
+
+	container.requestedContainerInfo.mainAllocator = &container.allocator;
+
+#pragma endregion
+
 	
 	dllLoader.bindAllocatorDllRealm(&container.allocator);
-	container.pointer->create(); //this calls create() (from the dll realm)
+	container.pointer->create(container.requestedContainerInfo); //this calls create() (from the dll realm)
 	dllLoader.resetAllocatorDllRealm();//sets the global allocator back to standard (used for runtime realm)
 
 	runningContainers[name] = container;
@@ -51,12 +58,13 @@ void pika::ContainerManager::init()
 {
 }
 
-void pika::ContainerManager::update(pika::DllLoader &dllLoader, pika::Input input, float deltaTime, pika::WindowState windowState)
+void pika::ContainerManager::update(pika::DllLoader &dllLoader,
+	pika::Input input, float deltaTime, pika::WindowState windowState)
 {
 	for (auto &c : runningContainers)
 	{
 		dllLoader.bindAllocatorDllRealm(&c.second.allocator);
-		c.second.pointer->update(input, deltaTime, windowState);
+		c.second.pointer->update(input, deltaTime, windowState, c.second.requestedContainerInfo);
 		dllLoader.resetAllocatorDllRealm();
 
 	}
@@ -70,7 +78,7 @@ bool pika::ContainerManager::destroyContainer(std::string name, pika::DllLoader 
 	if (c == runningContainers.end())
 	{
 		logManager.log((std::string("Couldn't find container for destruction: ") + name).c_str(),
-			pika::LogManager::logError);
+			pika::logError);
 		return false;
 	}
 

@@ -1,6 +1,7 @@
 ﻿#include "logWindow.h"
 #include <imgui.h>
 #include <IconsForkAwesome.h>
+#include <pikaImgui/pikaImgui.h>
 
 void pika::LogWindow::init()
 {
@@ -10,7 +11,7 @@ void pika::LogWindow::init()
 
 void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 {
-	//todo push pop id
+	ImGui::PushID(EditorImguiIds::logWindow);
 
 	if (!ImGui::Begin(ICON_NAME, &open))
 	{
@@ -46,11 +47,12 @@ void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	if (filter.IsActive())
 	{
-
 		for (auto i : logManager.internalLogs)
 		{
 			if (filter.PassFilter(i.c_str()))
+			{
 				ImGui::TextUnformatted(i.c_str());
+			}
 		}
 
 	}
@@ -69,7 +71,7 @@ void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 	ImGui::EndChild();
 	ImGui::End();
 
-
+	ImGui::PopID();
 }
 
 
