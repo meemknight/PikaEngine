@@ -12,15 +12,16 @@
 
 namespace pika
 {
-
+	using containerId_t = unsigned int;
 	
 	struct ContainerManager
 	{
 
-		std::unordered_map<std::string, pika::RuntimeContainer> runningContainers;
 
-		bool createContainer(
-			std::string name, pika::ContainerInformation containerInformation,
+		std::unordered_map<containerId_t, pika::RuntimeContainer> runningContainers;
+
+		containerId_t createContainer(
+			pika::ContainerInformation containerInformation,
 			pika::DllLoader &dllLoader, pika::LogManager &logManager);
 
 		void init();
@@ -31,11 +32,13 @@ namespace pika
 			float deltaTime,
 			pika::WindowState windowState);
 
-		bool destroyContainer(std::string name, pika::DllLoader &dllLoader,
+		bool destroyContainer(containerId_t id, pika::DllLoader &dllLoader,
 			pika::LogManager &logManager);
 
 		void destroyAllContainers(pika::DllLoader &dllLoader,
 			pika::LogManager &logManager);
+
+		containerId_t idCounter = 0;
 	};
 
 

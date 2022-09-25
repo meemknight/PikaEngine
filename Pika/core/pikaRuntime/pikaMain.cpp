@@ -98,12 +98,7 @@ int main()
 #pragma endregion
 
 	
-	logs.log("test log");
-	logs.log("warning log", pika::logWarning);
-	logs.log("error log", pika::logError);
-
-	containerManager.createContainer("Main level",
-		loadedContainers[0], dllLoader, logs);
+	auto container = containerManager.createContainer(loadedContainers[0], dllLoader, logs);
 
 	while (!window.shouldClose())
 	{
