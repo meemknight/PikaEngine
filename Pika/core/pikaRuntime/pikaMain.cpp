@@ -38,8 +38,8 @@ int main()
 
 #pragma region load dll
 	std::filesystem::path currentPath = std::filesystem::current_path();
-	pika::DllLoader dllLoader;
-	PIKA_PERMA_ASSERT(dllLoader.loadDll(currentPath), "Couldn't load dll");
+	pika::LoadedDll loadedDll;
+	PIKA_PERMA_ASSERT(loadedDll.loadDll(0, logs), "Couldn't load dll");
 #pragma endregion
 	
 #pragma region pika imgui id manager
@@ -68,15 +68,6 @@ int main()
 	window.context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
 #pragma endregion
 
-#pragma region init dll reaml
-	dllLoader.gameplayStart_(window.context);
-
-	std::vector<pika::ContainerInformation> loadedContainers;
-	loadedContainers.reserve(100);
-	
-	dllLoader.getContainerInfoAndCheck(loadedContainers, logs);
-#pragma endregion
-
 #pragma region container manager
 
 	pika::ContainerManager containerManager;
@@ -84,6 +75,14 @@ int main()
 	containerManager.init();
 
 #pragma endregion
+
+#pragma region init dll reaml
+	loadedDll.gameplayStart_(window.context);
+
+	
+#pragma endregion
+
+
 
 
 #pragma region shortcuts
@@ -98,18 +97,12 @@ int main()
 #pragma endregion
 
 	
-	auto container = containerManager.createContainer(loadedContainers[0], dllLoader, logs);
+	auto container = containerManager.createContainer
+		(loadedDll.containerInfo[0], loadedDll, logs);
 
 	while (!window.shouldClose())
 	{
 
-		//todo move this in container manager so we can check for collisions
-	#pragma region reload dll
-		if (dllLoader.reloadDll())
-		{
-			dllLoader.gameplayReload_(window.context);
-		}
-	#pragma endregion
 
 	#pragma region start imgui
 		pika::imguiStartFrame(window.context);
@@ -134,7 +127,7 @@ int main()
 	#pragma endregion
 
 	#pragma region container manager
-		containerManager.update(dllLoader, window.input, window.deltaTime, window.windowState);
+		containerManager.update(loadedDll, window, logs);
 	#pragma endregion
 
 	#pragma region end imgui frame
@@ -151,7 +144,7 @@ int main()
 	
 	}
 
-	containerManager.destroyAllContainers(dllLoader, logs);
+	containerManager.destroyAllContainers(loadedDll, logs);
 
 	return 0;
 }

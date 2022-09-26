@@ -22,23 +22,23 @@ namespace pika
 
 		containerId_t createContainer(
 			pika::ContainerInformation containerInformation,
-			pika::DllLoader &dllLoader, pika::LogManager &logManager);
+			pika::LoadedDll &dllLoader, pika::LogManager &logManager);
 
 		void init();
 
 		void update(
-			pika::DllLoader &dllLoader,
-			pika::Input input,
-			float deltaTime,
-			pika::WindowState windowState);
+			pika::LoadedDll &dllLoader,
+			pika::PikaWindow &window,
+			pika::LogManager &logs);
 
-		bool destroyContainer(containerId_t id, pika::DllLoader &dllLoader,
+		bool destroyContainer(containerId_t id, pika::LoadedDll &dllLoader,
 			pika::LogManager &logManager);
 
-		void destroyAllContainers(pika::DllLoader &dllLoader,
+		void destroyAllContainers(pika::LoadedDll &dllLoader,
 			pika::LogManager &logManager);
 
 		containerId_t idCounter = 0;
+
 	};
 
 

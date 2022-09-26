@@ -38,7 +38,7 @@ typedef BINDALLOCATOR(bindAllocator_t);
 typedef RESETALLOCATOR(resetAllocator_t)
 #undef RESETALLOCATOR
 
-//todo remove windows include 
+
 #ifdef PIKA_WINDOWS
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -48,8 +48,8 @@ typedef RESETALLOCATOR(resetAllocator_t)
 namespace pika
 {
 
-//this will have only one instance open at a time for now
-struct DllLoader
+
+struct LoadedDll
 {
 	gameplayStart_t *gameplayStart_ = {};
 	gameplayReload_t *gameplayReload_ = {};
@@ -59,26 +59,34 @@ struct DllLoader
 	bindAllocator_t *bindAllocator_ = {};
 	resetAllocator_t *resetAllocator_ = {};
 
-	std::filesystem::path p = {};
-
 #ifdef PIKA_WINDOWS
 	FILETIME filetime = {};
 	HMODULE dllHand = {};
 #endif
 
-	bool loadDll(std::filesystem::path path);
-	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);
-	void bindAllocatorDllRealm(pika::memory::FreeListAllocator *allocator);
-	void resetAllocatorDllRealm();
+	int id = 0;
 
-	void getContainerInfoAndCheck(std::vector<pika::ContainerInformation> &info, pika::LogManager &logs);
+	bool loadDll(int id, pika::LogManager &logs);
+
+	bool tryToloadDllUntillPossible(int id, pika::LogManager &logs);
 
 	void unloadDll();
 
-	//will check if the dll reloaded and reload it
-	bool reloadDll();
+	//no need to call since it is called in load dll function
+	void getContainerInfoAndCheck(pika::LogManager &logs);
+
+	bool shouldReloadDll();
+
+	std::vector<pika::ContainerInformation> containerInfo;
+
+	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);
+
+	void bindAllocatorDllRealm(pika::memory::FreeListAllocator *allocator);
+
+	void resetAllocatorDllRealm();
 
 };
+
 
 
 };

@@ -34,6 +34,7 @@ struct Container
 	//this is used to give to the engine basic information about your container.
 	//this function should be pure
 	//this function should not allocate memory
+	//this should not be dependent on anything that is called on create or library initialization
 	static ContainerStaticInfo containerInfo() { ContainerStaticInfo c; c._internalNotImplemented = true; return c; };
 	
 

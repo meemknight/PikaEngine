@@ -1,3 +1,1 @@
-#2022-09-25 21:30:55: test log
-#2022-09-25 21:30:55[warning]: warning log
-#2022-09-25 21:30:55[error]: error log
+#2022-09-26 16:11:33[error]: Killed container because it does not exist anymore in dll:  #1
