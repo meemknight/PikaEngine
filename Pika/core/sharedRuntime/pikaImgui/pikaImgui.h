@@ -11,6 +11,16 @@
 
 #include <pikaContext.h>
 
+#ifdef PIKA_WINDOWS
+#define IM_PRId64   "I64d"
+#define IM_PRIu64   "I64u"
+#define IM_PRIx64   "I64X"
+#else
+#define IM_PRId64   "lld"
+#define IM_PRIu64   "llu"
+#define IM_PRIx64   "llX"
+#endif
+
 namespace pika
 {
 
@@ -27,6 +37,7 @@ namespace pika
 			mainEditorWindow = 100,
 			editShortcutWindow = 200,
 			logWindow = 300,
+			containersWindow = 400,
 			
 			idsCount = 4000
 		};

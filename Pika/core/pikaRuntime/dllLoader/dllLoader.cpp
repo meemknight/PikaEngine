@@ -146,12 +146,17 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 
 	//get container info
 	getContainerInfoAndCheck(logs);
+	this->id = id;
 
 	return	true;
 }
 
-bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs)
+bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs,
+	std::chrono::duration<long long> timeout)
 {
+	auto startTime = std::chrono::steady_clock::now();
+
+	unloadDll();
 
 	HANDLE fileCheck = {};
 
@@ -159,12 +164,28 @@ bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs)
 		GENERIC_READ | GENERIC_WRITE, NULL, NULL,
 		OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE)
 	{
+		if (timeout != std::chrono::seconds(0))
+		{
+			if(std::chrono::steady_clock::now() > startTime + timeout)
+			{
+				return false;	//timeout
+			}
+		}
 		//Wait till the dll can be oppened. It is possible that the compiler still keeps it busy.
 	}
 	CloseHandle(fileCheck);
 
 	//try to load (we loop since it is still possible that windows thinks that the dll is not available yet)
-	while (!loadDll(id, logs)) {};
+	while (!loadDll(id, logs)) 
+	{
+		if (timeout != std::chrono::seconds(0))
+		{
+			if (std::chrono::steady_clock::now() > startTime + timeout)
+			{
+				return false;	//timeout
+			}
+		}
+	};
 	return true;
 }
 
@@ -204,12 +225,14 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	bindAllocator_ = bindAllocator;
 	resetAllocator_ = resetAllocator;
 	getContainerInfoAndCheck(logs);
+	this->id = id;
 
 	return	true;
 }
 
 
-bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs)
+bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs,
+	std::chrono::duration<long long> timeout)
 {
 	return loadDll(id, logs);
 }

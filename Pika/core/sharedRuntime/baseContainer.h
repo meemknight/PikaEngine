@@ -4,6 +4,7 @@
 #include <pikaOptional.h>
 #include <string>
 #include <pikaAllocator/freeListAllocator.h>
+#include <staticVector.h>
 
 //this is passed by the engine. You should not modify the data
 struct RequestedContainerInfo
@@ -18,11 +19,10 @@ struct ContainerStaticInfo
 	static constexpr size_t MaxAllocatorsCount = 128;
 
 
-	//this is the main allocator memory size
+	//this is the main heap allocator memory size
 	size_t defaultHeapMemorySize = 0;
 	
-	size_t bonusAllocators[MaxAllocatorsCount] = {}; //todo static vector here
-
+	pika::StaticVector<size_t, MaxAllocatorsCount> bonusAllocators = {};
 
 	bool _internalNotImplemented = 0;
 };

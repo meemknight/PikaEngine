@@ -204,7 +204,7 @@ namespace ImGui
         return (b.second < a.second);
     }
 
-    bool ComboWithFilter(const char *label, int *current_item,const std::vector<char*> &items)
+    bool ComboWithFilter(const char *label, int *current_item,const std::vector<std::string> &items)
     {
         ImGuiContext &g = *GImGui;
 
@@ -218,7 +218,7 @@ namespace ImGui
         // Call the getter to obtain the preview string which is a parameter to BeginCombo()
         const char *preview_value = NULL;
         if (*current_item >= 0 && *current_item < items_count)
-            preview_value = items[*current_item];
+            preview_value = items[*current_item].c_str();
 
         static char pattern_buffer[256] = {0};
         bool isNeedFilter = false;
@@ -295,6 +295,139 @@ namespace ImGui
                 for (int i = 0; i < items_count; i++)
                 {
                     int score = 0;
+                    bool matched = fuzzy_match(pattern_buffer, items[i].c_str(), score);
+                    if (matched)
+                        itemScoreVector.push_back(std::make_pair(i, score));
+                }
+                std::sort(itemScoreVector.begin(), itemScoreVector.end(), sortbysec_desc);
+            }
+
+            int show_count = isNeedFilter ? itemScoreVector.size() : items_count;
+            if (ImGui::ListBoxHeader("##ComboWithFilter_itemList", show_count))
+            {
+                for (int i = 0; i < show_count; i++)
+                {
+                    int idx = isNeedFilter ? itemScoreVector[i].first : i;
+                    PushID((void *)(intptr_t)idx);
+                    const bool item_selected = (idx == *current_item);
+                    const char *item_text = items[idx].c_str();
+                    if (Selectable(item_text, item_selected))
+                    {
+                        value_changed = true;
+                        *current_item = idx;
+                        CloseCurrentPopup();
+                    }
+                    if (item_selected)
+                        SetItemDefaultFocus();
+                    PopID();
+                }
+                ImGui::ListBoxFooter();
+            }
+            ImGui::PopItemWidth();
+            ImGui::EndPopup();
+        }
+
+
+        if (value_changed)
+        {
+            MarkItemEdited(g.LastItemData.ID);
+        }
+
+        return value_changed;
+    }
+
+    //todo move pattern_buffer
+    bool ComboWithFilter(const char *label, int *current_item, const std::vector<char *> &items)
+    {
+        ImGuiContext &g = *GImGui;
+
+        ImGuiWindow *window = GetCurrentWindow();
+        if (window->SkipItems)
+            return false;
+
+        const ImGuiStyle &style = g.Style;
+        int items_count = items.size();
+
+        // Call the getter to obtain the preview string which is a parameter to BeginCombo()
+        const char *preview_value = NULL;
+        if (*current_item >= 0 && *current_item < items_count)
+            preview_value = items[*current_item];
+
+        static char pattern_buffer[256] = {0};
+        bool isNeedFilter = false;
+
+        char comboButtonName[512] = {0};
+        ImFormatString(comboButtonName, IM_ARRAYSIZE(comboButtonName), "%s##name_ComboWithFilter_button_%s", preview_value ? preview_value : "", label);
+
+        char name_popup[256 + 10];
+        ImFormatString(name_popup, IM_ARRAYSIZE(name_popup), "##name_popup_%s", label);
+
+        // Display items
+        // FIXME-OPT: Use clipper (but we need to disable it on the appearing frame to make sure our call to SetItemDefaultFocus() is processed)
+        bool value_changed = false;
+
+        const float expected_w = CalcItemWidth();
+        ImVec2 item_min = GetItemRectMin();
+        bool isNewOpen = false;
+        float sz = GetFrameHeight();
+        ImVec2 size(sz, sz);
+        ImVec2 CursorPos = window->DC.CursorPos;
+        ImVec2 pos = ImVec2{CursorPos.x + expected_w - sz, CursorPos.y};
+        const ImRect bb(pos, ImVec2{pos.x + size.x , pos.y + size.y});
+
+        float ButtonTextAlignX = g.Style.ButtonTextAlign.x;
+        g.Style.ButtonTextAlign.x = 0;
+        if (ImGui::Button(comboButtonName, ImVec2(expected_w, 0)))
+        {
+            ImGui::OpenPopup(name_popup);
+            isNewOpen = true;
+        }
+        g.Style.ButtonTextAlign.x = ButtonTextAlignX;
+        bool hovered = IsItemHovered();
+        bool active = IsItemActivated();
+        bool pressed = IsItemClicked();
+
+        // Render
+        //const ImU32 bg_col = GetColorU32((active && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+        //RenderFrame(bb.Min, bb.Max, bg_col, true, g.Style.FrameRounding);
+        const ImU32 text_col = GetColorU32(ImGuiCol_Text);
+        RenderArrow(window->DrawList, ImVec2(ImMax(0.0f, (size.x - g.FontSize) * 0.5f) + bb.Min.x,
+            ImMax(0.0f, (size.y - g.FontSize) * 0.5f) + bb.Min.y), text_col, ImGuiDir_Down);
+
+        if (isNewOpen)
+        {
+            memset(pattern_buffer, 0, IM_ARRAYSIZE(pattern_buffer));
+        }
+        ImVec2 item_max = GetItemRectMax();
+        SetNextWindowPos({CursorPos.x, item_max.y});
+        ImGui::SetNextWindowSize({ImGui::GetItemRectSize().x, 0});
+        if (ImGui::BeginPopup(name_popup))
+        {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor(240, 240, 240, 255));
+            ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(0, 0, 0, 255));
+            ImGui::PushItemWidth(-FLT_MIN);
+            // Filter input
+            if (isNewOpen)
+                ImGui::SetKeyboardFocusHere();
+            InputText("##ComboWithFilter_inputText", pattern_buffer, 256);
+
+            // Search Icon, you can use it if you load IconsFontAwesome5 https://github.com/juliettef/IconFontCppHeaders
+            //const ImVec2 label_size = CalcTextSize(ICON_FA_SEARCH, NULL, true);
+            //const ImVec2 search_icon_pos(ImGui::GetItemRectMax().x - label_size.x - style.ItemInnerSpacing.x * 2, window->DC.CursorPos.y + style.FramePadding.y + g.FontSize * 0.1f);
+            //RenderText(search_icon_pos, ICON_FA_SEARCH);
+
+            ImGui::PopStyleColor(2);
+            if (pattern_buffer[0] != '\0')
+            {
+                isNeedFilter = true;
+            }
+
+            std::vector<std::pair<int, int> > itemScoreVector;
+            if (isNeedFilter)
+            {
+                for (int i = 0; i < items_count; i++)
+                {
+                    int score = 0;
                     bool matched = fuzzy_match(pattern_buffer, items[i], score);
                     if (matched)
                         itemScoreVector.push_back(std::make_pair(i, score));
@@ -335,6 +468,7 @@ namespace ImGui
 
         return value_changed;
     }
+
 
     bool ComboWithFilter(const char *label, int *current_item, std::vector<const char *> &items)
     {
@@ -467,5 +601,83 @@ namespace ImGui
 
         return value_changed;
     }
+
+
+    void ListWithFilter(const char *label, int *current_item,
+        char *filter, size_t filterSize,
+        std::vector<std::string> &items, ImVec2 size = {0,0})
+    {
+       
+        if (size.x > 0)
+        {
+            ImGui::SetNextItemWidth(size.x);
+        }
+
+        std::string textLabel = std::string(label) + "##Filter1";
+
+        ImGui::InputText(textLabel.c_str(), filter, filterSize);
+
+
+    #pragma region filter
+        bool isNeedFilter = false;
+
+        if (filter[0] != '\0')
+        {
+            isNeedFilter = true;
+        }
+
+        std::vector<std::pair<int, int> > itemScoreVector;
+        if (isNeedFilter)
+        {
+            for (int i = 0; i < items.size(); i++)
+            {
+                int score = 0;
+                bool matched = fuzzy_match(filter, items[i].c_str(), score);
+                if (matched)
+                    itemScoreVector.push_back(std::make_pair(i, score));
+            }
+            std::sort(itemScoreVector.begin(), itemScoreVector.end(), sortbysec_desc);
+        }
+
+    #pragma endregion
+
+        textLabel = "##list box" + textLabel;
+
+        if (ImGui::BeginListBox(textLabel.c_str(), size))
+        {
+            if (isNeedFilter)
+            {
+                for (int n = 0; n < itemScoreVector.size(); n++)
+                {
+                    bool isSelected = (*current_item == itemScoreVector[n].first);
+                    if (ImGui::Selectable(items[itemScoreVector[n].first].c_str(), isSelected))
+                        *current_item = itemScoreVector[n].first;
+
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+            }
+            else
+            {
+                for (int n = 0; n < items.size(); n++)
+                {
+                    bool isSelected = (*current_item == n);
+                    if (ImGui::Selectable(items[n].c_str(), isSelected))
+                        *current_item = n;
+
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::EndListBox();
+        }
+
+
+    }
+
+
+
 
 }

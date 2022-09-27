@@ -23,8 +23,55 @@
 #include <containerManager/containerManager.h>
 #include <staticVector.h>
 
+static bool shouldClose = false;
+
+#if defined(PIKA_WINDOWS)
+#include <Windows.h>
+
+BOOL WINAPI customConsoleHandlerRoutine(
+	_In_ DWORD dwCtrlType
+)
+{
+
+	if (dwCtrlType == CTRL_CLOSE_EVENT)
+	{
+		shouldClose = true;
+	
+		return true;
+	}
+
+	return false;
+}
+
+#endif
+
+
 int main()
 {
+
+#if defined(PIKA_WINDOWS)
+
+#if PIKA_ENABLE_CONSOLE
+
+	{
+		AllocConsole();
+		(void)freopen("conin$", "r", stdin);
+		(void)freopen("conout$", "w", stdout);
+		(void)freopen("conout$", "w", stderr);
+		std::cout.sync_with_stdio();
+
+		//HWND hwnd = GetConsoleWindow(); //dissable console x button
+		//HMENU hmenu = GetSystemMenu(hwnd, FALSE);
+		//EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
+		
+		SetConsoleCtrlHandler(0, true); //dissable ctrl+c shortcut in console
+		SetConsoleCtrlHandler(customConsoleHandlerRoutine, true); //custom exti function on clicking x button on console
+	}
+
+#endif
+
+#endif
+	
 
 #pragma region init global variables stuff
 	pika::initShortcutApi();
@@ -35,11 +82,12 @@ int main()
 	logs.init(pika::LogManager::DefaultLogFile);
 
 #pragma endregion
-
+	//todo (in the future) increment id if it wasn't possible to copy the file
 #pragma region load dll
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	pika::LoadedDll loadedDll;
-	PIKA_PERMA_ASSERT(loadedDll.loadDll(0, logs), "Couldn't load dll");
+	PIKA_PERMA_ASSERT(loadedDll.tryToloadDllUntillPossible(0, logs, std::chrono::seconds(5)),
+		"Couldn't load dll");
 #pragma endregion
 	
 #pragma region pika imgui id manager
@@ -100,8 +148,13 @@ int main()
 	auto container = containerManager.createContainer
 		(loadedDll.containerInfo[0], loadedDll, logs);
 
-	while (!window.shouldClose())
+	while (!shouldClose)
 	{
+		if (window.shouldClose())
+		{
+			shouldClose = true;
+			break;
+		}
 
 
 	#pragma region start imgui
@@ -115,7 +168,7 @@ int main()
 	#pragma region editor stuff
 	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
 		editor.update(window.input, shortcutManager, logs, 
-			pushNotificationManager);
+			pushNotificationManager, loadedDll);
 	#endif
 	#pragma endregion
 

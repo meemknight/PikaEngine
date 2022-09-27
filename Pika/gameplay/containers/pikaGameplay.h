@@ -26,6 +26,21 @@ struct Gameplay : public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(10);
 
+		info.bonusAllocators.push_back(100);
+		info.bonusAllocators.push_back(200);
+		info.bonusAllocators.push_back(300);
+		info.bonusAllocators.push_back(400);
+		info.bonusAllocators.push_back(100);
+		info.bonusAllocators.push_back(200);
+		info.bonusAllocators.push_back(300);
+		info.bonusAllocators.push_back(400);
+		info.bonusAllocators.push_back(100);
+		info.bonusAllocators.push_back(200);
+		info.bonusAllocators.push_back(300);
+		info.bonusAllocators.push_back(400);
+		info.bonusAllocators.push_back(200);
+		info.bonusAllocators.push_back(200);
+
 		return info;
 	}
 
@@ -54,7 +69,7 @@ struct Gameplay : public Container
 
 		*r += deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Orange, {}, *r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Turqoise, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{

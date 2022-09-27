@@ -46,4 +46,9 @@
 
 #define PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION 0
 
+#define PIKA_ENABLE_CONSOLE 1
+
 #include <pikaConfigInternal.h>
+
+//todo flag to make main window imgui dock space
+//todo flag remove imgui

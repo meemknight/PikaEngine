@@ -16,6 +16,7 @@ void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 	if (!ImGui::Begin(ICON_NAME, &open))
 	{
 		ImGui::End();
+		ImGui::PopID();
 		return;
 	}
 

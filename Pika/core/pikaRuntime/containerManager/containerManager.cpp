@@ -68,23 +68,58 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 #pragma region reload dll
 
-	//if (dllLoader.checkIfShouldReloadDll() || window.input.buttons[pika::Button::P].released())
+	if (loadedDll.shouldReloadDll() || window.input.buttons[pika::Button::P].released())
+	{
+	
+		auto oldContainerIndo = loadedDll.containerInfo;
+
+		PIKA_PERMA_ASSERT(loadedDll.tryToloadDllUntillPossible(loadedDll.id, logs, std::chrono::seconds(5)),
+			"Couldn't reload dll");
+
+		//clear containers that dissapeared
+		{
+			std::unordered_set<std::string> containerNames;
+			for (auto &c : loadedDll.containerInfo)
+			{
+				containerNames.insert(c.containerName);
+			}
+	
+			std::vector<pika::containerId_t> containersToClean;
+			for (auto &i : runningContainers)
+			{
+				if (containerNames.find(i.second.baseContainerName) ==
+					containerNames.end())
+				{
+					std::string l = "Killed container because it does not exist anymore in dll: " + i.second.baseContainerName
+						+ " #" + std::to_string(i.first);
+					logs.log(l.c_str(), pika::logError);
+	
+					containersToClean.push_back(i.first);
+				}
+			}
+	
+			for (auto i : containersToClean)
+			{
+				forceTerminateContainer(i, loadedDll, logs);
+			}
+		}
+		
+		loadedDll.gameplayReload_(window.context);
+	
+	}
+
+	//if (loadedDll.shouldReloadDll() || window.input.buttons[pika::Button::P].released())
 	//{
 	//	pika::LoadedDll newDll = {};
 	//
-	//	newDll.tryToloadDllUntillPossible(dllLoader.path);
 	//
-	//	std::cout << "new dll loaded\n";
+	//	newDll.tryToloadDllUntillPossible(!loadedDll.id, logs); //create a new copy with a new id 
 	//
-	//	std::vector<pika::ContainerInformation> newContainers;
-	//	newContainers.reserve(100);
-	//
-	//	newDll.getContainerInfoAndCheck(newContainers, logs);
-	//
+	//#if 0
 	//	//clear containers that dissapeared
 	//	{
 	//		std::unordered_set<std::string> containerNames;
-	//		for (auto &c : newContainers)
+	//		for (auto &c : newDll.containerInfo)
 	//		{
 	//			containerNames.insert(c.containerName);
 	//		}
@@ -105,25 +140,21 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	//
 	//		for (auto i : containersToClean)
 	//		{
-	//			destroyContainer(i, dllLoader, logs);
+	//			destroyContainer(i, loadedDll, logs);
 	//		}
 	//	}
-	//
-	//
+	//#endif
 	//
 	//	//set new dll
-	//	dllLoader.loadedDll.unloadDll();
+	//	loadedDll.unloadDll();
 	//
-	//	dllLoader.loadedDll = newDll;
-	//	loadedContainers = newContainers;
+	//	loadedDll = newDll;
 	//		
-	//	dllLoader.loadedDll.gameplayReload_(window.context);
+	//	loadedDll.gameplayReload_(window.context);
 	//}
-
 
 	
 #pragma endregion
-
 
 
 #pragma region running containers
@@ -154,6 +185,26 @@ bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll 
 	loadedDll.bindAllocatorDllRealm(&c->second.allocator);
 	loadedDll.destructContainer_(&(c->second.pointer), &c->second.arena);
 	loadedDll.resetAllocatorDllRealm();
+
+	c->second.arena.dealocateStaticMemory(); //static memory
+	free(c->second.allocator.originalBaseMemory); //heap memory
+
+	runningContainers.erase(c);
+
+	return true;
+}
+
+bool pika::ContainerManager::forceTerminateContainer(containerId_t id, pika::LoadedDll &loadedDll, pika::LogManager &logManager)
+{
+	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to destroy container");
+
+	auto c = runningContainers.find(id);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for destruction: #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
 
 	c->second.arena.dealocateStaticMemory(); //static memory
 	free(c->second.allocator.originalBaseMemory); //heap memory

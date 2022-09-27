@@ -2,6 +2,12 @@
 #include <logs/assert.h>
 #include "callbacks.h"
 
+#ifdef PIKA_WINDOWS
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <Windows.h>
+#include <GLFW/glfw3native.h>
+#endif
+
 void pika::PikaWindow::create()
 {
 	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
@@ -16,6 +22,25 @@ void pika::PikaWindow::create()
 	glfwSetMouseButtonCallback(context.wind, mouseCallback);
 	glfwSetWindowFocusCallback(context.wind, windowFocusCallback);
 	glfwSetKeyCallback(context.wind, keyCallback);
+
+
+	//HWND hwnd = glfwGetWin32Window(context.wind);
+
+	//LONG exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+	//exStyle &= ~WS_EX_APPWINDOW;
+	//exStyle |= WS_EX_TOOLWINDOW;
+	//exStyle |= WS_EX_CONTEXTHELP;
+	//exStyle &= ~WS_MAXIMIZEBOX;
+	//exStyle &= ~WS_MINIMIZEBOX;
+	//SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+
+	//LONG style = GetWindowLongPtr(hwnd, GWL_STYLE);
+	//style &= ~WS_MAXIMIZEBOX;
+	//style &= ~WS_MINIMIZEBOX;
+	//style &= ~WS_CAPTION;
+	//style |= WS_DLGFRAME;
+	//SetWindowLongPtr(hwnd, GWL_STYLE, style);
+	
 
 
 	timer = std::chrono::high_resolution_clock::now();

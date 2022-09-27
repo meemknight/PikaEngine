@@ -13,6 +13,7 @@
 #define DOCK_MAIN_WINDOW_SHORTCUT ICON_FK_EYE_SLASH " Hide main window"
 #define LOGS_SHORTCUT ICON_FK_COMMENT_O " Logs window"
 #define EDIT_SHORTCUTS ICON_FK_PENCIL_SQUARE " Edit shortcuts window"
+#define CONTAINERS_SHORTCUTS ICON_FK_MICROCHIP " Containers window"
 
 void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 {
@@ -20,17 +21,19 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 	shortcutManager.registerShortcut(DOCK_MAIN_WINDOW_SHORTCUT, "Ctrl+Alt+D", &optionsFlags.hideMainWindow);
 	shortcutManager.registerShortcut(LOGS_SHORTCUT, "Ctrl+L", &windowFlags.logsWindow);
 	shortcutManager.registerShortcut(EDIT_SHORTCUTS, "", &windowFlags.editShortcutsWindow);
+	shortcutManager.registerShortcut(CONTAINERS_SHORTCUTS, "Ctrl+M", &windowFlags.containerManager);
 
 
 	logWindow.init();
 	editShortcutsWindow.init();
+	containersWindow.init();
 }
 
 
 
 void pika::Editor::update(const pika::Input &input,
 	pika::ShortcutManager &shortcutManager, pika::LogManager &logs, 
-	pika::PushNotificationManager &pushNotificationManager)
+	pika::PushNotificationManager &pushNotificationManager, pika::LoadedDll &loadedDll)
 {
 
 #pragma region push notification if hide window
@@ -120,6 +123,8 @@ void pika::Editor::update(const pika::Input &input,
 					ImGui::MenuItem(pika::LogWindow::ICON_NAME,
 						shortcutManager.getShortcut(LOGS_SHORTCUT), &windowFlags.logsWindow);
 
+					ImGui::MenuItem(pika::ContainersWindow::ICON_NAME,
+						shortcutManager.getShortcut(CONTAINERS_SHORTCUTS), &windowFlags.containerManager);
 
 					ImGui::EndMenu();
 
@@ -149,17 +154,24 @@ void pika::Editor::update(const pika::Input &input,
 
 
 #pragma region log window
-
 	if (windowFlags.logsWindow)
 	{
 		logWindow.update(logs, windowFlags.logsWindow);
 	}
+#pragma endregion
 
+#pragma region shortcuts window
 	if (windowFlags.editShortcutsWindow)
 	{
 		editShortcutsWindow.update(shortcutManager, windowFlags.editShortcutsWindow);
 	}
+#pragma endregion
 
+#pragma region containers window
+	if (windowFlags.containerManager)
+	{
+		containersWindow.update(logs, windowFlags.containerManager, loadedDll);
+	}
 #pragma endregion
 
 

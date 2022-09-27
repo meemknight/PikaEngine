@@ -11,6 +11,7 @@
 #include <shortcutApi/shortcutApi.h>
 #include <editShortcuts/editShortcuts.h>
 #include <pushNotification/pushNotification.h>
+#include <containersWindow/containersWindow.h>
 
 namespace pika
 {
@@ -21,7 +22,8 @@ namespace pika
 		void init(pika::ShortcutManager &shortcutManager);
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
-			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager);
+			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager,
+			pika::LoadedDll &loadedDll);
 
 		struct
 		{
@@ -32,11 +34,13 @@ namespace pika
 		{
 			bool logsWindow = 0;
 			bool editShortcutsWindow = 0;
+			bool containerManager = 0;
 		}windowFlags;
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
-	
+		pika::ContainersWindow containersWindow;
+
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 	};
 

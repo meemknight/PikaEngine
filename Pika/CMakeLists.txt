@@ -42,7 +42,9 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_SHARED_RUNTIME	CONFIGURE_DEPENDS "${CMAKE_CU
 add_compile_definitions(PIKA_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/") 
 #add_compile_definitions(PIKA_RESOURCES_PATH="./resources/")
 
-
+if(MSVC)
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
 
 
 #pikaCore ############################################
@@ -100,3 +102,12 @@ target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_tr
 
 
 #################^^^^^^^^^^^^^^############################
+
+
+#set exe type to be windowed
+if(MSVC)
+	
+	 set_target_properties(pikaProduction PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+	 set_target_properties(pikaCore PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+
+endif()

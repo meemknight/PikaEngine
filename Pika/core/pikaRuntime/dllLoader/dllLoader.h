@@ -68,7 +68,8 @@ struct LoadedDll
 
 	bool loadDll(int id, pika::LogManager &logs);
 
-	bool tryToloadDllUntillPossible(int id, pika::LogManager &logs);
+	bool tryToloadDllUntillPossible(int id, pika::LogManager &logs, std::chrono::duration<long long> timeout = 
+		std::chrono::seconds(0));
 
 	void unloadDll();
 

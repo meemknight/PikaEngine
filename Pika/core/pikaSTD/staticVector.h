@@ -39,7 +39,7 @@ namespace pika
 			other.size_ = 0;
 		}
 
-		StaticVector(StaticVector &other)
+		StaticVector(const StaticVector &other)
 		{
 			for (size_t i = 0; i < other.size_; i++)
 			{
@@ -77,7 +77,7 @@ namespace pika
 			return *this;
 		}
 
-		StaticVector &operator= (const StaticVector &&other)
+		StaticVector &operator= (StaticVector &&other)
 		{
 			if (this == &other)
 			{
@@ -97,13 +97,13 @@ namespace pika
 
 		T &operator[] (size_t index)
 		{
-			PIKA_PERMA_ASSERT(index < size_);
+			PIKA_PERMA_ASSERT(index < size_, "buffer overflow on acces");
 			return static_cast<T *>(beg_)[index];
 		}
 
 		T operator[] (size_t index) const
 		{
-			PIKA_PERMA_ASSERT(index < size_);
+			PIKA_PERMA_ASSERT(index < size_, "buffer overflow on acces");
 			return static_cast<T *>(beg_)[index];
 		}
 
@@ -121,21 +121,21 @@ namespace pika
 
 		void push_back(const T &el)
 		{
-			PIKA_PERMA_ASSERT(size_ < MAX_SIZE);
+			PIKA_PERMA_ASSERT(size_ < MAX_SIZE, "exceded max size in push back");
 			beg_[size_] = std::forward<T>(el);
 			size_++;
 		}
 
 		void push_back(T &&el)
 		{
-			PIKA_PERMA_ASSERT(size_ < MAX_SIZE);
+			PIKA_PERMA_ASSERT(size_ < MAX_SIZE, "exceded max size in push back");
 			beg_[size_] = std::forward<T>(el);
 			size_++;
 		}
 
 		void pop_back()
 		{
-			PIKA_PERMA_ASSERT(size_ > 0);
+			PIKA_PERMA_ASSERT(size_ > 0, "buffer underflow on pop back");
 			size_--;
 		}
 
