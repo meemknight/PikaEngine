@@ -7,7 +7,7 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "imguiThemes.h"
 #include <IconsForkAwesome.h>
-
+#include <pikaAllocator/freeListAllocator.h>
 
 #include <pikaContext.h>
 
@@ -23,7 +23,10 @@
 
 namespace pika
 {
+	void *imguiCustomAlloc(size_t sz, void *user_data);
+	void imguiCustomFree(void *ptr, void *user_data);
 
+	void setImguiAllocator(pika::memory::FreeListAllocator &allocator);
 
 	void initImgui(PikaContext &pikaContext);
 	void setImguiContext(PikaContext pikaContext);
@@ -58,4 +61,6 @@ namespace pika
 	void addErrorSymbol();
 	void addWarningSymbol();
 
+	void helpMarker(const char *desc);
+	//todo another namespace for pika imgui adons
 };

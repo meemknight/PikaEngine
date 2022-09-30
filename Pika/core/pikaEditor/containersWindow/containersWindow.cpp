@@ -1,12 +1,14 @@
 #include "containersWindow.h"
 #include <pikaImgui/pikaImgui.h>
 #include "imguiComboSearch.h"
+#include <imgui_spinner.h>
 
 void pika::ContainersWindow::init()
 {
 }
 
-void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll)
+void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
+	pika::ContainerManager &containerManager)
 {
 	//todo imgui firsttime stuff for all windows
 	ImGui::PushID(EditorImguiIds::containersWindow);
@@ -20,27 +22,13 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 	}
 
 
-	// Left
 	static int selected = 0;
-	//{
-	//	ImGui::BeginChild("left pane", ImVec2(150, 0), true);
-	//	for (int i = 0; i < 100; i++)
-	//	{
-	//		// FIXME: Good candidate to use ImGuiSelectableFlags_SelectOnNav
-	//		char label[128];
-	//		sprintf(label, "MyObject %d", i);
-	//		if (ImGui::Selectable(label, selected == i))
-	//			selected = i;
-	//	}
-	//	ImGui::EndChild();
-	//}
-	//ImGui::SameLine();
+	
+	std::string selectedContainerToLaunch = "";
 
-	// Right
 	{
 		ImGui::BeginGroup();
 		ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
-		
 
 		if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
 		{
@@ -57,8 +45,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 					static char filter[256] = {};
 					
-					loadedDll.containerInfo[0];
-
 					std::vector<std::string> containerNames;
 					containerNames.reserve(loadedDll.containerInfo.size());
 
@@ -91,6 +77,16 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 						ImGui::Text("Container info: %s", c.containerName.c_str());
 						ImGui::Separator();
+
+						selectedContainerToLaunch = c.containerName;
+
+						if (!selectedContainerToLaunch.empty()
+							&& ImGui::Button(ICON_FK_PLUS_SQUARE_O " Launch"))
+						{
+							containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
+						}
+
+
 
 						if (ImGui::BeginTabBar("##Tabs for container info", ImGuiTabBarFlags_Reorderable))
 						{
@@ -143,7 +139,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::EndTabItem();
 							}
 
-							if (ImGui::BeginTabItem(" Other..."))
+							if (ImGui::BeginTabItem("Other..."))
 							{
 								ImGui::NewLine();
 
@@ -172,16 +168,92 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 			}
 			if (ImGui::BeginTabItem(ICON_FK_MICROCHIP " Running containers"))
 			{
-				ImGui::Text("Running containers");
+				
+
+				ImGui::Text("Running containers"); 
+
+				ImGui::SameLine();
+
+				pika::helpMarker(
+					ICON_FK_BOLT ": Container is running;\n"
+					ICON_FK_PAUSE_CIRCLE_O ": Container is on pause;\n"
+					ICON_FK_VIDEO_CAMERA ": Container is being recorded;\n"
+					ICON_FK_REPEAT ": Container is on input playback."
+				);
+
 				ImGui::Separator();
+			
+				static int itemCurrent;//todo move
+
+				//left
+				std::vector<pika::containerId_t> containerIds;
+				std::vector<std::string> containerNames;
+
+				ImGui::PushID(EditorImguiIds::containersWindow + 3);
+				ImGui::BeginGroup();
+				{
+
+					static char filter[256] = {};
+
+
+					
+					containerIds.reserve(containerManager.runningContainers.size());
+					containerNames.reserve(containerManager.runningContainers.size());
+
+					for (auto &i : containerManager.runningContainers)
+					{
+						containerIds.push_back(i.first);
+						containerNames.push_back(
+							ICON_FK_BOLT " " + i.second.baseContainerName + ": " + std::to_string(i.first));
+					}
+
+					auto contentSize = ImGui::GetItemRectSize();
+					contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+					contentSize.x /= 2;
+
+					ImGui::ListWithFilter("##list box container info", &itemCurrent, filter, sizeof(filter),
+						containerNames, contentSize);
+
+
+				}
+				ImGui::EndGroup();
+				ImGui::PopID();
+
+				ImGui::SameLine();
+
+				//right
+				ImGui::PushID(EditorImguiIds::containersWindow + 4);
+				ImGui::BeginGroup();
+				{
+					if (itemCurrent < containerIds.size())
+					{
+						auto &c = containerManager.runningContainers[containerIds[itemCurrent]];
+
+						
+						ImGui::Text("Running container: %s #%u", c.baseContainerName.c_str(), containerIds[itemCurrent]);
+						ImGui::Separator();
+
+
+					}
+					else
+					{
+						ImGui::Text("Running container:");
+						ImGui::Separator();
+					}
+
+				}
+				ImGui::EndGroup();
+				ImGui::PopID();
+				
+				
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
 		}
 		ImGui::EndChild();
-		if (ImGui::Button("Revert")) {}
-		ImGui::SameLine();
-		if (ImGui::Button("Save")) {}
+		
+		//you can add buttons here
+		
 		ImGui::EndGroup();
 	}
 
@@ -193,3 +265,5 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 	ImGui::End();
 	ImGui::PopID();
 }
+
+//todo options hide show push notidications also engine push notifications that are forced

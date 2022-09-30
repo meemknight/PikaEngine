@@ -17,6 +17,22 @@ struct ContainerInformation
 	{
 	};
 
+	bool operator==(const ContainerInformation &other)
+	{
+		if (this == &other) { return true; }
+
+		return
+			this->containerStructBaseSize == other.containerStructBaseSize &&
+			this->containerName == other.containerName &&
+			this->containerStaticInfo == other.containerStaticInfo;
+
+	}
+
+	bool operator!=(const ContainerInformation &other)
+	{ 
+		return !(*this == other);
+	}
+
 	size_t containerStructBaseSize = 0; //static memory
 	std::string containerName = "";
 	ContainerStaticInfo containerStaticInfo = {};

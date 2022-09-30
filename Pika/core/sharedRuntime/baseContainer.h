@@ -18,13 +18,29 @@ struct ContainerStaticInfo
 {
 	static constexpr size_t MaxAllocatorsCount = 128;
 
-
 	//this is the main heap allocator memory size
 	size_t defaultHeapMemorySize = 0;
 	
 	pika::StaticVector<size_t, MaxAllocatorsCount> bonusAllocators = {};
 
 	bool _internalNotImplemented = 0;
+
+	bool operator==(const ContainerStaticInfo &other)
+	{
+		if (this == &other) { return true; }
+
+		return
+			this->defaultHeapMemorySize == other.defaultHeapMemorySize &&
+			this->bonusAllocators == other.bonusAllocators &&
+			this->_internalNotImplemented == other._internalNotImplemented;
+	}
+
+	bool operator!=(const ContainerStaticInfo &other)
+	{
+		return !(*this == other);
+	}
+
+
 };
 
 

@@ -10,11 +10,11 @@
 #include <runtimeContainer/runtimeContainer.h>
 #include <logs/log.h>
 
-#define GAMEPLAYSTART(x) void x(pika::PikaContext pikaContext)
+#define GAMEPLAYSTART(x) void x(pika::PikaContext &pikaContext)
 typedef GAMEPLAYSTART(gameplayStart_t);
 #undef GAMEPLAYSTART
 
-#define GAMEPLAYRELOAD(x) void x(pika::PikaContext pikaContext)
+#define GAMEPLAYRELOAD(x) void x(pika::PikaContext &pikaContext)
 typedef GAMEPLAYRELOAD(gameplayReload_t);
 #undef GAMEPLAYRELOAD
 
@@ -38,6 +38,9 @@ typedef BINDALLOCATOR(bindAllocator_t);
 typedef RESETALLOCATOR(resetAllocator_t)
 #undef RESETALLOCATOR
 
+#define DISSABLEALLOCATORS(x) void x();
+typedef DISSABLEALLOCATORS(dissableAllocators_t)
+#undef DISSABLEALLOCATORS
 
 #ifdef PIKA_WINDOWS
 #define NOMINMAX
@@ -58,6 +61,7 @@ struct LoadedDll
 	destructContainer_t *destructContainer_ = {};
 	bindAllocator_t *bindAllocator_ = {};
 	resetAllocator_t *resetAllocator_ = {};
+	dissableAllocators_t *dissableAllocators_ = {};
 
 #ifdef PIKA_WINDOWS
 	FILETIME filetime = {};
@@ -86,6 +90,7 @@ struct LoadedDll
 
 	void resetAllocatorDllRealm();
 
+	bool checkIfDllIsOpenable();
 };
 
 

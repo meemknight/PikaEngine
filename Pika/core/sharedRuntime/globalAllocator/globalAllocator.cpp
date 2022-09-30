@@ -12,6 +12,15 @@ void DefaultFree(void *ptr)
 	free(ptr);
 }
 
+void *DisabeledAllocator(size_t size)
+{
+	return 0;
+}
+void DisabeledFree(void *ptr)
+{
+	(void)ptr;
+}
+
 pika::memory::FreeListAllocator *currentCustomAllocator = {};
 void *CustomAllocator(size_t size)
 {
@@ -33,6 +42,12 @@ namespace memory
 	{
 		GlobalAllocateFunction = DefaultAllocator;
 		GlobalFree = DefaultFree;
+	}
+
+	void dissableAllocators()
+	{
+		GlobalAllocateFunction = DisabeledAllocator;
+		GlobalFree = DisabeledFree;
 	}
 
 	void setGlobalAllocator(pika::memory::FreeListAllocator *allocator)

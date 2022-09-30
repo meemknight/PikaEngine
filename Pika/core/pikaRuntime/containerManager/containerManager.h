@@ -24,10 +24,18 @@ namespace pika
 			pika::ContainerInformation containerInformation,
 			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
 
+		containerId_t createContainer(
+			std::string containerName,
+			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
+
 		void init();
 
 		void update(
 			pika::LoadedDll &loadedDll,
+			pika::PikaWindow &window,
+			pika::LogManager &logs);
+
+		void reloadDll(pika::LoadedDll &loadedDll,
 			pika::PikaWindow &window,
 			pika::LogManager &logs);
 

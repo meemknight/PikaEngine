@@ -14,6 +14,7 @@
 #define LOGS_SHORTCUT ICON_FK_COMMENT_O " Logs window"
 #define EDIT_SHORTCUTS ICON_FK_PENCIL_SQUARE " Edit shortcuts window"
 #define CONTAINERS_SHORTCUTS ICON_FK_MICROCHIP " Containers window"
+#define RELOAD_DLL_SHORTCUTS ICON_FK_REFRESH " Reload dll"
 
 void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 {
@@ -22,6 +23,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 	shortcutManager.registerShortcut(LOGS_SHORTCUT, "Ctrl+L", &windowFlags.logsWindow);
 	shortcutManager.registerShortcut(EDIT_SHORTCUTS, "", &windowFlags.editShortcutsWindow);
 	shortcutManager.registerShortcut(CONTAINERS_SHORTCUTS, "Ctrl+M", &windowFlags.containerManager);
+	shortcutManager.registerShortcut(RELOAD_DLL_SHORTCUTS, "Ctrl+Alt+R", &shouldReloadDll);
 
 
 	logWindow.init();
@@ -33,7 +35,8 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 
 void pika::Editor::update(const pika::Input &input,
 	pika::ShortcutManager &shortcutManager, pika::LogManager &logs, 
-	pika::PushNotificationManager &pushNotificationManager, pika::LoadedDll &loadedDll)
+	pika::PushNotificationManager &pushNotificationManager, pika::LoadedDll &loadedDll
+	,pika::ContainerManager &containerManager)
 {
 
 #pragma region push notification if hide window
@@ -100,10 +103,16 @@ void pika::Editor::update(const pika::Input &input,
 			if (ImGui::BeginMenuBar())
 			{
 
-				if (ImGui::BeginMenu("Open..."))
+				if (ImGui::BeginMenu(ICON_FK_COGS " Engine"))
 				{
+					//todo submit tasks to the engine (usefull for this and also in gameplay)
 
-					ImGui::Text("menu text");
+					if (ImGui::MenuItem(ICON_FK_REFRESH " Reload dll",
+						shortcutManager.getShortcut(RELOAD_DLL_SHORTCUTS), nullptr))
+					{
+						shouldReloadDll = true;
+					}
+
 
 					ImGui::EndMenu();
 				}
@@ -170,7 +179,7 @@ void pika::Editor::update(const pika::Input &input,
 #pragma region containers window
 	if (windowFlags.containerManager)
 	{
-		containersWindow.update(logs, windowFlags.containerManager, loadedDll);
+		containersWindow.update(logs, windowFlags.containerManager, loadedDll, containerManager);
 	}
 #pragma endregion
 

@@ -1520,8 +1520,7 @@ namespace gl2d
 
 		createFromBuffer((const char *)decodedImage, width, height, pixelated, useMipMaps);
 
-		//Replace stbi allocators
-		free((void *)decodedImage);
+		STBI_FREE(decodedImage);
 	}
 
 	void Texture::createFromFileDataWithPixelPadding(const unsigned char *image_file_data, const size_t image_file_size, int blockSize,
@@ -1663,8 +1662,7 @@ namespace gl2d
 
 		createFromBuffer((const char *)newData, newW, newH, pixelated, useMipMaps);
 
-		//Replace stbi allocators
-		free((void *)decodedImage);
+		STBI_FREE(decodedImage);
 		delete[] newData;
 	}
 

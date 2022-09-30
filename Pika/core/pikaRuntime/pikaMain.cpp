@@ -111,6 +111,7 @@ int main()
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
+
 	pika::initImgui(window.context);
 
 	window.context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
@@ -132,7 +133,6 @@ int main()
 
 
 
-
 #pragma region shortcuts
 	pika::ShortcutManager shortcutManager;
 #pragma endregion
@@ -146,7 +146,7 @@ int main()
 
 	
 	auto container = containerManager.createContainer
-		(loadedDll.containerInfo[0], loadedDll, logs);
+		(loadedDll.containerInfo[1], loadedDll, logs);
 
 	while (!shouldClose)
 	{
@@ -168,7 +168,7 @@ int main()
 	#pragma region editor stuff
 	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
 		editor.update(window.input, shortcutManager, logs, 
-			pushNotificationManager, loadedDll);
+			pushNotificationManager, loadedDll, containerManager);
 	#endif
 	#pragma endregion
 
@@ -180,7 +180,17 @@ int main()
 	#pragma endregion
 
 	#pragma region container manager
+
+	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
+		if (editor.shouldReloadDll)
+		{
+			editor.shouldReloadDll = false;
+			containerManager.reloadDll(loadedDll, window, logs);
+		}
+	#endif
+		
 		containerManager.update(loadedDll, window, logs);
+
 	#pragma endregion
 
 	#pragma region end imgui frame
@@ -198,6 +208,8 @@ int main()
 	}
 
 	containerManager.destroyAllContainers(loadedDll, logs);
+
+	//terminate();
 
 	return 0;
 }

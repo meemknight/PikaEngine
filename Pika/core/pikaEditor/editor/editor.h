@@ -23,7 +23,7 @@ namespace pika
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
 			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager,
-			pika::LoadedDll &loadedDll);
+			pika::LoadedDll &loadedDll, pika::ContainerManager &containerManager);
 
 		struct
 		{
@@ -42,6 +42,8 @@ namespace pika
 		pika::ContainersWindow containersWindow;
 
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
+
+		bool shouldReloadDll = 0;
 	};
 
 

@@ -38,6 +38,7 @@ file(GLOB_RECURSE PIKA_SOURCES_CORE_RUNTIME			CONFIGURE_DEPENDS "${CMAKE_CURRENT
 file(GLOB_RECURSE PIKA_SOURCES_CORE_STD				CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_GAMEPLAY				CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/*.cpp")
 file(GLOB_RECURSE PIKA_SOURCES_CORE_SHARED_RUNTIME	CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/*.cpp")
+file(GLOB_RECURSE PIKA_SOURCES_PLUGGINS				CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/*.cpp")
 
 add_compile_definitions(PIKA_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/") 
 #add_compile_definitions(PIKA_RESOURCES_PATH="./resources/")
@@ -70,12 +71,13 @@ add_library(pikaGameplay SHARED)
 
 target_compile_definitions(pikaGameplay PUBLIC PIKA_DEVELOPMENT)
 set_property(TARGET pikaGameplay PROPERTY CXX_STANDARD 17)
-target_sources(pikaGameplay PRIVATE "${PIKA_SOURCES_CORE_CONFIG}" 
+target_sources(pikaGameplay PRIVATE "${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_PLUGGINS}"
 	"${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_SHARED_RUNTIME}")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
+target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
 #################^^^^^^^^^^^^^^############################
 
@@ -88,7 +90,7 @@ target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
 set_property(TARGET pikaProduction PROPERTY CXX_STANDARD 17)
 
 target_sources(pikaProduction PRIVATE 
-	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" 
+	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" "${PIKA_SOURCES_PLUGGINS}"
 	"${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_SHARED_RUNTIME}")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
@@ -96,6 +98,7 @@ target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/co
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
+target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 
 target_link_libraries(pikaProduction PRIVATE glad glfw gl2d glm stb_image stb_truetype imgui)
 

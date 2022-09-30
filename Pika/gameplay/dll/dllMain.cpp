@@ -21,6 +21,7 @@ PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 {
 	info.clear();
 	info.push_back(PIKA_MAKE_CONTAINER_INFO(Gameplay));
+	info.push_back(PIKA_MAKE_CONTAINER_INFO(ImmageViewer));
 }
 
 //this should not allocate memory
@@ -48,10 +49,16 @@ PIKA_API void resetAllocator()
 	pika::memory::setGlobalAllocatorToStandard();
 }
 
+PIKA_API void dissableAllocators()
+{
+	pika::memory::dissableAllocators();
+}
 
 //used to initialize libraries 
-PIKA_API void gameplayStart(pika::PikaContext pikaContext)
+PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 {
+	pika::setImguiAllocator(pikaContext.imguiAllocator);
+
 	//todo user should have functions to specify this
 #pragma region init stuff
 #ifdef PIKA_DEVELOPMENT
@@ -66,9 +73,12 @@ PIKA_API void gameplayStart(pika::PikaContext pikaContext)
 
 
 //this won't be ever called in production so we can remove the code
-PIKA_API void gameplayReload(pika::PikaContext pikaContext)
+PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 {
 #ifdef PIKA_DEVELOPMENT	
+
+	pika::setImguiAllocator(pikaContext.imguiAllocator); //todo check if really needed
+
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
 	pika::setImguiContext(pikaContext);

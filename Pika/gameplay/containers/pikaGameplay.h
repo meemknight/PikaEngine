@@ -6,6 +6,7 @@
 #include <baseContainer.h>
 #include <shortcutApi/shortcutApi.h>
 #include <pikaSizes.h>
+#include <imgui_spinner.h>
 
 struct Test
 {
@@ -96,10 +97,25 @@ struct Gameplay : public Container
 
 		//ImGui::SetAllocatorFunctions(userMalloc, userFree);
 
-		//ImGui::Begin("window from gameplay");
-		//ImGui::End();
+		ImGui::Begin("window from gameplay");
+		
+		
+		ImGui::Spinner("spinner", 10, 2);
+
+		ImGui::ProgressBar(0.4);
+		
+		ImGui::BufferingBar("buffering bar", 0.4, {100, 5});
+
+		ImGui::LoadingIndicatorCircle("circle", 20, 8, 8);
+
+		ImGui::End();
 		
 		ImGui::ShowDemoWindow();
+
 	}
 
 };
+
+//todo flag to clear screen from engine
+//todo error popup
+//todo error popup disable in release

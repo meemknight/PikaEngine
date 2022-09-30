@@ -8,6 +8,8 @@
 #include <GLFW/glfw3native.h>
 #endif
 
+#include <pikaSizes.h>
+
 void pika::PikaWindow::create()
 {
 	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
@@ -23,6 +25,8 @@ void pika::PikaWindow::create()
 	glfwSetWindowFocusCallback(context.wind, windowFocusCallback);
 	glfwSetKeyCallback(context.wind, keyCallback);
 
+	//todo macro
+	context.imguiAllocator.init(malloc(pika::MB(20)), pika::MB(20));
 
 	//HWND hwnd = glfwGetWin32Window(context.wind);
 

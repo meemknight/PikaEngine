@@ -95,16 +95,33 @@ namespace pika
 			return *this;
 		}
 
+		bool operator==(const StaticVector &other)
+		{
+			if (this == &other) { return true; }
+
+			if(this->size_ != other.size_)
+
+			for (int i = 0; i < size_; i++)
+			{
+				if ((*this)[i] != other[i])
+				{
+					return false;
+				}
+			}
+			
+			return true;
+		}
+
 		T &operator[] (size_t index)
 		{
 			PIKA_PERMA_ASSERT(index < size_, "buffer overflow on acces");
-			return static_cast<T *>(beg_)[index];
+			return (beg_)[index];
 		}
 
 		T operator[] (size_t index) const
 		{
 			PIKA_PERMA_ASSERT(index < size_, "buffer overflow on acces");
-			return static_cast<T *>(beg_)[index];
+			return (beg_)[index];
 		}
 
 		T &back()

@@ -2,9 +2,35 @@
 #include <pikaImgui/pikaImgui.h>
 #include <GLFW/glfw3.h>
 #include "IconsForkAwesome.h"
+#include <pikaAllocator/freeListAllocator.h>
+#include <logs/assert.h>
+
+void *pika::imguiCustomAlloc(size_t sz, void *user_data)
+{
+	pika::memory::FreeListAllocator* allocator = (pika::memory::FreeListAllocator *)user_data;
+	PIKA_DEVELOPMENT_ONLY_ASSERT(allocator, "no allocator for imgui");
+
+	return allocator->allocate(sz);
+}
+
+void pika::imguiCustomFree(void *ptr, void *user_data)
+{
+	pika::memory::FreeListAllocator *allocator = (pika::memory::FreeListAllocator *)user_data;
+	PIKA_DEVELOPMENT_ONLY_ASSERT(allocator, "no allocator for imgui");
+	
+	allocator->free(ptr);
+}
+
+void pika::setImguiAllocator(pika::memory::FreeListAllocator &allocator)
+{
+	ImGui::SetAllocatorFunctions(imguiCustomAlloc, imguiCustomFree, &allocator);
+}
+
 
 void pika::initImgui(PikaContext &pikaContext)
 {
+	setImguiAllocator(pikaContext.imguiAllocator);
+
 	auto context = ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
 	imguiThemes::embraceTheDarkness();
@@ -34,7 +60,7 @@ void pika::initImgui(PikaContext &pikaContext)
 	//https://pixtur.github.io/mkdocs-for-imgui/site/FONTS/
 	//https://github.com/juliettef/IconFontCppHeaders
 	//https://fontawesome.com/v4/icons/
-	io.Fonts->AddFontFromFileTTF("arial.ttf", 16);
+	io.Fonts->AddFontFromFileTTF(PIKA_RESOURCES_PATH "arial.ttf", 16);
 
 	//ImVector<ImWchar> ranges;
 	//ImFontGlyphRangesBuilder builder;
@@ -48,7 +74,7 @@ void pika::initImgui(PikaContext &pikaContext)
 	config.MergeMode = true;
 	config.GlyphMinAdvanceX = 16.0f; // Use if you want to make the icon monospaced
 	static const ImWchar icon_ranges[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
-	io.Fonts->AddFontFromFileTTF("fontawesome-webfont.ttf", 16.0f, &config, icon_ranges);
+	io.Fonts->AddFontFromFileTTF(PIKA_RESOURCES_PATH "fontawesome-webfont.ttf", 16.0f, &config, icon_ranges);
 	io.Fonts->Build();
 
 
@@ -109,4 +135,17 @@ void pika::addWarningSymbol()
 	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
 	ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " ");
 	ImGui::PopStyleColor();
+}
+
+void pika::helpMarker(const char *desc)
+{
+	ImGui::TextDisabled("(?)");
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
 }

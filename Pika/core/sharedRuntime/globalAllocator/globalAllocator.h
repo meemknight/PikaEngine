@@ -9,5 +9,8 @@ namespace memory
 	void setGlobalAllocatorToStandard();
 	
 	void setGlobalAllocator(pika::memory::FreeListAllocator *allocator);
+
+	void dissableAllocators();
+
 }
 }

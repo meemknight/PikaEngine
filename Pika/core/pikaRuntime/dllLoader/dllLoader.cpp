@@ -24,7 +24,7 @@ static std::filesystem::path dllPath = std::filesystem::current_path();
 		}
 		else
 		{
-			PIKA_PERMA_ASSERT(0, "Couldn't get file time");
+			return {};
 		}
 
 		return(time);
@@ -119,9 +119,15 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 
 	filetime = getLastWriteFile(originalDll.string().c_str());
 
+	if (filetime.dwLowDateTime == FILETIME().dwLowDateTime
+		&&
+		filetime.dwHighDateTime == FILETIME().dwHighDateTime
+		) { return false; }
 
-	std::filesystem::copy(originalDll, copyDll, std::filesystem::copy_options::overwrite_existing); //todo use windows function here
-	//to be able to catch errors
+
+	//std::filesystem::copy(originalDll, copyDll, std::filesystem::copy_options::overwrite_existing);
+	if (!CopyFile(originalDll.string().c_str(), copyDll.string().c_str(), false) ) { return false; }
+
 
 	dllHand = LoadLibraryA(copyDll.string().c_str());
 
@@ -132,9 +138,9 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	getContainersInfo_ = (getContainersInfo_t *)GetProcAddress(dllHand, "getContainersInfo");
 	constructContainer_ = (constructContainer_t *)GetProcAddress(dllHand, "constructContainer");
 	destructContainer_ = (destructContainer_t *)GetProcAddress(dllHand, "destructContainer");
-	bindAllocator_ = (bindAllocator_t *)GetProcAddress(dllHand, "bindAllocator");;
-	resetAllocator_ = (resetAllocator_t *)GetProcAddress(dllHand, "resetAllocator");;
-
+	bindAllocator_ = (bindAllocator_t *)GetProcAddress(dllHand, "bindAllocator");
+	resetAllocator_ = (resetAllocator_t *)GetProcAddress(dllHand, "resetAllocator");
+	dissableAllocators_ = (dissableAllocators_t *)GetProcAddress(dllHand, "dissableAllocators");
 
 	if (!gameplayStart_) { return false; }
 	if (!gameplayReload_) { return false; }
@@ -143,6 +149,7 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	if (!destructContainer_) { return false; }
 	if (!bindAllocator_) { return false; }
 	if (!resetAllocator_) { return false; }
+	if (!dissableAllocators_) { return false; }
 
 	//get container info
 	getContainerInfoAndCheck(logs);
@@ -151,29 +158,43 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	return	true;
 }
 
+bool pika::LoadedDll::checkIfDllIsOpenable()
+{
+	HANDLE fileCheck = {};
+	fileCheck = CreateFile((dllPath / "pikaGameplay.dll").string().c_str(),
+		GENERIC_READ | GENERIC_WRITE, NULL, NULL,
+		OPEN_EXISTING, 0, NULL);
+
+	if (fileCheck == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	else
+	{
+		CloseHandle(fileCheck);
+		return true;
+	}
+}
+
 bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs,
 	std::chrono::duration<long long> timeout)
 {
 	auto startTime = std::chrono::steady_clock::now();
 
-	unloadDll();
-
-	HANDLE fileCheck = {};
-
-	while ((fileCheck = CreateFile((dllPath / "pikaGameplay.dll").string().c_str(),
-		GENERIC_READ | GENERIC_WRITE, NULL, NULL,
-		OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE)
+	while (!checkIfDllIsOpenable())
 	{
 		if (timeout != std::chrono::seconds(0))
 		{
-			if(std::chrono::steady_clock::now() > startTime + timeout)
+			if (std::chrono::steady_clock::now() > startTime + timeout)
 			{
 				return false;	//timeout
 			}
 		}
 		//Wait till the dll can be oppened. It is possible that the compiler still keeps it busy.
 	}
-	CloseHandle(fileCheck);
+
+	unloadDll();
+
 
 	//try to load (we loop since it is still possible that windows thinks that the dll is not available yet)
 	while (!loadDll(id, logs)) 
@@ -191,6 +212,10 @@ bool pika::LoadedDll::tryToloadDllUntillPossible(int id, pika::LogManager &logs,
 
 void pika::LoadedDll::unloadDll()
 {
+	if (dllHand == 0) { return; }
+
+	dissableAllocators_();
+
 	FreeLibrary(dllHand);
 	dllHand = {};
 	filetime = {};
@@ -204,6 +229,14 @@ bool pika::LoadedDll::shouldReloadDll()
 	std::filesystem::path originalDll = dllPath / "pikaGameplay.dll";
 
 	FILETIME newFiletime = getLastWriteFile(originalDll.string().c_str());
+
+	if (filetime.dwLowDateTime == FILETIME().dwLowDateTime
+		&&
+		filetime.dwHighDateTime == FILETIME().dwHighDateTime
+		)
+	{
+		return false;
+	}
 
 	return (CompareFileTime(&filetime, &newFiletime) != 0);
 }
@@ -224,6 +257,7 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	destructContainer_ = destructContainer;
 	bindAllocator_ = bindAllocator;
 	resetAllocator_ = resetAllocator;
+	dissableAllocators_ = dissableAllocators;
 	getContainerInfoAndCheck(logs);
 	this->id = id;
 
@@ -247,6 +281,10 @@ bool pika::LoadedDll::shouldReloadDll()
 	return false;
 }
 
+bool pika::LoadedDll::checkIfDllIsOpenable()
+{
+	return true;
+}
 
 #endif
 
