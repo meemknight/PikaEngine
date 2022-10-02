@@ -214,7 +214,7 @@ void pika::LoadedDll::unloadDll()
 {
 	if (dllHand == 0) { return; }
 
-	dissableAllocators_();
+	//dissableAllocators_();
 
 	FreeLibrary(dllHand);
 	dllHand = {};

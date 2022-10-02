@@ -6,13 +6,44 @@
 #include <pikaAllocator/freeListAllocator.h>
 #include <staticVector.h>
 
+#define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
+typedef READENTIREFILE(readEntireFile_t);
+#undef READENTIREFILE
+
+#define GETFILESIZE(x) bool x(const char* name, size_t &size)
+typedef GETFILESIZE(getFileSize_t);
+#undef GETFILESIZE
+
 //this is passed by the engine. You should not modify the data
+//this is also used by the engine to give you acces to some io functions
 struct RequestedContainerInfo
 {
 	pika::memory::FreeListAllocator *mainAllocator = {};
 
 
+	//readEntireFile_t *readEntireFilePointer = {};
+	//getFileSize_t *getFileSizePointer = {};
+
+	bool readEntireFile(const char *name, void *buffer, size_t size)
+	{
+		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
+
+		//bool rez = readEntireFilePointer(name, buffer, size);
+
+		//pika::memory::setGlobalAllocator(mainAllocator);
+
+		//return rez;
+	}
+
+	bool getFileSize(const char *name, size_t &size)
+	{
+		//PIKA_DEVELOPMENT_ONLY_ASSERT(getFileSizePointer, "get file size pointer not assigned");
+
+
+
+	}
 };
+
 
 struct ContainerStaticInfo
 {

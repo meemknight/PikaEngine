@@ -7,7 +7,8 @@
 #include <shortcutApi/shortcutApi.h>
 #include <pikaSizes.h>
 #include <imgui_spinner.h>
-
+#include <fstream>
+#include <globalAllocator/globalAllocator.h>
 
 struct ImmageViewer: public Container
 {
@@ -26,7 +27,15 @@ struct ImmageViewer: public Container
 
 	void create(RequestedContainerInfo &requestedInfo)
 	{
-		texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
+		
+
+
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
+		}
+		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
+
 		//texture.cleanup();
 		//GLuint b = 0;
 		//glGenBuffers(1, &b);
@@ -46,7 +55,7 @@ struct ImmageViewer: public Container
 			return;
 		}
 
-		float xsize = 200.f;
+		float xsize = 400.f;
 		float aspect = 1.f;
 
 		ImGui::Image((void *)texture.id, {xsize,xsize / aspect},

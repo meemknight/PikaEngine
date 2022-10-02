@@ -165,7 +165,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
 {
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(10)); // make sure that the compiler had enough time 
+	std::this_thread::sleep_for(std::chrono::milliseconds(200)); // make sure that the compiler had enough time 
 		//to get hold onto the dll 
 
 
@@ -190,7 +190,7 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 		logs.log("Couldn't reloaded dll", pika::logWarning);
 		return;
 	}
-
+	//todo pospone dll reloading
 
 	std::unordered_map<std::string, pika::ContainerInformation> containerNames;
 	for (auto &c : loadedDll.containerInfo)

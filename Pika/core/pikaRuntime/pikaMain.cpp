@@ -209,6 +209,7 @@ int main()
 
 	containerManager.destroyAllContainers(loadedDll, logs);
 
+
 	//terminate();
 
 	return 0;

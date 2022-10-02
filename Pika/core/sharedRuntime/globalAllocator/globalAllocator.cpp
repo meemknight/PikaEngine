@@ -1,6 +1,9 @@
 #include "globalAllocator.h"
 #include <malloc.h>
 #include <pikaAllocator/freeListAllocator.h>
+#include <fstream>
+
+
 
 
 void *DefaultAllocator(size_t size)

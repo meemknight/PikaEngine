@@ -45,6 +45,13 @@ add_compile_definitions(PIKA_RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resourc
 
 if(MSVC)
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+
+#https://stackoverflow.com/questions/5559357/debugheapdelete-access-violation-at-termination
+#add_compile_definitions(_STATIC_CPPLIB)
+#add_compile_definitions(_DISABLE_DEPRECATE_STATIC_CPPLIB)
+
+
+
 endif()
 
 
