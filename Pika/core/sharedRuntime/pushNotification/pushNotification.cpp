@@ -5,8 +5,7 @@
 #include <IconsForkAwesome.h>
 #include <pikaImgui/pikaImgui.h>
 
-#ifdef PIKA_PRODUCTION and 
-#if PIKA_REMOVE_PUSH_NOTIFICATIONS_IN_PRODUCTION
+#if PIKA_SHOULD_REMOVE_PUSH_NOTIFICATIONS
 
 #define PIKA_NOT_IMPLEMENT
 
@@ -20,7 +19,7 @@ void pika::PushNotificationManager::update(bool &open)
 void pika::PushNotificationManager::pushNotification(const char *content, int logType)
 {}
 
-#endif
+
 #endif
 
 #ifndef PIKA_NOT_IMPLEMENT
@@ -73,13 +72,13 @@ void pika::PushNotificationManager::update(bool &open)
 
 			if (notificationQue[i].notificationType == pika::logError)
 			{
-				pika::addErrorSymbol();
+				pika::pikaImgui::addErrorSymbol();
 				ImGui::SameLine();
 			}
 
 			if (notificationQue[i].notificationType == pika::logWarning)
 			{
-				pika::addWarningSymbol();
+				pika::pikaImgui::addWarningSymbol();
 				ImGui::SameLine();
 			}
 			

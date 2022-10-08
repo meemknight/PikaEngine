@@ -57,13 +57,13 @@ PIKA_API void dissableAllocators()
 //used to initialize libraries 
 PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 {
-	pika::setImguiAllocator(pikaContext.imguiAllocator);
+	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator);
 
 	//todo user should have functions to specify this
 #pragma region init stuff
 #ifdef PIKA_DEVELOPMENT
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
-	pika::setImguiContext(pikaContext);
+	pika::pikaImgui::setImguiContext(pikaContext);
 #endif
 
 	gl2d::init();
@@ -77,11 +77,11 @@ PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 {
 #ifdef PIKA_DEVELOPMENT	
 
-	pika::setImguiAllocator(pikaContext.imguiAllocator); //todo check if really needed
+	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator); //todo check if really needed
 
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
-	pika::setImguiContext(pikaContext);
+	pika::pikaImgui::setImguiContext(pikaContext);
 
 	gl2d::init();
 

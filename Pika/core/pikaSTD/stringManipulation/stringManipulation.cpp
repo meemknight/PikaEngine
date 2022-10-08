@@ -55,6 +55,26 @@ namespace pika
 		return false;
 	}
 
+	size_t strlcpy(char *dst, const char *src, size_t size)
+	{
+
+		for (size_t i = 0; i < size-1; i++)
+		{
+			dst[i] = src[i];
+
+			if (src[i] == '\0') { return i; }
+		}
+
+		dst[size - 1] = '\0';
+
+		return size - 1;
+	}
+
+	size_t strlcpy(char *dst, std::string src, size_t size)
+	{
+		return strlcpy(dst, src.c_str(), size);
+	}
+
 	std::vector<std::string> split(const char *source, char c)
 	{
 

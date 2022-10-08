@@ -81,7 +81,7 @@ void pika::Editor::update(const pika::Input &input,
 		//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
 	
 	
-		ImGui::PushID(pika::EditorImguiIds::mainEditorWindow);
+		ImGui::PushID(pika::pikaImgui::EditorImguiIds::mainEditorWindow);
 
 		if (ImGui::Begin(
 			"Main window",

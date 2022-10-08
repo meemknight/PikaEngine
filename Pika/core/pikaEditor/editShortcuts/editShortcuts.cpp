@@ -12,7 +12,7 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 
 	ImGui::SetNextWindowSize({400, 500});
 
-	ImGui::PushID(pika::EditorImguiIds::editShortcutWindow);
+	ImGui::PushID(pika::pikaImgui::EditorImguiIds::editShortcutWindow);
 
 	if (ImGui::Begin(ICON_NAME, &open,
 		ImGuiWindowFlags_NoDocking | 

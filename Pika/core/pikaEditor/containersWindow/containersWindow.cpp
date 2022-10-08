@@ -2,6 +2,7 @@
 #include <pikaImgui/pikaImgui.h>
 #include "imguiComboSearch.h"
 #include <imgui_spinner.h>
+#include <validatePath.h>
 
 void pika::ContainersWindow::init()
 {
@@ -11,7 +12,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 	pika::ContainerManager &containerManager)
 {
 	//todo imgui firsttime stuff for all windows
-	ImGui::PushID(EditorImguiIds::containersWindow);
+	ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow);
 
 
 	if (!ImGui::Begin(ICON_NAME, &open))
@@ -39,7 +40,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				static int itemCurrent;//todo move
 
 				//left
-				ImGui::PushID(EditorImguiIds::containersWindow+1);
+				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow+1);
 				ImGui::BeginGroup();
 				{
 
@@ -68,7 +69,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::SameLine();
 
 				//right
-				ImGui::PushID(EditorImguiIds::containersWindow + 2);
+				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 2);
 				ImGui::BeginGroup();
 				{
 					if (itemCurrent < loadedDll.containerInfo.size())
@@ -79,13 +80,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 						ImGui::Separator();
 
 						selectedContainerToLaunch = c.containerName;
-
-						if (!selectedContainerToLaunch.empty()
-							&& ImGui::Button(ICON_FK_PLUS_SQUARE_O " Launch"))
-						{
-							containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
-						}
-
 
 
 						if (ImGui::BeginTabBar("##Tabs for container info", ImGuiTabBarFlags_Reorderable))
@@ -104,20 +98,30 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 								size_t totalMemory = totalHeapMemory + c.containerStructBaseSize;
 
-								ImGui::Text("Total Memory requirement: %" IM_PRIu64 " (bytes)", totalMemory);
-								ImGui::Text("Total Heap requirement: %" IM_PRIu64 " (bytes)", totalHeapMemory);
+								ImGui::Text("Total Memory requirement: ");
+								ImGui::SameLine();
+								pika::pikaImgui::displayMemorySizeValue(totalMemory);
+
+								ImGui::Text("Total Heap requirement: ");
+								ImGui::SameLine();
+								pika::pikaImgui::displayMemorySizeValue(totalHeapMemory);
 							#pragma endregion
 
 								ImGui::NewLine();
 
-								ImGui::Text("Static Memory requirement: %" IM_PRIu64 " (bytes)", c.containerStructBaseSize);
+								ImGui::Text("Static Memory requirement: ");
+								ImGui::SameLine();
+								pika::pikaImgui::displayMemorySizeValue(c.containerStructBaseSize);
 								//todo select memory unit
 
-								ImGui::Text("Default Heap Memory requirement: %" IM_PRIu64 " (bytes)",
-									c.containerStaticInfo.defaultHeapMemorySize);
+								ImGui::Text("Default Heap Memory requirement: ");
+								ImGui::SameLine();
+								pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.defaultHeapMemorySize);
 
+								ImGui::Text("Other Heap Memory Allocators count: ");
+								ImGui::SameLine();
+								pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.bonusAllocators.size());
 
-								ImGui::Text("Other Heap Memory Allocators count: %" IM_PRIu64, c.containerStaticInfo.bonusAllocators.size());
 
 								if (!c.containerStaticInfo.bonusAllocators.empty())
 								{
@@ -127,7 +131,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 										for (auto i : c.containerStaticInfo.bonusAllocators)
 										{
-											ImGui::Text("%" IM_PRIu64 " (btyes)", i);
+											pika::pikaImgui::displayMemorySizeValue(i);
 										}
 
 
@@ -139,9 +143,24 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::EndTabItem();
 							}
 
-							if (ImGui::BeginTabItem("Other..."))
+							if (ImGui::BeginTabItem(ICON_FK_PLUS_SQUARE_O" Launch"))
 							{
 								ImGui::NewLine();
+
+								if (!selectedContainerToLaunch.empty()
+									&& ImGui::Button(ICON_FK_PLAY " Launch a default configuration"))
+								{
+									containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
+								}
+
+								ImGui::NewLine();
+
+
+								if (!selectedContainerToLaunch.empty()
+									&& ImGui::Button(ICON_FK_PICTURE_O " Launch a snapshot"))
+								{
+									//containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
+								}
 
 								ImGui::EndTabItem();
 							}
@@ -174,7 +193,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 				ImGui::SameLine();
 
-				pika::helpMarker(
+				pika::pikaImgui::helpMarker(
 					ICON_FK_BOLT ": Container is running;\n"
 					ICON_FK_PAUSE_CIRCLE_O ": Container is on pause;\n"
 					ICON_FK_VIDEO_CAMERA ": Container is being recorded;\n"
@@ -189,7 +208,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				std::vector<pika::containerId_t> containerIds;
 				std::vector<std::string> containerNames;
 
-				ImGui::PushID(EditorImguiIds::containersWindow + 3);
+				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 3);
 				ImGui::BeginGroup();
 				{
 
@@ -204,7 +223,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 					{
 						containerIds.push_back(i.first);
 						containerNames.push_back(
-							ICON_FK_BOLT " " + i.second.baseContainerName + ": " + std::to_string(i.first));
+							std::string(i.second.flags.getStatusIcon()) + " " + i.second.baseContainerName + ": " + std::to_string(i.first));
 					}
 
 					auto contentSize = ImGui::GetItemRectSize();
@@ -222,7 +241,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::SameLine();
 
 				//right
-				ImGui::PushID(EditorImguiIds::containersWindow + 4);
+				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 4);
 				ImGui::BeginGroup();
 				{
 					if (itemCurrent < containerIds.size())
@@ -230,10 +249,122 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 						auto &c = containerManager.runningContainers[containerIds[itemCurrent]];
 
 						
-						ImGui::Text("Running container: %s #%u", c.baseContainerName.c_str(), containerIds[itemCurrent]);
+						ImGui::Text("Running container: %s #%u", c.baseContainerName, containerIds[itemCurrent]);
 						ImGui::Separator();
 
+					#pragma region buttons
+						
+						//calculate cursor pos for 3 buttons
+						{
+							ImGuiStyle &style = ImGui::GetStyle();
+							float width = 0.0f;
+							width += ImGui::CalcTextSize(ICON_FK_PAUSE).x;
+							width += style.ItemSpacing.x;
+							width += ImGui::CalcTextSize(ICON_FK_PAUSE).x;
+							width += style.ItemSpacing.x;
+							width += ImGui::CalcTextSize(ICON_FK_PAUSE).x;
 
+							pika::pikaImgui::alignForWidth(width);
+						}
+
+						if (c.flags.running)
+						{
+							if (ImGui::Button(ICON_FK_PAUSE))
+							{
+								c.flags.running = 0;
+							}
+
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							{
+								ImGui::SetTooltip("Pause container.");
+							}
+						}
+						else
+						{
+							if (ImGui::Button(ICON_FK_PLAY))
+							{
+								c.flags.running = 1;
+							}
+
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							{
+								ImGui::SetTooltip("Resume container.");
+							}
+						}
+
+						ImGui::SameLine();
+
+						bool stopped = false;
+
+						if (ImGui::Button(ICON_FK_STOP))
+						{
+							//todo mabe defer here when api is made
+							containerManager.destroyContainer(containerIds[itemCurrent], loadedDll, logManager);
+							stopped = true;
+						}
+						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+						{
+							ImGui::SetTooltip("Stop container.");
+						}
+
+						ImGui::SameLine();
+
+						if (ImGui::Button(ICON_FK_EJECT))
+						{
+							containerManager.forceTerminateContainer(containerIds[itemCurrent], loadedDll, logManager);
+							stopped = true;
+						}
+						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+						{
+							ImGui::SetTooltip("Force stop container (not recomended).\nThis won't call any destructors.");
+						}
+
+
+					#pragma endregion
+
+						if(!stopped)
+						{
+
+							ImGui::Text("Status: %s", c.flags.getStatusName());
+							
+
+							ImGui::Separator();
+
+							static char snapshotName[50] = {};
+
+
+							if (ImGui::Button(ICON_FK_CAMERA))
+							{
+								if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
+								{
+									if (!containerManager.makeSnapshot(containerIds[itemCurrent], logManager, snapshotName))
+									{
+										logManager.log("Coultn't make snapshot", pika::logError);
+									}else
+									{
+										logManager.log("Successfully created snapshot.");
+									}
+								}
+								else
+								{
+									logManager.log("File name invalid", pika::logError);
+								}
+
+							}
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							{
+								ImGui::SetTooltip("Make snapshot");
+							}
+
+							ImGui::SameLine();
+
+							//todo move
+
+							ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
+
+
+
+						}
 					}
 					else
 					{

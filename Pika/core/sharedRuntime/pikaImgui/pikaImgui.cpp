@@ -5,52 +5,56 @@
 #include <pikaAllocator/freeListAllocator.h>
 #include <logs/assert.h>
 
-void *pika::imguiCustomAlloc(size_t sz, void *user_data)
+#if !(PIKA_SHOULD_REMOVE_IMGUI)
+
+void *pika::pikaImgui::imguiCustomAlloc(size_t sz, void *user_data)
 {
-	pika::memory::FreeListAllocator* allocator = (pika::memory::FreeListAllocator *)user_data;
+	pika::memory::FreeListAllocator *allocator = (pika::memory::FreeListAllocator *)user_data;
 	PIKA_DEVELOPMENT_ONLY_ASSERT(allocator, "no allocator for imgui");
 
 	return allocator->allocate(sz);
 }
 
-void pika::imguiCustomFree(void *ptr, void *user_data)
+void pika::pikaImgui::imguiCustomFree(void *ptr, void *user_data)
 {
 	pika::memory::FreeListAllocator *allocator = (pika::memory::FreeListAllocator *)user_data;
 	PIKA_DEVELOPMENT_ONLY_ASSERT(allocator, "no allocator for imgui");
-	
+
 	allocator->free(ptr);
 }
 
-void pika::setImguiAllocator(pika::memory::FreeListAllocator &allocator)
+void pika::pikaImgui::setImguiAllocator(pika::memory::FreeListAllocator &allocator)
 {
-	ImGui::SetAllocatorFunctions(imguiCustomAlloc, imguiCustomFree, &allocator);
+	::ImGui::SetAllocatorFunctions(imguiCustomAlloc, imguiCustomFree, &allocator);
 }
 
 
-void pika::initImgui(PikaContext &pikaContext)
+void pika::pikaImgui::initImgui(PikaContext &pikaContext)
 {
 	setImguiAllocator(pikaContext.imguiAllocator);
 
-	auto context = ImGui::CreateContext();
+	auto context = ::ImGui::CreateContext();
 	//ImGui::StyleColorsDark();
 	imguiThemes::embraceTheDarkness();
-	
-	ImGuiIO &io = ImGui::GetIO();
+
+	ImGuiIO &io = ::ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 	//io.ConfigViewportsNoAutoMerge = true;
 	//io.ConfigViewportsNoTaskBarIcon = true;
-	
-	ImGuiStyle &style = ImGui::GetStyle();
+
+	ImGuiStyle &style = ::ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
 		//style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 0.f;
 		style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 	}
-	
+
+
+
 	ImGui_ImplGlfw_InitForOpenGL(pikaContext.wind, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
@@ -80,31 +84,31 @@ void pika::initImgui(PikaContext &pikaContext)
 
 }
 
-void pika::setImguiContext(PikaContext pikaContext)
+void pika::pikaImgui::setImguiContext(PikaContext pikaContext)
 {
-	ImGui::SetCurrentContext(pikaContext.ImGuiContext);
+	::ImGui::SetCurrentContext(pikaContext.ImGuiContext);
 }
 
-void pika::imguiStartFrame(PikaContext pikaContext)
+void pika::pikaImgui::imguiStartFrame(PikaContext pikaContext)
 {
 	setImguiContext(pikaContext);
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+	::ImGui::NewFrame();
+	::ImGui::DockSpaceOverViewport(::ImGui::GetMainViewport());
 }
 
 
-void pika::imguiEndFrame(PikaContext pikaContext)
+void pika::pikaImgui::imguiEndFrame(PikaContext pikaContext)
 {
 	setImguiContext(pikaContext);
-	ImGui::Render();
+	::ImGui::Render();
 	int display_w = 0, display_h = 0;
 	glfwGetFramebufferSize(pikaContext.wind, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	ImGui_ImplOpenGL3_RenderDrawData(::ImGui::GetDrawData());
 
-	ImGuiIO &io = ImGui::GetIO();
+	ImGuiIO &io = ::ImGui::GetIO();
 
 	// Update and Render additional Platform Windows
 	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
@@ -116,36 +120,84 @@ void pika::imguiEndFrame(PikaContext pikaContext)
 		//ImGui::RenderPlatformWindowsDefault();
 		//glfwMakeContextCurrent(backup_current_context);
 
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
+		::ImGui::UpdatePlatformWindows();
+		::ImGui::RenderPlatformWindowsDefault();
 		pikaContext.glfwMakeContextCurrentPtr(pikaContext.wind); //idea create a class with some functions
-	
+
 	}
 }
 
-void pika::addErrorSymbol()
+void pika::pikaImgui::addErrorSymbol()
 {
-	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-	ImGui::Text(ICON_FK_TIMES_CIRCLE " ");
-	ImGui::PopStyleColor();
+	::ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+	::ImGui::Text(ICON_FK_TIMES_CIRCLE " ");
+	::ImGui::PopStyleColor();
 }
 
-void pika::addWarningSymbol()
+void pika::pikaImgui::addWarningSymbol()
 {
-	ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
-	ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " ");
-	ImGui::PopStyleColor();
+	::ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
+	::ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " ");
+	::ImGui::PopStyleColor();
 }
 
-void pika::helpMarker(const char *desc)
+void pika::pikaImgui::helpMarker(const char *desc)
 {
-	ImGui::TextDisabled("(?)");
-	if (ImGui::IsItemHovered())
+	::ImGui::TextDisabled("(?)");
+	if (::ImGui::IsItemHovered())
 	{
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		ImGui::TextUnformatted(desc);
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
+		::ImGui::BeginTooltip();
+		::ImGui::PushTextWrapPos(::ImGui::GetFontSize() * 35.0f);
+		::ImGui::TextUnformatted(desc);
+		::ImGui::PopTextWrapPos();
+		::ImGui::EndTooltip();
 	}
 }
+
+//https://github.com/ocornut/imgui/discussions/3862
+void pika::pikaImgui::alignForWidth(float width, float alignment)
+{
+	ImGuiStyle &style = ::ImGui::GetStyle();
+	float avail = ::ImGui::GetContentRegionAvail().x;
+	float off = (avail - width) * alignment;
+	if (off > 0.0f)
+		::ImGui::SetCursorPosX(::ImGui::GetCursorPosX() + off);
+}
+
+static int sizesType = 0;
+
+void pika::pikaImgui::displayMemorySizeValue(size_t value)
+{
+
+	const char *items[] = 
+	{"Bytes", 
+		"KB",
+		"MB",
+		"GB",
+		"TB"};
+
+	//ImGui::Combo("##sizes type pika", &sizesType, "Bytes\0KB\0MB\0GB\0TB\0");
+
+	ImGui::Text("%" IM_PRIu64 " (bytes)", value);
+
+
+}
+
+
+#else
+
+void pika::pikaImgui::alignForWidth(float width, float alignment) {};
+void pika::pikaImgui::helpMarker(const char *desc) {};
+void pika::pikaImgui::addWarningSymbol() {};
+void pika::pikaImgui::addErrorSymbol() {};
+void pika::pikaImgui::imguiEndFrame(PikaContext pikaContext) {};
+void pika::pikaImgui::imguiStartFrame(PikaContext pikaContext) {};
+void pika::pikaImgui::setImguiContext(PikaContext pikaContext) {};
+void pika::pikaImgui::initImgui(PikaContext &pikaContext) {};
+void pika::pikaImgui::setImguiAllocator(pika::memory::FreeListAllocator &allocator) {};
+
+
+
+#endif
+
+

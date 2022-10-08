@@ -36,6 +36,24 @@ struct ContainerInformation
 	size_t containerStructBaseSize = 0; //static memory
 	std::string containerName = "";
 	ContainerStaticInfo containerStaticInfo = {};
+
+	size_t calculateMemoryRequirements()
+	{
+		size_t size = 0;
+
+		size += containerStructBaseSize;
+		pika::align64(size);
+
+		size += containerStaticInfo.defaultHeapMemorySize;
+
+		for (auto i : containerStaticInfo.bonusAllocators)
+		{
+			pika::align64(size);
+			size += i;
+		}
+
+		return size;
+	}
 };
 
 }

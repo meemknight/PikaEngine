@@ -27,20 +27,20 @@ struct Gameplay : public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(10);
 
-		info.bonusAllocators.push_back(100);
-		info.bonusAllocators.push_back(200);
-		info.bonusAllocators.push_back(300);
-		info.bonusAllocators.push_back(400);
-		info.bonusAllocators.push_back(100);
-		info.bonusAllocators.push_back(200);
-		info.bonusAllocators.push_back(300);
-		info.bonusAllocators.push_back(400);
-		info.bonusAllocators.push_back(100);
-		info.bonusAllocators.push_back(200);
-		info.bonusAllocators.push_back(300);
-		info.bonusAllocators.push_back(400);
-		info.bonusAllocators.push_back(200);
-		info.bonusAllocators.push_back(200);
+		//info.bonusAllocators.push_back(100);
+		//info.bonusAllocators.push_back(200);
+		//info.bonusAllocators.push_back(300);
+		//info.bonusAllocators.push_back(400);
+		//info.bonusAllocators.push_back(100);
+		//info.bonusAllocators.push_back(200);
+		//info.bonusAllocators.push_back(300);
+		//info.bonusAllocators.push_back(400);
+		//info.bonusAllocators.push_back(100);
+		//info.bonusAllocators.push_back(200);
+		//info.bonusAllocators.push_back(300);
+		//info.bonusAllocators.push_back(400);
+		//info.bonusAllocators.push_back(200);
+		//info.bonusAllocators.push_back(200);
 
 		return info;
 	}
@@ -63,14 +63,14 @@ struct Gameplay : public Container
 		{
 			std::cout << "save\n";
 		}
-
+		
 
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(windowState.w, windowState.h);
 
 		*r += deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Green, {}, *r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{
@@ -97,18 +97,12 @@ struct Gameplay : public Container
 
 		//ImGui::SetAllocatorFunctions(userMalloc, userFree);
 
-		ImGui::Begin("window from gameplay");
-		
-		
-		ImGui::Spinner("spinner", 10, 2);
-
-		ImGui::ProgressBar(0.4);
-		
-		ImGui::BufferingBar("buffering bar", 0.4, {100, 5});
-
-		ImGui::LoadingIndicatorCircle("circle", 20, 8, 8);
-
-		ImGui::End();
+		//ImGui::Begin("window from gameplay");
+		//ImGui::Spinner("spinner", 10, 2);
+		//ImGui::ProgressBar(0.4);
+		//ImGui::BufferingBar("buffering bar", 0.4, {100, 5});
+		//ImGui::LoadingIndicatorCircle("circle", 20, 8, 8);
+		//ImGui::End();
 		
 		ImGui::ShowDemoWindow();
 

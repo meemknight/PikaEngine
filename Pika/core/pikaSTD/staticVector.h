@@ -99,7 +99,7 @@ namespace pika
 		{
 			if (this == &other) { return true; }
 
-			if(this->size_ != other.size_)
+			if (this->size_ != other.size_) { return false; }
 
 			for (int i = 0; i < size_; i++)
 			{
@@ -139,7 +139,7 @@ namespace pika
 		void push_back(const T &el)
 		{
 			PIKA_PERMA_ASSERT(size_ < MAX_SIZE, "exceded max size in push back");
-			beg_[size_] = std::forward<T>(el);
+			beg_[size_] = el;
 			size_++;
 		}
 

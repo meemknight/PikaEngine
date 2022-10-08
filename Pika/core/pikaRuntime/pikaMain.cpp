@@ -91,11 +91,11 @@ int main()
 #pragma endregion
 	
 #pragma region pika imgui id manager
-	pika::ImGuiIdsManager imguiIdsManager;
+	pika::pikaImgui::ImGuiIdsManager imguiIdsManager;
 #pragma endregion
 
 #pragma region push notification manager
-#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION)
+#if !(PIKA_SHOULD_REMOVE_PUSH_NOTIFICATIONS)
 	pika::PushNotificationManager pushNotificationManager; 
 	pushNotificationManager.init();
 	logs.pushNotificationManager = &pushNotificationManager;
@@ -112,7 +112,7 @@ int main()
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
 
-	pika::initImgui(window.context);
+	pika::pikaImgui::initImgui(window.context);
 
 	window.context.glfwMakeContextCurrentPtr = glfwMakeContextCurrent;
 #pragma endregion
@@ -138,7 +138,7 @@ int main()
 #pragma endregion
 
 #pragma region editor
-#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
+#if !PIKA_SHOULD_REMOVE_EDITOR
 	pika::Editor editor; //todo remove editor in production
 	editor.init(shortcutManager);
 #endif
@@ -146,7 +146,7 @@ int main()
 
 	
 	auto container = containerManager.createContainer
-		(loadedDll.containerInfo[1], loadedDll, logs);
+		(loadedDll.containerInfo[0], loadedDll, logs);
 
 	while (!shouldClose)
 	{
@@ -158,22 +158,28 @@ int main()
 
 
 	#pragma region start imgui
-		pika::imguiStartFrame(window.context);
+		pika::pikaImgui::imguiStartFrame(window.context);
 	#pragma endregion
 
 	#pragma region clear screen
+	#if PIKA_CLEAR_SCREEN_BY_ENGINE && PIKA_CLEAR_DEPTH_BY_ENGINE 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	#elif PIKA_CLEAR_SCREEN_BY_ENGINE
 		glClear(GL_COLOR_BUFFER_BIT);
+	#elif PIKA_CLEAR_DEPTH_BY_ENGINE
+		glClear(GL_DEPTH_BUFFER_BIT);
+	#endif
 	#pragma endregion
 
 	#pragma region editor stuff
-	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
+	#if !PIKA_SHOULD_REMOVE_EDITOR
 		editor.update(window.input, shortcutManager, logs, 
 			pushNotificationManager, loadedDll, containerManager);
 	#endif
 	#pragma endregion
 
 	#pragma region push notification
-	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION)
+	#if !(PIKA_SHOULD_REMOVE_PUSH_NOTIFICATIONS)
 		static bool pushNoticicationOpen = true;
 		pushNotificationManager.update(pushNoticicationOpen);
 	#endif
@@ -181,7 +187,7 @@ int main()
 
 	#pragma region container manager
 
-	#if !(defined(PIKA_PRODUCTION) && PIKA_REMOVE_EDITOR_IN_PRODUCATION)
+	#if !(PIKA_SHOULD_REMOVE_EDITOR)
 		if (editor.shouldReloadDll)
 		{
 			editor.shouldReloadDll = false;
@@ -194,7 +200,7 @@ int main()
 	#pragma endregion
 
 	#pragma region end imgui frame
-		pika::imguiEndFrame(window.context);
+		pika::pikaImgui::imguiEndFrame(window.context);
 	#pragma endregion
 
 	#pragma region window update

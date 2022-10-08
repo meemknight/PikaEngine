@@ -6,6 +6,8 @@
 #include <chrono>
 #include <thread>
 #include <unordered_map>
+#include <fileManipulation/fileManipulation.h>
+#include <stringManipulation/stringManipulation.h>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager)
@@ -26,6 +28,80 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 	return 0;
 }
 
+pika::containerId_t 
+pika::ContainerManager::createContainerFromSnapshot(std::string containerName, pika::LoadedDll &loadedDll, pika::LogManager &logManager, const char *fileName)
+{
+	
+
+
+	
+	
+	return containerId_t();
+}
+
+//todo use regions further appart in production
+void* pika::ContainerManager::allocateContainerMemory(pika::RuntimeContainer &container,
+	pika::ContainerInformation containerInformation, void *memPos)
+{
+	size_t memoryRequired = containerInformation.calculateMemoryRequirements();
+
+	void * baseMemory = allocateOSMemory(memoryRequired, memPos);
+
+	if (baseMemory == nullptr) { return 0; }
+
+	container.totalSize = memoryRequired;
+
+	allocateContainerMemoryAtBuffer(container,
+		containerInformation, baseMemory);
+
+	return baseMemory;
+}
+
+void pika::ContainerManager::allocateContainerMemoryAtBuffer(pika::RuntimeContainer &container,
+	pika::ContainerInformation containerInformation, void *buffer)
+{
+	const size_t staticMemory = containerInformation.containerStructBaseSize;
+	const size_t heapMemory = containerInformation.containerStaticInfo.defaultHeapMemorySize;
+
+	char *currentMemoryAdress = (char *)buffer;
+
+	container.arena.containerStructMemory.size = staticMemory;
+	container.arena.containerStructMemory.block = currentMemoryAdress;
+	currentMemoryAdress += staticMemory;
+	pika::align64(currentMemoryAdress);
+
+	container.allocator.init(currentMemoryAdress, heapMemory);
+
+	currentMemoryAdress += heapMemory;
+
+	for (int i = 0; i < containerInformation.containerStaticInfo.bonusAllocators.size(); i++)
+	{
+		pika::align64(currentMemoryAdress);
+
+		pika::memory::FreeListAllocator allocator;
+		allocator.init(
+			currentMemoryAdress,
+			containerInformation.containerStaticInfo.bonusAllocators[i]
+		);
+		container.bonusAllocators.push_back(allocator);
+		currentMemoryAdress += containerInformation.containerStaticInfo.bonusAllocators[i];
+	}
+
+}
+
+void pika::ContainerManager::freeContainerStuff(pika::RuntimeContainer &container)
+{
+	deallocateOSMemory(container.arena.containerStructMemory.block);
+
+	//container.arena.dealocateStaticMemory(); //static memory
+	//deallocateOSMemory(container.allocator.originalBaseMemory); //heap memory
+	//
+	//for (auto &i : container.bonusAllocators)
+	//{
+	//	deallocateOSMemory(i.originalBaseMemory);
+	//}
+}
+
 pika::containerId_t pika::ContainerManager::createContainer
 (pika::ContainerInformation containerInformation,
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager)
@@ -39,13 +115,18 @@ pika::containerId_t pika::ContainerManager::createContainer
 	//	return false;
 	//}
 
-	pika::RuntimeContainer container = {};
-	container.baseContainerName = containerInformation.containerName;
-	
-	container.arena.allocateStaticMemory(containerInformation); //this just allocates the staic memory
+	//todo a create and destruct wrapper
 
-	container.allocator.init(malloc(containerInformation.containerStaticInfo.defaultHeapMemorySize),
-		containerInformation.containerStaticInfo.defaultHeapMemorySize);
+	pika::RuntimeContainer container = {};
+	pika::strlcpy(container.baseContainerName, containerInformation.containerName,
+		sizeof(container.baseContainerName));
+	
+	if (!allocateContainerMemory(container, containerInformation))
+	{
+		logManager.log((std::string("Couldn't allocate memory for constructing container: #") 
+			+ std::to_string(id)).c_str(), pika::logError);
+		return 0;
+	}
 
 	loadedDll.bindAllocatorDllRealm(&container.allocator);
 	
@@ -56,17 +137,19 @@ pika::containerId_t pika::ContainerManager::createContainer
 
 		logManager.log((std::string("Couldn't construct container: #") + std::to_string(id)).c_str(), pika::logError);
 
-		container.arena.dealocateStaticMemory(); //static memory
-		free(container.allocator.originalBaseMemory); //heap memory
+		freeContainerStuff(container);
 
 		return 0;
 	}
+
+
 	loadedDll.resetAllocatorDllRealm();
 
 
 #pragma region setup requested container info
 
 	container.requestedContainerInfo.mainAllocator = &container.allocator;
+	container.requestedContainerInfo.bonusAllocators = &container.bonusAllocators;
 
 #pragma endregion
 
@@ -77,7 +160,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 
 	runningContainers[id] = container;
 
-	logManager.log(("Created container: " + container.baseContainerName).c_str());
+	logManager.log(("Created container: " + std::string(container.baseContainerName) ).c_str());
 
 	return id;
 }
@@ -92,13 +175,29 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 #pragma region reload dll
 
-	//todo button to reload dll
 
 	//todo try to recover from a failed load
 
 	if (loadedDll.shouldReloadDll())
 	{
-		reloadDll(loadedDll, window, logs);
+		reloadDll(loadedDll, window, logs); //todo return 0 on fail
+
+		//todo
+		//for (auto &c : runningContainers)
+		//{
+		//	if (c.second.flags.running)
+		//	{
+		//		loadedDll.bindAllocatorDllRealm(&c.second.allocator);
+		//		//c.second.pointer->reload...
+		//		loadedDll.resetAllocatorDllRealm();
+		//	}
+		//	else
+		//	{
+		//		c.second.flags.shouldCallReaload = true;
+		//	}
+		//
+		//	
+		//}
 	}
 
 	//if (loadedDll.shouldReloadDll() || window.input.buttons[pika::Button::P].released())
@@ -153,9 +252,13 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 #pragma region running containers
 	for (auto &c : runningContainers)
 	{
-		loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-		c.second.pointer->update(window.input, window.deltaTime, window.windowState, c.second.requestedContainerInfo);
-		loadedDll.resetAllocatorDllRealm();
+
+		if (c.second.flags.running)
+		{
+			loadedDll.bindAllocatorDllRealm(&c.second.allocator);
+			c.second.pointer->update(window.input, window.deltaTime, window.windowState, c.second.requestedContainerInfo);
+			loadedDll.resetAllocatorDllRealm();
+		}
 
 	}
 #pragma endregion
@@ -214,7 +317,8 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 			if (containerNames.find(i.second.baseContainerName) ==
 				containerNames.end())
 			{
-				std::string l = "Killed container because it does not exist anymore in dll: " + i.second.baseContainerName
+				std::string l = "Killed container because it does not exist anymore in dll: " + 
+					std::string(i.second.baseContainerName)
 					+ " #" + std::to_string(i.first);
 				logs.log(l.c_str(), pika::logError);
 
@@ -241,7 +345,7 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 			if (newContainer != oldContainer)
 			{
 				std::string l = "Killed container because its static container info\nhas changed: "
-					+ i.second.baseContainerName
+					+ std::string(i.second.baseContainerName)
 					+ " #" + std::to_string(i.first);
 				logs.log(l.c_str(), pika::logError);
 
@@ -283,12 +387,81 @@ bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll 
 	loadedDll.destructContainer_(&(c->second.pointer), &c->second.arena);
 	loadedDll.resetAllocatorDllRealm();
 
-	c->second.arena.dealocateStaticMemory(); //static memory
-	free(c->second.allocator.originalBaseMemory); //heap memory
+	freeContainerStuff(c->second);
 
 	runningContainers.erase(c);
 
 	logManager.log((std::string("Destroyed continer: ") + name + " #" + std::to_string(id)).c_str());
+
+	return true;
+}
+
+//todo remove some of this functions in production
+
+
+//snapshot file format:
+//
+// binary
+// 
+// pika::RuntimeContainer 
+// 
+// static memory
+// 
+// heap memory
+// 
+//
+bool pika::ContainerManager::makeSnapshot(containerId_t id, pika::LogManager &logManager, const char *fileName)
+{
+	auto c = runningContainers.find(id);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for making snapshot: #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+
+	std::string filePath = PIKA_ENGINE_RESOURCES_PATH;
+	filePath += fileName;
+
+	filePath += ".snapshot";
+		
+
+	if(!pika::writeEntireFile(filePath.c_str(), &c->second, sizeof(c->second)))
+	{
+		logManager.log(("Couldn't write to file for making snapshot: " + filePath).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	if (!pika::appendToFile(filePath.c_str(), 
+		c->second.getBaseAdress(), c->second.totalSize))
+	{
+		pika::deleteFile(filePath.c_str());
+		logManager.log(("Couldn't write to file for making snapshot: " + filePath).c_str(),
+			pika::logError);
+		return false;
+	}
+
+
+	//if (!pika::appendToFile(filePath.c_str(), 
+	//	c->second.arena.containerStructMemory.block, c->second.arena.containerStructMemory.size))
+	//{
+	//	pika::deleteFile(filePath.c_str());
+	//	logManager.log(("Couldn't write to file for making snapshot: " + filePath).c_str(),
+	//		pika::logError);
+	//	return false;
+	//}
+	//
+	//if (!pika::appendToFile(filePath.c_str(),
+	//	c->second.allocator.originalBaseMemory, c->second.allocatorSize))
+	//{
+	//	pika::deleteFile(filePath.c_str());
+	//	logManager.log(("Couldn't write to file for making snapshot: " + filePath).c_str(),
+	//		pika::logError);
+	//	return false;
+	//}
+
 
 	return true;
 }
@@ -307,8 +480,7 @@ bool pika::ContainerManager::forceTerminateContainer(containerId_t id, pika::Loa
 
 	auto name = c->second.baseContainerName;
 
-	c->second.arena.dealocateStaticMemory(); //static memory
-	free(c->second.allocator.originalBaseMemory); //heap memory
+	freeContainerStuff(c->second);
 
 	runningContainers.erase(c);
 
@@ -320,8 +492,49 @@ bool pika::ContainerManager::forceTerminateContainer(containerId_t id, pika::Loa
 void pika::ContainerManager::destroyAllContainers(pika::LoadedDll &loadedDll,
 	pika::LogManager &logManager)
 {
+	std::vector < pika::containerId_t> containersId;
+	containersId.reserve(runningContainers.size());
+
 	for (auto &c : runningContainers)
 	{
-		destroyContainer(c.first, loadedDll, logManager);
+		containersId.push_back(c.first);
 	}
+
+	for (auto i : containersId)
+	{
+		destroyContainer(i, loadedDll, logManager);
+	}
+
 }
+
+#ifdef PIKA_PRODUCTION
+
+void *pika::ContainerManager::allocateOSMemory(size_t size, void *baseAdress)
+{
+	PIKA_PERMA_ASSERT(baseAdress == nullptr, "can't allocate fixed memory in production");
+	return malloc(size);
+}
+
+void pika::ContainerManager::deallocateOSMemory(void *baseAdress)
+{
+	free(baseAdress);
+}
+
+#else
+
+#include <Windows.h>
+
+void *pika::ContainerManager::allocateOSMemory(size_t size, void *baseAdress)
+{
+	return VirtualAlloc(baseAdress, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+}
+
+void pika::ContainerManager::deallocateOSMemory(void *baseAdress)
+{
+	VirtualFree(baseAdress, 0, MEM_RELEASE);
+}
+
+
+
+#endif
+

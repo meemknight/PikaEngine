@@ -1,7 +1,7 @@
 #include <memoryArena/memoryArena.h>
 #include <malloc.h>
 
-
+//todo remove
 void pika::memory::MemoryArena::allocateStaticMemory(const ContainerInformation &containerInfo)
 {
 	containerStructMemory.size = containerInfo.containerStructBaseSize;

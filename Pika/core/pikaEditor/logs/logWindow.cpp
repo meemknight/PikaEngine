@@ -11,7 +11,7 @@ void pika::LogWindow::init()
 
 void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 {
-	ImGui::PushID(EditorImguiIds::logWindow);
+	ImGui::PushID(pikaImgui::EditorImguiIds::logWindow);
 
 	if (!ImGui::Begin(ICON_NAME, &open))
 	{

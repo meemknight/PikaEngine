@@ -28,6 +28,21 @@ namespace pika
 			std::string containerName,
 			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
 
+		containerId_t createContainerFromSnapshot(
+			std::string containerName,
+			pika::LoadedDll &loadedDll, pika::LogManager &logManager,
+			const char *fileName);
+
+		void* allocateContainerMemory(pika::RuntimeContainer &container, pika::ContainerInformation containerInformation, void *memPos = 0);
+
+		//buffer should have the correct size
+		void allocateContainerMemoryAtBuffer(pika::RuntimeContainer &container,
+			pika::ContainerInformation containerInformation, void *buffer);
+
+
+		//deallocates memory, does not call destructors
+		void freeContainerStuff(pika::RuntimeContainer &container);
+
 		void init();
 
 		void update(
@@ -42,6 +57,8 @@ namespace pika
 		bool destroyContainer(containerId_t id, pika::LoadedDll &loadedDll,
 			pika::LogManager &logManager);
 
+		bool makeSnapshot(containerId_t id, pika::LogManager &logManager, const char* fileName);
+
 		//same as destroy container but doesn't call user destructors
 		bool forceTerminateContainer(containerId_t id, pika::LoadedDll &loadedDll,
 			pika::LogManager &logManager);
@@ -51,6 +68,10 @@ namespace pika
 
 		containerId_t idCounter = 0;
 
+		//todo move outside
+		void *allocateOSMemory(size_t size, void* baseAdress = 0);
+
+		void deallocateOSMemory(void *baseAdress);
 	};
 
 

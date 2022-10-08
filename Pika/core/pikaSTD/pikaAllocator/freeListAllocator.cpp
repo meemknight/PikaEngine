@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-//freeListAllocator.h				beta 0.2
+//freeListAllocator.h				beta 0.3
 //Copyright(c) 2020 Luta Vlad
 //https://github.com/meemknight/freeListAllocator
 //////////////////////////////////////////////////
@@ -46,7 +46,7 @@ namespace memory
 
 			static_assert(sizeof(FreeBlock) == sizeof(AllocatedBlock), "");
 
-			PIKA_PERMA_ASSERT(memorySize > 100, "Memory size must be greater than 100 bytes");
+			PIKA_PERMA_ASSERT(memorySize >= 100, "Memory size must be at least 100 bytes");
 
 			this->baseMemory = (char *)baseMemory;
 
@@ -56,8 +56,9 @@ namespace memory
 
 			if (pos % 8 != 0)
 			{
-				this->baseMemory += 8 - (pos % 8);
-				memorySize -= 8 - (pos % 8);
+				size_t newMem = ((size_t)this->baseMemory | 0b111);
+				memorySize -= (newMem)- (size_t)this->baseMemory;
+				this->baseMemory = (char*)newMem;
 			}
 
 			((FreeBlock *)this->baseMemory)->next = nullptr;

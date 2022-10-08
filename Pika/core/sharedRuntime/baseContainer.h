@@ -14,12 +14,15 @@ typedef READENTIREFILE(readEntireFile_t);
 typedef GETFILESIZE(getFileSize_t);
 #undef GETFILESIZE
 
+static constexpr size_t MaxAllocatorsCount = 128;
+
+
 //this is passed by the engine. You should not modify the data
 //this is also used by the engine to give you acces to some io functions
 struct RequestedContainerInfo
 {
 	pika::memory::FreeListAllocator *mainAllocator = {};
-
+	pika::StaticVector<pika::memory::FreeListAllocator, MaxAllocatorsCount> *bonusAllocators = {};
 
 	//readEntireFile_t *readEntireFilePointer = {};
 	//getFileSize_t *getFileSizePointer = {};
@@ -47,7 +50,6 @@ struct RequestedContainerInfo
 
 struct ContainerStaticInfo
 {
-	static constexpr size_t MaxAllocatorsCount = 128;
 
 	//this is the main heap allocator memory size
 	size_t defaultHeapMemorySize = 0;
