@@ -15,8 +15,9 @@
 #define EDIT_SHORTCUTS ICON_FK_PENCIL_SQUARE " Edit shortcuts window"
 #define CONTAINERS_SHORTCUTS ICON_FK_MICROCHIP " Containers window"
 #define RELOAD_DLL_SHORTCUTS ICON_FK_REFRESH " Reload dll"
+#define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE "Transparent Editor window"
 
-void pika::Editor::init(pika::ShortcutManager &shortcutManager)
+void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager)
 {
 
 	shortcutManager.registerShortcut(DOCK_MAIN_WINDOW_SHORTCUT, "Ctrl+Alt+D", &optionsFlags.hideMainWindow);
@@ -24,10 +25,11 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager)
 	shortcutManager.registerShortcut(EDIT_SHORTCUTS, "", &windowFlags.editShortcutsWindow);
 	shortcutManager.registerShortcut(CONTAINERS_SHORTCUTS, "Ctrl+M", &windowFlags.containerManager);
 	shortcutManager.registerShortcut(RELOAD_DLL_SHORTCUTS, "Ctrl+Alt+R", &shouldReloadDll);
+	shortcutManager.registerShortcut(TRANSPARENT_EDITOR_WINDOW, "Ctrl+Alt+T", &windowFlags.transparentWindow);
 
 
 	logWindow.init();
-	editShortcutsWindow.init();
+	editShortcutsWindow.init(imguiIDManager);
 	containersWindow.init();
 }
 
@@ -148,10 +150,9 @@ void pika::Editor::update(const pika::Input &input,
 
 					pika::pikaImgui::displayMemorySizeToggle();
 
-					//todo
-					//ImGui::MenuItem(pika::EditShortcutsWindow::ICON_NAME,
-					//	shortcutManager.getShortcut(EDIT_SHORTCUTS), &windowFlags.editShortcutsWindow);
-					//transparentWindow
+					ImGui::MenuItem(TRANSPARENT_EDITOR_WINDOW,
+						shortcutManager.getShortcut(TRANSPARENT_EDITOR_WINDOW), 
+						&windowFlags.transparentWindow);
 
 					ImGui::EndMenu();
 				}
@@ -169,6 +170,16 @@ void pika::Editor::update(const pika::Input &input,
 
 	}
 
+	if (windowFlags.transparentWindow)
+	{
+		ImGuiStyle &style = ::ImGui::GetStyle();
+		style.Colors[ImGuiCol_WindowBg].w = 0.f;
+	}
+	else
+	{
+		ImGuiStyle &style = ::ImGui::GetStyle();
+		style.Colors[ImGuiCol_WindowBg].w = 1.f;
+	}
 
 #pragma region log window
 	if (windowFlags.logsWindow)

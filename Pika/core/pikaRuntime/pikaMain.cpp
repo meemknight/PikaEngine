@@ -139,8 +139,8 @@ int main()
 
 #pragma region editor
 #if !PIKA_SHOULD_REMOVE_EDITOR
-	pika::Editor editor; //todo remove editor in production
-	editor.init(shortcutManager);
+	pika::Editor editor; 
+	editor.init(shortcutManager, imguiIdsManager);
 #endif
 #pragma endregion
 

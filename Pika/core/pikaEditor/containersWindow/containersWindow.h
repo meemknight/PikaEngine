@@ -20,6 +20,9 @@ namespace pika
 		static constexpr char *NAME = "Containers manager";
 		static constexpr char *ICON_NAME = ICON_FK_MICROCHIP " Containers manager";
 
+		char filterContainerInfo[50] = {};
+		char filterSnapshots[50] = {};
+		char snapshotName[50] = {};
 
 		int itemCurrentAvailableCOntainers = 0;
 		int itemCurrentCreatedContainers = 0;

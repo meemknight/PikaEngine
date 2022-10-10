@@ -111,7 +111,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::Text("Static Memory requirement: ");
 								ImGui::SameLine();
 								pika::pikaImgui::displayMemorySizeValue(c.containerStructBaseSize);
-								//todo select memory unit
 
 								ImGui::Text("Default Heap Memory requirement: ");
 								ImGui::SameLine();
@@ -208,10 +207,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 3);
 				ImGui::BeginGroup();
 				{
-
-					static char filter[256] = {}; //todo move
-
-
 					
 					containerIds.reserve(containerManager.runningContainers.size());
 					containerNames.reserve(containerManager.runningContainers.size());
@@ -227,7 +222,8 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 					contentSize.y -= ImGui::GetFrameHeightWithSpacing();
 					contentSize.x /= 2;
 
-					ImGui::ListWithFilter("##list box container info", &itemCurrentCreatedContainers, filter, sizeof(filter),
+					ImGui::ListWithFilter("##list box container info", &itemCurrentCreatedContainers, 
+						filterContainerInfo, sizeof(filterContainerInfo),
 						containerNames, contentSize);
 
 
@@ -327,7 +323,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 							ImGui::Separator();
 
-							static char snapshotName[50] = {};
 
 
 							if (ImGui::Button(ICON_FK_CAMERA))
@@ -355,7 +350,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 							ImGui::SameLine();
 
-							//todo move
 
 							ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
 
@@ -365,7 +359,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 						#pragma region snapshots
 							{
-								static char filter[256] = {}; //todo move
 								static int currentSelectedSnapshot = 0;
 
 								auto snapshots = pika::getAvailableSnapshots(
@@ -376,7 +369,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								contentSize.x /= 2;
 
 								ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
-									filter, sizeof(filter),
+									filterSnapshots, sizeof(filterSnapshots),
 									snapshots, contentSize);
 
 								ImGui::SameLine();

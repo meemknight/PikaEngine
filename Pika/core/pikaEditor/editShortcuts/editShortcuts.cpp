@@ -2,8 +2,9 @@
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
 
-void pika::EditShortcutsWindow::init()
+void pika::EditShortcutsWindow::init(pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
+	imguiId = imguiIdManager.getImguiIds();
 }
 
 void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, bool &open)
@@ -23,8 +24,7 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 		
 		ImGui::Text("Edit shortcuts\n");
 
-		//todo unique id
-		if (ImGui::BeginChild(12, {}, true))
+		if (ImGui::BeginChild(imguiId, {}, true))
 		{
 
 

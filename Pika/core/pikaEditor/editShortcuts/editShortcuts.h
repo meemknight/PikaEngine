@@ -1,6 +1,7 @@
 #pragma once
 #include <IconsForkAwesome.h>
 #include <shortcutApi/shortcutApi.h>
+#include <pikaImgui/pikaImgui.h>
 
 namespace pika
 {
@@ -9,7 +10,7 @@ namespace pika
 	{
 
 
-		void init();
+		void init(pika::pikaImgui::ImGuiIdsManager &imguiIdManager);
 
 		void update(pika::ShortcutManager &shortcutManager, bool &open);
 
@@ -17,6 +18,7 @@ namespace pika
 		static constexpr char *NAME = "Edit Shortcuts...";
 		static constexpr char *ICON_NAME = ICON_FK_PENCIL_SQUARE " Edit Shortcuts...";
 
+		int imguiId = 0;
 	};
 
 
