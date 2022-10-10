@@ -4,18 +4,18 @@
 #include <cstdio>
 #include <assert.h>
 #include <logs/log.h>
-
+#include <compilerIntrinsics.h>
 
 namespace pika
 {
 
 	namespace assert
 	{
-
+		//todo noreturn
 		inline void terminate(...)
 		{
 			std::abort();
-			__assume(0); //optimize code after the exit
+			PIKA_UNREACHABLE(); //optimize code after the exit
 		}
 
 

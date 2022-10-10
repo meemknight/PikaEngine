@@ -37,7 +37,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 			{
 				ImGui::Text("Available containers");
 				ImGui::Separator();
-				static int itemCurrent;//todo move
 
 				//left
 				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow+1);
@@ -58,7 +57,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 					contentSize.y -= ImGui::GetFrameHeightWithSpacing();
 					contentSize.x /= 2;
 
-					ImGui::ListWithFilter("##list box container info", &itemCurrent, filter, sizeof(filter),
+					ImGui::ListWithFilter("##list box container info", &itemCurrentAvailableCOntainers, filter, sizeof(filter),
 						containerNames, contentSize);
 
 
@@ -72,9 +71,9 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 2);
 				ImGui::BeginGroup();
 				{
-					if (itemCurrent < loadedDll.containerInfo.size())
+					if (itemCurrentAvailableCOntainers < loadedDll.containerInfo.size())
 					{
-						auto &c = loadedDll.containerInfo[itemCurrent];
+						auto &c = loadedDll.containerInfo[itemCurrentAvailableCOntainers];
 
 						ImGui::Text("Container info: %s", c.containerName.c_str());
 						ImGui::Separator();
@@ -202,8 +201,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 				ImGui::Separator();
 			
-				static int itemCurrent;//todo move
-
 				//left
 				std::vector<pika::containerId_t> containerIds;
 				std::vector<std::string> containerNames;
@@ -212,7 +209,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::BeginGroup();
 				{
 
-					static char filter[256] = {};
+					static char filter[256] = {}; //todo move
 
 
 					
@@ -230,7 +227,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 					contentSize.y -= ImGui::GetFrameHeightWithSpacing();
 					contentSize.x /= 2;
 
-					ImGui::ListWithFilter("##list box container info", &itemCurrent, filter, sizeof(filter),
+					ImGui::ListWithFilter("##list box container info", &itemCurrentCreatedContainers, filter, sizeof(filter),
 						containerNames, contentSize);
 
 
@@ -244,12 +241,12 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 4);
 				ImGui::BeginGroup();
 				{
-					if (itemCurrent < containerIds.size())
+					if (itemCurrentCreatedContainers < containerIds.size())
 					{
-						auto &c = containerManager.runningContainers[containerIds[itemCurrent]];
+						auto &c = containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]];
 
 						
-						ImGui::Text("Running container: %s #%u", c.baseContainerName, containerIds[itemCurrent]);
+						ImGui::Text("Running container: %s #%u", c.baseContainerName, containerIds[itemCurrentCreatedContainers]);
 						ImGui::Separator();
 
 					#pragma region buttons
@@ -299,7 +296,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 						if (ImGui::Button(ICON_FK_STOP))
 						{
 							//todo mabe defer here when api is made
-							containerManager.destroyContainer(containerIds[itemCurrent], loadedDll, logManager);
+							containerManager.destroyContainer(containerIds[itemCurrentCreatedContainers], loadedDll, logManager);
 							stopped = true;
 						}
 						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -311,7 +308,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 						if (ImGui::Button(ICON_FK_EJECT))
 						{
-							containerManager.forceTerminateContainer(containerIds[itemCurrent], loadedDll, logManager);
+							containerManager.forceTerminateContainer(containerIds[itemCurrentCreatedContainers], loadedDll, logManager);
 							stopped = true;
 						}
 						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -337,7 +334,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							{
 								if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
 								{
-									if (!containerManager.makeSnapshot(containerIds[itemCurrent], logManager, snapshotName))
+									if (!containerManager.makeSnapshot(containerIds[itemCurrentCreatedContainers], logManager, snapshotName))
 									{
 										logManager.log("Coultn't make snapshot", pika::logError);
 									}else
@@ -363,6 +360,56 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
 
 
+							ImGui::NewLine();
+							ImGui::Separator();
+
+						#pragma region snapshots
+							{
+								static char filter[256] = {}; //todo move
+								static int currentSelectedSnapshot = 0;
+
+								auto snapshots = pika::getAvailableSnapshots(
+									containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]]);
+
+								auto contentSize = ImGui::GetItemRectSize();
+								contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+								contentSize.x /= 2;
+
+								ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
+									filter, sizeof(filter),
+									snapshots, contentSize);
+
+								ImGui::SameLine();
+
+								if (snapshots.size() == 0 || currentSelectedSnapshot >= snapshots.size())
+								{
+									ImGui::BeginDisabled(true);
+								}
+								else
+								{
+									ImGui::BeginDisabled(false);
+								}
+
+								if(ImGui::Button(ICON_FK_PLAY "##play snapshot"))
+								{
+									if (!containerManager.setSnapshotToContainer(
+										containerIds[itemCurrentCreatedContainers],
+										snapshots[currentSelectedSnapshot].c_str(), logManager
+										))
+									{
+										logManager.log("Failed to assign snapshot", pika::logError);
+									}
+								}
+
+								ImGui::EndDisabled();
+
+								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+								{
+									ImGui::SetTooltip("Play this snapshot to this container");
+								}
+
+							}
+						#pragma endregion
 
 						}
 					}

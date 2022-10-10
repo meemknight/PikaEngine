@@ -83,6 +83,8 @@ void pika::Editor::update(const pika::Input &input,
 	
 		ImGui::PushID(pika::pikaImgui::EditorImguiIds::mainEditorWindow);
 
+		ImGui::SetNextWindowBgAlpha(0);
+
 		if (ImGui::Begin(
 			"Main window",
 			/*p_open=*/nullptr,
@@ -144,6 +146,12 @@ void pika::Editor::update(const pika::Input &input,
 					ImGui::MenuItem(pika::EditShortcutsWindow::ICON_NAME,
 						shortcutManager.getShortcut(EDIT_SHORTCUTS), &windowFlags.editShortcutsWindow);
 
+					pika::pikaImgui::displayMemorySizeToggle();
+
+					//todo
+					//ImGui::MenuItem(pika::EditShortcutsWindow::ICON_NAME,
+					//	shortcutManager.getShortcut(EDIT_SHORTCUTS), &windowFlags.editShortcutsWindow);
+					//transparentWindow
 
 					ImGui::EndMenu();
 				}

@@ -4,6 +4,7 @@
 #include "IconsForkAwesome.h"
 #include <pikaAllocator/freeListAllocator.h>
 #include <logs/assert.h>
+#include <compilerIntrinsics.h>
 
 #if !(PIKA_SHOULD_REMOVE_IMGUI)
 
@@ -169,18 +170,31 @@ static int sizesType = 0;
 void pika::pikaImgui::displayMemorySizeValue(size_t value)
 {
 
-	const char *items[] = 
-	{"Bytes", 
-		"KB",
-		"MB",
-		"GB",
-		"TB"};
+	switch (sizesType)
+	{
+	case 0:
+		ImGui::Text("%" IM_PRIu64 " (bytes)", value);
+		break;
+	case 1:
+		ImGui::Text("%f (KB)", pika::BYTES_TO_KB(value));
+		break;
+	case 2:
+		ImGui::Text("%f (MB)", pika::BYTES_TO_MB(value));
+		break;
+	case 3:
+		ImGui::Text("%f (GB)", pika::BYTES_TO_GB(value));
+		break;
+	default:
+		PIKA_UNREACHABLE();
+	}
 
-	//ImGui::Combo("##sizes type pika", &sizesType, "Bytes\0KB\0MB\0GB\0TB\0");
+	//ImGui::Text("%" IM_PRIu64 " (bytes)", value); 
 
-	ImGui::Text("%" IM_PRIu64 " (bytes)", value);
+}
 
-
+void pika::pikaImgui::displayMemorySizeToggle()
+{
+	ImGui::Combo("Sizes type##pika", &sizesType, "Bytes\0KB\0MB\0GB\0");
 }
 
 

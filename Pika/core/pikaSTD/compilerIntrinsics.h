@@ -25,6 +25,12 @@
 	#define PIKA_ASSUME(x)
 #endif
 
+//assume unreachable //todo for other compilers
+#ifdef PIKA_MSVC
+#define PIKA_UNREACHABLE() __assume((0))
+#else
+#define PIKA_UNREACHABLE()
+#endif
 
 
 //optimize off

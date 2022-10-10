@@ -103,7 +103,7 @@ namespace pika
 
 			for (int i = 0; i < size_; i++)
 			{
-				if ((*this)[i] != other[i])
+				if ( (*this)[i] != other[i])
 				{
 					return false;
 				}

@@ -5,7 +5,7 @@ namespace pika
 {
 
 	size_t getFileSize(const char *name);
-	bool readEntireFile(const char* name, void *buffer, size_t s);
+	size_t readEntireFile(const char* name, void *buffer, size_t s, size_t from = 0);
 
 	bool writeEntireFile(const char *name, void *buffer, size_t s);
 

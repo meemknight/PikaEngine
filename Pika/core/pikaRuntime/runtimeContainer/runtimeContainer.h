@@ -26,7 +26,6 @@ struct RuntimeContainer
 
 	//this is the allocator of the arena.
 	pika::memory::FreeListAllocator allocator = {};
-	size_t allocatorSize = 0;
 	size_t totalSize = 0;
 
 	//bonus allocators

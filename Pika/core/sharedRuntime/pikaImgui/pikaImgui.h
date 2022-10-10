@@ -71,5 +71,8 @@ namespace pika
 		
 		void displayMemorySizeValue(size_t value);
 
+		//todo move to internal
+		void displayMemorySizeToggle();
+
 	};
 };

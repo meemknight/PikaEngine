@@ -28,10 +28,8 @@ namespace pika
 			std::string containerName,
 			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
 
-		containerId_t createContainerFromSnapshot(
-			std::string containerName,
-			pika::LoadedDll &loadedDll, pika::LogManager &logManager,
-			const char *fileName);
+		bool setSnapshotToContainer(pika::containerId_t containerId, const char* snapshotName,
+			pika::LogManager &logManager);
 
 		void* allocateContainerMemory(pika::RuntimeContainer &container, pika::ContainerInformation containerInformation, void *memPos = 0);
 
@@ -75,6 +73,8 @@ namespace pika
 	};
 
 
+	std::vector<std::string> getAvailableSnapshots(pika::RuntimeContainer &info);
 
+	bool checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char *snapshotName);
 
 }

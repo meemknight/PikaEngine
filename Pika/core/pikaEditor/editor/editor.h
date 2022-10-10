@@ -44,6 +44,8 @@ namespace pika
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 
 		bool shouldReloadDll = 0;
+
+		bool transparentWindow = 1;
 	};
 
 

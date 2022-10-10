@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <fileManipulation/fileManipulation.h>
 #include <stringManipulation/stringManipulation.h>
+#include <filesystem>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager)
@@ -28,15 +29,43 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 	return 0;
 }
 
-pika::containerId_t 
-pika::ContainerManager::createContainerFromSnapshot(std::string containerName, pika::LoadedDll &loadedDll, pika::LogManager &logManager, const char *fileName)
+bool pika::ContainerManager::setSnapshotToContainer(pika::containerId_t containerId, const char *snapshotName, pika::LogManager &logManager)
 {
-	
+	auto c = runningContainers.find(containerId);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for setting snapshot: #") 
+			+ std::to_string(containerId)).c_str(),
+			pika::logError);
+		return false;
+	}
 
+	if (!checkIfSnapshotIsCompatible(c->second, snapshotName))
+	{
+		logManager.log((std::string("Snapshot incompatible: ") + snapshotName).c_str(),
+			pika::logError);
+		return false;
+	}
+	
+	std::string file = PIKA_ENGINE_RESOURCES_PATH;
+	file += snapshotName;
+	file += ".snapshot";
 
-	
-	
-	return containerId_t();
+	auto s = pika::getFileSize(file.c_str());
+
+	if (s != (c->second.totalSize + sizeof(pika::RuntimeContainer)) ) 
+	{
+		logManager.log((std::string("Snapshot corrupted probably, file size incorrect: ") 
+			+ snapshotName).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	pika::readEntireFile(file.c_str(), c->second.getBaseAdress(),
+		c->second.totalSize, sizeof(pika::RuntimeContainer));
+
+	logManager.log("Loaded snapshot");
+	return true;
 }
 
 //todo use regions further appart in production
@@ -538,3 +567,75 @@ void pika::ContainerManager::deallocateOSMemory(void *baseAdress)
 
 #endif
 
+std::vector<std::string> pika::getAvailableSnapshots(pika::RuntimeContainer &info)
+{
+	std::vector<std::string> files;
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".snapshot"
+			)
+		{
+			if (pika::checkIfSnapshotIsCompatible(info, iter.path().stem().string().c_str()))
+			{
+				files.push_back(iter.path().stem().string());
+			}
+
+		}
+	}
+
+	return files;
+}
+
+bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char *snapshotName)
+{
+
+	std::string file = PIKA_ENGINE_RESOURCES_PATH;
+	file += snapshotName;
+	file += ".snapshot";
+	
+	pika::RuntimeContainer loadedInfo = {};
+
+	auto s = pika::readEntireFile(file.c_str(), &loadedInfo, sizeof(loadedInfo));
+
+	if (s != sizeof(loadedInfo))
+	{
+		return 0;
+	}
+
+	//todo mabe a method here?
+	if (loadedInfo.allocator.originalBaseMemory != info.allocator.originalBaseMemory)
+	{
+		return false;
+	}
+
+	if (loadedInfo.arena.containerStructMemory.block != info.arena.containerStructMemory.block)
+	{
+		return false;
+	}
+
+	if (loadedInfo.arena.containerStructMemory.size != info.arena.containerStructMemory.size)
+	{
+		return false;
+	}
+
+	if (std::strcmp(loadedInfo.baseContainerName, info.baseContainerName) != 0)
+	{
+		return false;
+	}
+
+	if (loadedInfo.requestedContainerInfo.bonusAllocators != info.requestedContainerInfo.bonusAllocators)
+	{
+		return false;
+	}
+
+	if (loadedInfo.totalSize != info.totalSize)
+	{
+		return false;
+	}
+		
+	return true;
+}
