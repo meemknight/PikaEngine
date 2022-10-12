@@ -9,7 +9,7 @@ void pika::ContainersWindow::init()
 }
 
 void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
-	pika::ContainerManager &containerManager)
+	pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager)
 {
 	//todo imgui firsttime stuff for all windows
 	ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow);
@@ -145,20 +145,78 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							{
 								ImGui::NewLine();
 
+
 								if (!selectedContainerToLaunch.empty()
 									&& ImGui::Button(ICON_FK_PLAY " Launch a default configuration"))
 								{
-									containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
+									if (createAtSpecificMemoryRegion)
+									{
+										containerManager.createContainer(selectedContainerToLaunch, loadedDll,
+											logManager, imguiIdsManager, pika::TB(1));
+									}
+									else
+									{
+										containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager,
+											imguiIdsManager);
+									}
 								}
 
-								ImGui::NewLine();
+								ImGui::Checkbox("allocate at specific memory region", &createAtSpecificMemoryRegion);
 
 
-								if (!selectedContainerToLaunch.empty()
-									&& ImGui::Button(ICON_FK_PICTURE_O " Launch a snapshot"))
+								//ImGui::NewLine();
+
 								{
-									//containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager);
+									static int currentSelectedSnapshot = 0;
+									auto snapshots = pika::getAvailableSnapshotsAnyMemoryPosition(c);
+
+									if (!selectedContainerToLaunch.empty()
+										&& ImGui::Button(ICON_FK_PICTURE_O " Launch a snapshot"))
+									{
+										auto s = snapshots[currentSelectedSnapshot];
+
+										auto memPos = getSnapshotMemoryPosition(s.c_str());
+
+										if (memPos == nullptr)
+										{
+											logManager.log("Failes to get snapshot info", pika::logError);
+										}
+										else
+										{
+
+											auto c = containerManager.createContainer(
+												selectedContainerToLaunch, loadedDll, logManager,
+												imguiIdsManager, (size_t)memPos);
+
+											//no need to log error since create container does that
+											if (c != 0)
+											{
+												if (!containerManager.setSnapshotToContainer(c,
+													s.c_str(), logManager))
+												{
+													containerManager.destroyContainer(c, loadedDll, logManager);
+												}
+											}
+
+
+										}
+
+										
+									
+									
+									}
+
+
+									auto contentSize = ImGui::GetItemRectSize();
+									contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+									//contentSize.x /= 2;
+
+									ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
+										filterSnapshots, sizeof(filterSnapshots),
+										snapshots, contentSize);
 								}
+
+								
 
 								ImGui::EndTabItem();
 							}
@@ -260,11 +318,11 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							pika::pikaImgui::alignForWidth(width);
 						}
 
-						if (c.flags.running)
+						if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING)
 						{
 							if (ImGui::Button(ICON_FK_PAUSE))
 							{
-								c.flags.running = 0;
+								c.flags.status = pika::RuntimeContainer::FLAGS::STATUS_PAUSE;
 							}
 
 							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -272,11 +330,11 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::SetTooltip("Pause container.");
 							}
 						}
-						else
+						else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_PAUSE)
 						{
 							if (ImGui::Button(ICON_FK_PLAY))
 							{
-								c.flags.running = 1;
+								c.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
 							}
 
 							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -284,6 +342,20 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::SetTooltip("Resume container.");
 							}
 						}
+						else
+						{
+							ImGui::BeginDisabled();
+							if (ImGui::Button(ICON_FK_PAUSE))
+							{
+							}
+							ImGui::EndDisabled();
+
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							{
+								ImGui::SetTooltip("Can't pause container while it is recorded."); //todo implement
+							}
+						}
+
 
 						ImGui::SameLine();
 
@@ -324,34 +396,48 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							ImGui::Separator();
 
 
-
-							if (ImGui::Button(ICON_FK_CAMERA))
 							{
-								if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
+								if (ImGui::Button(ICON_FK_CAMERA))
 								{
-									if (!containerManager.makeSnapshot(containerIds[itemCurrentCreatedContainers], logManager, snapshotName))
+									if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
 									{
-										logManager.log("Coultn't make snapshot", pika::logError);
-									}else
-									{
-										logManager.log("Successfully created snapshot.");
+										if (!containerManager.makeSnapshot(containerIds[itemCurrentCreatedContainers], logManager, snapshotName))
+										{
+											logManager.log("Coultn't make snapshot", pika::logError);
+										}
+										else
+										{
+											logManager.log("Successfully created snapshot.");
+										}
 									}
+									else
+									{
+										logManager.log("File name invalid", pika::logError);
+									}
+
 								}
-								else
+								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 								{
-									logManager.log("File name invalid", pika::logError);
+									ImGui::SetTooltip("Make snapshot");
 								}
 
+								ImGui::SameLine();
+								ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
 							}
-							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+
+							//recording
 							{
-								ImGui::SetTooltip("Make snapshot");
+								if (ImGui::Button(ICON_FK_VIDEO_CAMERA))
+								{
+
+								}
+								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+								{
+									ImGui::SetTooltip("start recording");
+								}
+								ImGui::SameLine();
+								ImGui::InputText("recording name", recordingName, sizeof(recordingName));
 							}
-
-							ImGui::SameLine();
-
-
-							ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
 
 
 							ImGui::NewLine();
@@ -359,7 +445,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 						#pragma region snapshots
 							{
-								static int currentSelectedSnapshot = 0;
+								static int currentSelectedSnapshot = 0; //todo move
 
 								auto snapshots = pika::getAvailableSnapshots(
 									containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]]);

@@ -44,7 +44,7 @@ struct ImmageViewer: public Container
 		//new int[100];
 	}
 
-	void update(pika::Input input, float deltaTime, pika::WindowState windowState,
+	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
 

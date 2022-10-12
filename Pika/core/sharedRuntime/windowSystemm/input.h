@@ -34,6 +34,7 @@ namespace pika
 		//true in the first frame is pressed then after a pause true every few milliseconds
 		PIKA_ADD_FLAG(typed, setTyped, 3);
 
+		//todo implement
 		//true if the key is double pressed (true only for one frame, 3 presses would yield only one frame of this being true)
 		PIKA_ADD_FLAG(doublePressed, setDoublePressed, 4);
 
@@ -55,6 +56,7 @@ namespace pika
 
 	struct Input
 	{
+		//typed input doesn't work with mouse buttons
 		Button lMouse = {};
 		Button rMouse = {};
 
@@ -63,7 +65,8 @@ namespace pika
 		int mouseY = 0;
 
 		Button buttons[Button::BUTTONS_COUNT] = {};
-
+		
+		float deltaTime = 0;
 	};
 
 	

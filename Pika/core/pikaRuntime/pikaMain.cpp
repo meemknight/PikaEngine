@@ -146,7 +146,7 @@ int main()
 
 	
 	auto container = containerManager.createContainer
-		(loadedDll.containerInfo[0], loadedDll, logs);
+		(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager);
 
 	while (!shouldClose)
 	{
@@ -162,28 +162,34 @@ int main()
 	#pragma endregion
 
 	#pragma region clear screen
-	#if PIKA_CLEAR_SCREEN_BY_ENGINE && PIKA_CLEAR_DEPTH_BY_ENGINE 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	#elif PIKA_CLEAR_SCREEN_BY_ENGINE
+
+	#if PIKA_PRODUCTION
+		#if PIKA_CLEAR_SCREEN_BY_ENGINE_IN_PRODUCTION && PIKA_CLEAR_DEPTH_BY_ENGINE _IN_PRODUCTION
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		#elif PIKA_CLEAR_SCREEN_BY_ENGINE_IN_PRODUCTION
+			glClear(GL_COLOR_BUFFER_BIT);
+		#elif PIKA_CLEAR_DEPTH_BY_ENGINE_IN_PRODUCTION
+			glClear(GL_DEPTH_BUFFER_BIT);
+		#endif
+
+	#else
+
 		glClear(GL_COLOR_BUFFER_BIT);
-	#elif PIKA_CLEAR_DEPTH_BY_ENGINE
-		glClear(GL_DEPTH_BUFFER_BIT);
+
 	#endif
+
+
+
 	#pragma endregion
 
 	#pragma region editor stuff
 	#if !PIKA_SHOULD_REMOVE_EDITOR
 		editor.update(window.input, shortcutManager, logs, 
-			pushNotificationManager, loadedDll, containerManager);
+			pushNotificationManager, loadedDll, containerManager, imguiIdsManager);
 	#endif
 	#pragma endregion
 
-	#pragma region push notification
-	#if !(PIKA_SHOULD_REMOVE_PUSH_NOTIFICATIONS)
-		static bool pushNoticicationOpen = true;
-		pushNotificationManager.update(pushNoticicationOpen);
-	#endif
-	#pragma endregion
+
 
 	#pragma region container manager
 
@@ -199,6 +205,13 @@ int main()
 
 	#pragma endregion
 
+	#pragma region push notification
+	#if !(PIKA_SHOULD_REMOVE_PUSH_NOTIFICATIONS)
+		static bool pushNoticicationOpen = true;
+		pushNotificationManager.update(pushNoticicationOpen);
+	#endif
+	#pragma endregion
+
 	#pragma region end imgui frame
 		pika::pikaImgui::imguiEndFrame(window.context);
 	#pragma endregion
@@ -207,14 +220,31 @@ int main()
 		window.update();
 	#pragma endregion
 
+
 	#pragma region shortcut manager update
 		shortcutManager.update(window.input);
 	#pragma endregion
 	
+	#if !PIKA_SHOULD_REMOVE_EDITOR
+		editor.saveFlagsData();
+	#endif
+
+	window.saveWindowPositions();
+
 	}
+
+	#if !PIKA_SHOULD_REMOVE_EDITOR
+		editor.saveFlagsData();
+	#endif
+
+	//todo flag?
+	window.saveWindowPositions();
+
 
 	containerManager.destroyAllContainers(loadedDll, logs);
 
+	
+	
 
 	//terminate();
 

@@ -5,6 +5,7 @@
 void pika::EditShortcutsWindow::init(pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
 	imguiId = imguiIdManager.getImguiIds();
+	//todo save shortcuts
 }
 
 void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, bool &open)

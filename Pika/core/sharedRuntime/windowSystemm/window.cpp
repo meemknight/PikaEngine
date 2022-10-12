@@ -10,10 +10,28 @@
 
 #include <pikaSizes.h>
 
+#include <safeSave.h>
+
+struct WindowRect
+{
+	int x = 100, y = 100, z = 640, w = 480;
+};
+
 void pika::PikaWindow::create()
 {
-	context.wind = glfwCreateWindow(640, 480, "Pika", NULL, NULL);
-	
+
+	WindowRect wr = {};
+
+#if PIKA_DEVELOPMENT
+	if (sfs::safeLoad(&wr, sizeof(wr), PIKA_ENGINE_SAVES_PATH "windowPos", false) != sfs::noError)
+	{
+		wr = {};
+	}
+#endif
+
+	context.wind = glfwCreateWindow(wr.z, wr.w, "Pika", NULL, NULL);
+	glfwSetWindowPos(context.wind, wr.x, wr.y);
+
 	windowState.hasFocus = true;
 
 	PIKA_PERMA_ASSERT(context.wind, "problem initializing window");
@@ -50,6 +68,23 @@ void pika::PikaWindow::create()
 	timer = std::chrono::high_resolution_clock::now();
 }
 
+void pika::PikaWindow::saveWindowPositions()
+{
+#if PIKA_DEVELOPMENT
+
+	WindowRect wr = {};
+
+	glfwGetWindowPos(context.wind, &wr.x, &wr.y);
+
+	wr.z = windowState.w;
+	wr.w = windowState.h;
+
+	sfs::safeSave(&wr, sizeof(wr), PIKA_ENGINE_SAVES_PATH "windowPos", false);
+
+#endif
+
+}
+
 bool pika::PikaWindow::shouldClose()
 {
 	return glfwWindowShouldClose(context.wind);
@@ -59,10 +94,10 @@ void pika::PikaWindow::update()
 {
 #pragma region deltaTime
 	auto end = std::chrono::high_resolution_clock::now();
-	deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(end - timer)).count() / 1000000.0f;
+	input.deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(end - timer)).count() / 1000000.0f;
 	timer = end;
 
-	if (deltaTime > 1.f / 10) { deltaTime = 1.f / 10; }
+	if (input.deltaTime > 1.f / 10) { input.deltaTime = 1.f / 10; }
 #pragma endregion
 
 #pragma region input
@@ -115,6 +150,7 @@ void pika::PikaWindow::update()
 		if (!b.lastState() && b.held())
 		{
 			b.setPressed(true);
+			b.setTyped(true);
 		}
 		else
 		{

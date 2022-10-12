@@ -9,6 +9,7 @@
 #include "IconsForkAwesome.h"
 #include "shortcutApi/shortcutApi.h"
 #include <editShortcuts/editShortcuts.h>
+#include <safeSave.h>
 
 #define DOCK_MAIN_WINDOW_SHORTCUT ICON_FK_EYE_SLASH " Hide main window"
 #define LOGS_SHORTCUT ICON_FK_COMMENT_O " Logs window"
@@ -31,6 +32,19 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	logWindow.init();
 	editShortcutsWindow.init(imguiIDManager);
 	containersWindow.init();
+
+	
+	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
+	{
+		optionsFlags = {};
+	}
+
+	if (sfs::safeLoad(&windowFlags, sizeof(windowFlags), PIKA_ENGINE_SAVES_PATH "window", false) != sfs::noError)
+	{
+		windowFlags = {};
+	}
+	
+
 }
 
 
@@ -38,7 +52,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 void pika::Editor::update(const pika::Input &input,
 	pika::ShortcutManager &shortcutManager, pika::LogManager &logs, 
 	pika::PushNotificationManager &pushNotificationManager, pika::LoadedDll &loadedDll
-	,pika::ContainerManager &containerManager)
+	,pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager)
 {
 
 #pragma region push notification if hide window
@@ -198,11 +212,21 @@ void pika::Editor::update(const pika::Input &input,
 #pragma region containers window
 	if (windowFlags.containerManager)
 	{
-		containersWindow.update(logs, windowFlags.containerManager, loadedDll, containerManager);
+		containersWindow.update(logs, windowFlags.containerManager, 
+			loadedDll, containerManager, imguiIDsManager);
 	}
 #pragma endregion
 
 
+
+
+}
+
+void pika::Editor::saveFlagsData()
+{
+
+	sfs::safeSave(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false);
+	sfs::safeSave(&windowFlags, sizeof(windowFlags), PIKA_ENGINE_SAVES_PATH "window", false);
 
 
 }

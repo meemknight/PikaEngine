@@ -5,6 +5,7 @@
 #include <string>
 #include <pikaAllocator/freeListAllocator.h>
 #include <staticVector.h>
+#include <pikaGL/frameBuffer.h>
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
 typedef READENTIREFILE(readEntireFile_t);
@@ -27,6 +28,9 @@ struct RequestedContainerInfo
 	//readEntireFile_t *readEntireFilePointer = {};
 	//getFileSize_t *getFileSizePointer = {};
 
+	pika::GL::PikaFramebuffer requestedFBO = {};
+
+	//todo implement
 	bool readEntireFile(const char *name, void *buffer, size_t size)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
@@ -56,6 +60,10 @@ struct ContainerStaticInfo
 	
 	pika::StaticVector<size_t, MaxAllocatorsCount> bonusAllocators = {};
 
+	//the engine will create a new window for your container and give you the fbo to bind to
+	//in release that fbo will just be the default framebuffer
+	bool requestImguiFbo = 0;
+
 	bool _internalNotImplemented = 0;
 
 	bool operator==(const ContainerStaticInfo &other)
@@ -65,7 +73,9 @@ struct ContainerStaticInfo
 		return
 			this->defaultHeapMemorySize == other.defaultHeapMemorySize &&
 			this->bonusAllocators == other.bonusAllocators &&
-			this->_internalNotImplemented == other._internalNotImplemented;
+			this->_internalNotImplemented == other._internalNotImplemented &&
+			this->requestImguiFbo == other.requestImguiFbo;
+			;
 	}
 
 	bool operator!=(const ContainerStaticInfo &other)
@@ -91,7 +101,6 @@ struct Container
 
 	virtual void update(
 		pika::Input input, 
-		float deltaTime, 
 		pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) = 0;
 

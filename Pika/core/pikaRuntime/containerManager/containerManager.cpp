@@ -9,9 +9,11 @@
 #include <fileManipulation/fileManipulation.h>
 #include <stringManipulation/stringManipulation.h>
 #include <filesystem>
+#include <imgui.h>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
-	pika::LoadedDll &loadedDll, pika::LogManager &logManager)
+	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
+	pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, size_t memoryPos)
 {
 	
 	for(auto &i : loadedDll.containerInfo)
@@ -19,7 +21,7 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 		
 		if (i.containerName == containerName)
 		{
-			return createContainer(i, loadedDll, logManager);
+			return createContainer(i, loadedDll, logManager, imguiIDsManager, memoryPos);
 		}
 
 	}
@@ -133,7 +135,8 @@ void pika::ContainerManager::freeContainerStuff(pika::RuntimeContainer &containe
 
 pika::containerId_t pika::ContainerManager::createContainer
 (pika::ContainerInformation containerInformation,
-	pika::LoadedDll &loadedDll, pika::LogManager &logManager)
+	pika::LoadedDll &loadedDll, pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager,
+	size_t memoryPos)
 {	
 	containerId_t id = ++idCounter;
 	
@@ -150,12 +153,19 @@ pika::containerId_t pika::ContainerManager::createContainer
 	pika::strlcpy(container.baseContainerName, containerInformation.containerName,
 		sizeof(container.baseContainerName));
 	
-	if (!allocateContainerMemory(container, containerInformation))
+	if (!allocateContainerMemory(container, containerInformation, (void*)memoryPos))
 	{
 		logManager.log((std::string("Couldn't allocate memory for constructing container: #") 
 			+ std::to_string(id)).c_str(), pika::logError);
 		return 0;
 	}
+
+	if (containerInformation.containerStaticInfo.requestImguiFbo)
+	{
+		container.requestedContainerInfo.requestedFBO.createFramebuffer(400, 400); //todo resize small or sthing
+		container.imguiWindowId = imguiIDsManager.getImguiIds();
+	}
+
 
 	loadedDll.bindAllocatorDllRealm(&container.allocator);
 	
@@ -167,6 +177,8 @@ pika::containerId_t pika::ContainerManager::createContainer
 		logManager.log((std::string("Couldn't construct container: #") + std::to_string(id)).c_str(), pika::logError);
 
 		freeContainerStuff(container);
+
+		container.requestedContainerInfo.requestedFBO.deleteFramebuffer();
 
 		return 0;
 	}
@@ -211,7 +223,10 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	{
 		reloadDll(loadedDll, window, logs); //todo return 0 on fail
 
-		//todo
+		//todo mark shouldCallReaload
+		
+
+
 		//for (auto &c : runningContainers)
 		//{
 		//	if (c.second.flags.running)
@@ -282,11 +297,66 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	for (auto &c : runningContainers)
 	{
 
-		if (c.second.flags.running)
+		if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING
+			||
+			c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED
+			)
 		{
-			loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-			c.second.pointer->update(window.input, window.deltaTime, window.windowState, c.second.requestedContainerInfo);
-			loadedDll.resetAllocatorDllRealm();
+			
+			PIKA_DEVELOPMENT_ONLY_ASSERT(
+				(c.second.requestedContainerInfo.requestedFBO.fbo == 0 &&
+				c.second.imguiWindowId == 0) ||
+				(
+				c.second.requestedContainerInfo.requestedFBO.fbo != 0 &&
+				c.second.imguiWindowId != 0), "we have a fbo but no imguiwindow id"
+			);
+
+			if (c.second.imguiWindowId)
+			{
+				//todo remove in production
+
+				ImGui::PushID(c.second.imguiWindowId);
+				
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.0f));
+				ImGui::SetNextWindowSize({200,200}, ImGuiCond_Once);
+				ImGui::Begin( (std::string("gameplay window id: ") + std::to_string(c.first)).c_str(),
+					0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+				
+				auto s = ImGui::GetContentRegionMax();
+
+				ImGui::Image((void *)c.second.requestedContainerInfo.requestedFBO.texture, s, {0, 1}, {1, 0},
+					{1,1,1,1}, {0,0,0,1});
+
+				ImGui::End();
+
+				ImGui::PopStyleColor();
+
+				ImGui::PopID();
+
+				auto state = window.windowState;
+				state.w = s.x;
+				state.h = s.y;
+
+				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(state.w, state.h);
+
+				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
+
+				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
+				c.second.pointer->update(window.input, state, c.second.requestedContainerInfo);
+				loadedDll.resetAllocatorDllRealm();
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+			}
+			else
+			{
+				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
+				c.second.pointer->update(window.input, window.windowState, c.second.requestedContainerInfo);
+				loadedDll.resetAllocatorDllRealm();
+			}
+
+
 		}
 
 	}
@@ -418,6 +488,8 @@ bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll 
 
 	freeContainerStuff(c->second);
 
+	c->second.requestedContainerInfo.requestedFBO.deleteFramebuffer();
+
 	runningContainers.erase(c);
 
 	logManager.log((std::string("Destroyed continer: ") + name + " #" + std::to_string(id)).c_str());
@@ -515,6 +587,8 @@ bool pika::ContainerManager::forceTerminateContainer(containerId_t id, pika::Loa
 
 	logManager.log((std::string("Force terminated continer: ") + name + " #" + std::to_string(id)).c_str());
 
+	c->second.requestedContainerInfo.requestedFBO.deleteFramebuffer();
+
 	return true;
 }
 
@@ -590,6 +664,52 @@ std::vector<std::string> pika::getAvailableSnapshots(pika::RuntimeContainer &inf
 	return files;
 }
 
+std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::RuntimeContainer &info)
+{
+	std::vector<std::string> files;
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".snapshot"
+			)
+		{
+			if (pika::checkIfSnapshotIsCompatibleAnyMemoryPosition(info, iter.path().stem().string().c_str()))
+			{
+				files.push_back(iter.path().stem().string());
+			}
+
+		}
+	}
+
+	return files;
+}
+
+std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::ContainerInformation &info)
+{
+	std::vector<std::string> files;
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".snapshot"
+			)
+		{
+			if (pika::checkIfSnapshotIsCompatibleAnyMemoryPosition(info, iter.path().stem().string().c_str()))
+			{
+				files.push_back(iter.path().stem().string());
+			}
+
+		}
+	}
+
+	return files;
+}
+
 bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char *snapshotName)
 {
 
@@ -632,10 +752,160 @@ bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char 
 		return false;
 	}
 
+	//check if user requested an imgui window
+	if (
+		!(
+			(info.imguiWindowId == 0&&
+			loadedInfo.imguiWindowId == 0
+			)||
+			(
+			info.imguiWindowId != 0 &&
+			loadedInfo.imguiWindowId != 0
+			)
+		)
+		)
+	{
+		return false;
+	}
+
 	if (loadedInfo.totalSize != info.totalSize)
 	{
 		return false;
 	}
 		
 	return true;
+}
+
+bool pika::checkIfSnapshotIsCompatibleAnyMemoryPosition(pika::RuntimeContainer &info, const char *snapshotName)
+{
+	std::string file = PIKA_ENGINE_RESOURCES_PATH;
+	file += snapshotName;
+	file += ".snapshot";
+
+	pika::RuntimeContainer loadedInfo = {};
+
+	auto s = pika::readEntireFile(file.c_str(), &loadedInfo, sizeof(loadedInfo));
+
+	if (s != sizeof(loadedInfo))
+	{
+		return 0;
+	}
+
+	if (loadedInfo.arena.containerStructMemory.size != info.arena.containerStructMemory.size)
+	{
+		return false;
+	}
+
+	if (std::strcmp(loadedInfo.baseContainerName, info.baseContainerName) != 0)
+	{
+		return false;
+	}
+
+	if (loadedInfo.requestedContainerInfo.bonusAllocators != info.requestedContainerInfo.bonusAllocators)
+	{
+		return false;
+	}
+
+	//check if user requested an imgui window
+	if (
+		!(
+		(info.imguiWindowId == 0 &&
+		loadedInfo.imguiWindowId == 0
+		) ||
+		(
+		info.imguiWindowId != 0 &&
+		loadedInfo.imguiWindowId != 0
+		)
+		)
+		)
+	{
+		return false;
+	}
+
+	if (loadedInfo.totalSize != info.totalSize)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool pika::checkIfSnapshotIsCompatibleAnyMemoryPosition(pika::ContainerInformation &info, const char *snapshotName)
+{
+	std::string file = PIKA_ENGINE_RESOURCES_PATH;
+	file += snapshotName;
+	file += ".snapshot";
+
+	pika::RuntimeContainer loadedInfo = {};
+
+	auto s = pika::readEntireFile(file.c_str(), &loadedInfo, sizeof(loadedInfo));
+
+	if (s != sizeof(loadedInfo))
+	{
+		return 0;
+	}
+
+	if (loadedInfo.arena.containerStructMemory.size != info.containerStructBaseSize)
+	{
+		return false;
+	}
+
+	if (std::strcmp(loadedInfo.baseContainerName, info.containerName.c_str()) != 0)
+	{
+		return false;
+	}
+
+	if (loadedInfo.bonusAllocators.size() != info.containerStaticInfo.bonusAllocators.size())
+	{
+		return false;
+	}
+
+	for (int i = 0; i < loadedInfo.bonusAllocators.size(); i++)
+	{
+		if (loadedInfo.bonusAllocators[i].heapSize != info.containerStaticInfo.bonusAllocators[i]) //todo this doesn't seem to work
+		{
+			return false;
+		}
+	}
+
+	//check if user requested an imgui window
+	if (
+		!(
+		(info.containerStaticInfo.requestImguiFbo == false &&
+		loadedInfo.imguiWindowId == 0
+		) ||
+		(
+		info.containerStaticInfo.requestImguiFbo == true &&
+		loadedInfo.imguiWindowId != 0
+		)
+		)
+		)
+	{
+		return false;
+	}
+
+	if (loadedInfo.allocator.heapSize != info.containerStaticInfo.defaultHeapMemorySize)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void *pika::getSnapshotMemoryPosition(const char *snapshotName)
+{
+	std::string file = PIKA_ENGINE_RESOURCES_PATH;
+	file += snapshotName;
+	file += ".snapshot";
+
+	pika::RuntimeContainer loadedInfo = {};
+
+	auto s = pika::readEntireFile(file.c_str(), &loadedInfo, sizeof(loadedInfo));
+
+	if (s != sizeof(loadedInfo))
+	{
+		return nullptr;
+	}
+
+	return loadedInfo.getBaseAdress();
 }

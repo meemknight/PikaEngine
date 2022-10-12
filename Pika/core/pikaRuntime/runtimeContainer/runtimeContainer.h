@@ -31,22 +31,31 @@ struct RuntimeContainer
 	//bonus allocators
 	pika::StaticVector<pika::memory::FreeListAllocator, MaxAllocatorsCount> bonusAllocators = {};
 
-
 	RequestedContainerInfo requestedContainerInfo = {};
+	
+	int imguiWindowId = 0;
 
-	struct
+	struct FLAGS
 	{
-		bool running = 1;
+		enum
+		{
+			STATUS_PAUSE = 0,
+			STATUS_RUNNING = 1,
+			STATUS_BEING_RECORDED = 1,
+		};
+
+		int status = STATUS_RUNNING;
+
 		bool shouldCallReaload = 0; //if the container happens to be on pause when the dll reloads we mark this to true
 
 		const char *getStatusName()
 		{
 
-			if (running)
+			if (status == STATUS_RUNNING)
 			{
 				return "running.";
 			}
-			else
+			else if(status == STATUS_PAUSE)
 			{
 				if (shouldCallReaload)
 				{
@@ -56,19 +65,26 @@ struct RuntimeContainer
 				{
 					return "paused.";
 				}
-
+			}
+			else if (status == STATUS_BEING_RECORDED)
+			{
+				return "on recording";
 			}
 		}
 		
 		const char *getStatusIcon()
 		{
-			if (running)
+			if (status == STATUS_RUNNING)
 			{
 				return ICON_FK_BOLT;
 			}
-			else
+			else if (status == STATUS_PAUSE)
 			{
 				return ICON_FK_PAUSE_CIRCLE_O;
+			}
+			else if (status == STATUS_BEING_RECORDED)
+			{
+				return ICON_FK_VIDEO_CAMERA;
 			}
 		}
 

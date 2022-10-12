@@ -49,8 +49,8 @@
 #define PIKA_ENABLE_CONSOLE 1
 
 
-#define PIKA_CLEAR_SCREEN_BY_ENGINE 1
-#define PIKA_CLEAR_DEPTH_BY_ENGINE 0
+#define PIKA_CLEAR_SCREEN_BY_ENGINE_IN_PRODUCTION 0
+#define PIKA_CLEAR_DEPTH_BY_ENGINE_IN_PRODUCTION 0
 
 //todo ? not implemented
 //makes the main window a docking space or not in production build
@@ -59,6 +59,8 @@
 
 #define PIKA_REMOVE_IMGUI_IN_PRODUCTION 0
 
+
+ #define PIKA_ENGINE_SAVES_PATH PIKA_ENGINE_RESOURCES_PATH "/engineSaves/"
 
 
 #include <pikaConfigInternal.h>

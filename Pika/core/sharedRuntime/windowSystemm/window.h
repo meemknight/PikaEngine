@@ -28,14 +28,14 @@ namespace pika
 		//this is made to be passed to the user code
 		//on live code editing this will be recorded every frame
 		Input input = {};
-		float deltaTime = 0;
 
 
 		WindowState windowState = {};
 
-
 		//this doesn't return error codes because it will do the asserts for you
 		void create();
+
+		void saveWindowPositions();
 
 		bool shouldClose();
 

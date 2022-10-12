@@ -45,7 +45,7 @@ void pika::PushNotificationManager::update(bool &open)
 	//set popup pos
 	{
 		const float PADX = 10.0f;
-		const float PADY = 20.0f;
+		const float PADY = 40.0f;
 		const ImGuiViewport *viewport = ImGui::GetMainViewport();
 		ImVec2 work_pos = viewport->WorkPos;
 		ImVec2 work_size = viewport->WorkSize;
@@ -59,7 +59,16 @@ void pika::PushNotificationManager::update(bool &open)
 		window_flags |= ImGuiWindowFlags_NoMove;
 	}
 
-	ImGui::SetNextWindowBgAlpha(0.30f);
+	static int lastSize = 0; //todo move
+
+	if (lastSize < notificationQue.size())
+	{
+		ImGui::SetNextWindowFocus();
+	}
+
+	lastSize = notificationQue.size();
+
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
 	if (ImGui::Begin("Notification content", &open, window_flags))
 	{
 
@@ -95,11 +104,12 @@ void pika::PushNotificationManager::update(bool &open)
 			if (ImGui::MenuItem("Top-right", NULL, corner == 1)) corner = 1;
 			if (ImGui::MenuItem("Bottom-left", NULL, corner == 2)) corner = 2;
 			if (ImGui::MenuItem("Bottom-right", NULL, corner == 3)) corner = 3;
-			if (ImGui::MenuItem("Close")) open = false;
+			if (ImGui::MenuItem("Close")) notificationQue.clear();
 			ImGui::EndPopup();
 		}
 	}
 	ImGui::End();
+	ImGui::PopStyleColor();
 
 
 	while (!notificationQue.empty() && notificationQue.front().startTime +

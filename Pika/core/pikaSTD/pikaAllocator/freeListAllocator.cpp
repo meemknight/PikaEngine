@@ -41,6 +41,7 @@ namespace memory
 
 	void FreeListAllocator::init(void *baseMemory, size_t memorySize)
 		{
+			heapSize = memorySize; 
 			originalBaseMemory = baseMemory;
 			end = (void *)((size_t)baseMemory + memorySize);
 

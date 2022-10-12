@@ -10,6 +10,8 @@
 #include <windowSystemm/input.h>
 #include <windowSystemm/window.h>
 
+#include <pikaImgui/pikaImgui.h>
+
 namespace pika
 {
 	using containerId_t = unsigned int;
@@ -22,11 +24,13 @@ namespace pika
 
 		containerId_t createContainer(
 			pika::ContainerInformation containerInformation,
-			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
+			pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
+			pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, size_t memoryPos = 0);
 
 		containerId_t createContainer(
 			std::string containerName,
-			pika::LoadedDll &loadedDll, pika::LogManager &logManager);
+			pika::LoadedDll &loadedDll, pika::LogManager &logManager,
+			pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, size_t memoryPos = 0);
 
 		bool setSnapshotToContainer(pika::containerId_t containerId, const char* snapshotName,
 			pika::LogManager &logManager);
@@ -75,6 +79,16 @@ namespace pika
 
 	std::vector<std::string> getAvailableSnapshots(pika::RuntimeContainer &info);
 
+	std::vector<std::string> getAvailableSnapshotsAnyMemoryPosition(pika::RuntimeContainer &info);
+	
+	std::vector<std::string> getAvailableSnapshotsAnyMemoryPosition(pika::ContainerInformation &info);
+
 	bool checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char *snapshotName);
+
+	bool checkIfSnapshotIsCompatibleAnyMemoryPosition(pika::RuntimeContainer &info, const char *snapshotName);
+
+	bool checkIfSnapshotIsCompatibleAnyMemoryPosition(pika::ContainerInformation &info, const char *snapshotName);
+
+	void *getSnapshotMemoryPosition(const char *snapshotName);
 
 }

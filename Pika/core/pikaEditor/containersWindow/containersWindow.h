@@ -14,7 +14,7 @@ namespace pika
 		void init();
 
 		void update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
-			pika::ContainerManager &containerManager);
+			pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager);
 
 		static constexpr char *ICON = ICON_FK_MICROCHIP;
 		static constexpr char *NAME = "Containers manager";
@@ -23,9 +23,12 @@ namespace pika
 		char filterContainerInfo[50] = {};
 		char filterSnapshots[50] = {};
 		char snapshotName[50] = {};
+		char recordingName[50] = {};
 
 		int itemCurrentAvailableCOntainers = 0;
 		int itemCurrentCreatedContainers = 0;
+
+		bool createAtSpecificMemoryRegion = 0;
 
 	};
 

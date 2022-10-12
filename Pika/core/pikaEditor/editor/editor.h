@@ -23,7 +23,10 @@ namespace pika
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
 			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager,
-			pika::LoadedDll &loadedDll, pika::ContainerManager &containerManager);
+			pika::LoadedDll &loadedDll, pika::ContainerManager &containerManager,
+			pika::pikaImgui::ImGuiIdsManager &imguiIDsManager);
+
+		void saveFlagsData();
 
 		struct
 		{
@@ -35,7 +38,7 @@ namespace pika
 			bool logsWindow = 0;
 			bool editShortcutsWindow = 0;
 			bool containerManager = 0;
-			bool transparentWindow = 1;
+			bool transparentWindow = 0;
 		}windowFlags;
 
 		pika::LogWindow logWindow;

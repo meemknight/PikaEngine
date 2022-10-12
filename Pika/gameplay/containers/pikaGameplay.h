@@ -27,6 +27,8 @@ struct Gameplay : public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(10);
 
+		info.requestImguiFbo = true; //todo this should not affect the compatibility of input recording
+
 		//info.bonusAllocators.push_back(100);
 		//info.bonusAllocators.push_back(200);
 		//info.bonusAllocators.push_back(300);
@@ -55,9 +57,12 @@ struct Gameplay : public Container
 		//void *test = new char[pika::MB(10)]; //todo let the allocator tell the engine somehow that it is out of memory
 	}
 
-	void update(pika::Input input, float deltaTime, pika::WindowState windowState,
+	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+		//todo keep window on top stuff
+
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		if (pika::shortcut(input, "Ctrl + S"))
 		{
@@ -68,9 +73,9 @@ struct Gameplay : public Container
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(windowState.w, windowState.h);
 
-		*r += deltaTime * 4.f;
+		*r += input.deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Green, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{
@@ -81,15 +86,15 @@ struct Gameplay : public Container
 		//	std::cout << "released\n";
 		//}
 
-		if (input.lMouse.typed())
-		{
-			std::cout << "typed\n";
-		}
+		//if (input.lMouse.typed())
+		//{
+		//	std::cout << "typed\n";
+		//}
 
-		if (input.buttons[pika::Button::E].doublePressed())
-		{
-			std::cout << "double pressed\n";
-		}
+		//if (input.buttons[pika::Button::E].typed())
+		//{
+		//	std::cout << "e";
+		//}
 
 		//std::cout << state.deltaTime << "\n";
 
@@ -104,7 +109,7 @@ struct Gameplay : public Container
 		//ImGui::LoadingIndicatorCircle("circle", 20, 8, 8);
 		//ImGui::End();
 		
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 	}
 

@@ -49,7 +49,8 @@ namespace memory
 	{
 		char* baseMemory = 0;
 		void* originalBaseMemory = 0;
-	
+		size_t heapSize = 0;
+
 		FreeListAllocator() = default;
 		FreeListAllocator(void* baseMemory, size_t memorySize)
 		{

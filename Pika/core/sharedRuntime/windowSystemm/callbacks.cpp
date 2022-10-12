@@ -22,6 +22,7 @@ static void processAButton(pika::Button &b, int action)
 	if (action == GLFW_PRESS)
 	{
 		b.setHeld(true);
+
 	}
 	else if (action == GLFW_RELEASE)
 	{
