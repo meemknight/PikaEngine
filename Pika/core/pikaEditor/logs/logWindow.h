@@ -2,6 +2,7 @@
 #include <logs/log.h>
 #include <IconsForkAwesome.h>
 #include <imgui.h>
+#include <pikaImgui/pikaImgui.h>
 
 namespace pika
 {
@@ -10,7 +11,7 @@ namespace pika
 	struct LogWindow
 	{
 
-		void init();
+		void init(pika::pikaImgui::ImGuiIdsManager &idManager);
 
 		void update(pika::LogManager &logManager, bool &open);
 
@@ -19,6 +20,8 @@ namespace pika
 		static constexpr char *ICON_NAME = ICON_FK_COMMENT_O " logs";
 		bool autoScroll = true;
 		ImGuiTextFilter filter;
+
+		int imguiId = 0;
 	};
 
 }

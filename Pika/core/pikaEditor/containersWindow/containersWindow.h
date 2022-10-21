@@ -11,7 +11,7 @@ namespace pika
 	struct ContainersWindow
 	{
 
-		void init();
+		void init(pika::pikaImgui::ImGuiIdsManager &imguiIdsManager);
 
 		void update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
 			pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager);
@@ -27,9 +27,12 @@ namespace pika
 
 		int itemCurrentAvailableCOntainers = 0;
 		int itemCurrentCreatedContainers = 0;
+		int currentSelectedSnapshot = 0;
+		int currentSelectedRecording = 0;
 
 		bool createAtSpecificMemoryRegion = 0;
 
+		int imguiIds = 0;
 	};
 
 

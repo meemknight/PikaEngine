@@ -40,10 +40,6 @@ namespace pika
 		{
 			enum
 			{
-				mainEditorWindow = 100,
-				editShortcutWindow = 200,
-				logWindow = 300,
-				containersWindow = 400,
 
 				idsCount = 4000
 			};

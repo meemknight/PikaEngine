@@ -28,6 +28,11 @@ void pika::PikaWindow::create()
 		wr = {};
 	}
 #endif
+	
+	if (wr.x < 0 || wr.y < 0 || wr.z <= 0 || wr.w <= 0)
+	{
+		wr = {};
+	}
 
 	context.wind = glfwCreateWindow(wr.z, wr.w, "Pika", NULL, NULL);
 	glfwSetWindowPos(context.wind, wr.x, wr.y);

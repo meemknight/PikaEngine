@@ -28,10 +28,11 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	shortcutManager.registerShortcut(RELOAD_DLL_SHORTCUTS, "Ctrl+Alt+R", &shouldReloadDll);
 	shortcutManager.registerShortcut(TRANSPARENT_EDITOR_WINDOW, "Ctrl+Alt+T", &windowFlags.transparentWindow);
 
+	imguiId = imguiIDManager.getImguiIds(1);
 
-	logWindow.init();
+	logWindow.init(imguiIDManager);
 	editShortcutsWindow.init(imguiIDManager);
-	containersWindow.init();
+	containersWindow.init(imguiIDManager);
 
 	
 	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
@@ -97,7 +98,7 @@ void pika::Editor::update(const pika::Input &input,
 		//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
 	
 	
-		ImGui::PushID(pika::pikaImgui::EditorImguiIds::mainEditorWindow);
+		ImGui::PushID(imguiId);
 
 		ImGui::SetNextWindowBgAlpha(0);
 

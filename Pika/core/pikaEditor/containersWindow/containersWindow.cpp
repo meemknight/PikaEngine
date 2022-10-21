@@ -4,15 +4,15 @@
 #include <imgui_spinner.h>
 #include <validatePath.h>
 
-void pika::ContainersWindow::init()
+void pika::ContainersWindow::init(pika::pikaImgui::ImGuiIdsManager &imguiIdsManager)
 {
+	imguiIds = imguiIdsManager.getImguiIds(10);
 }
 
 void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
 	pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager)
 {
-	//todo imgui firsttime stuff for all windows
-	ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow);
+	ImGui::PushID(imguiIds);
 
 
 	if (!ImGui::Begin(ICON_NAME, &open))
@@ -31,7 +31,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 		ImGui::BeginGroup();
 		ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
 
-		if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
+		if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_Reorderable))
 		{
 			if (ImGui::BeginTabItem(ICON_FK_PLUS_SQUARE_O " Create container"))
 			{
@@ -39,7 +39,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::Separator();
 
 				//left
-				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow+1);
+				ImGui::PushID(imguiIds +1);
 				ImGui::BeginGroup();
 				{
 
@@ -68,7 +68,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::SameLine();
 
 				//right
-				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 2);
+				ImGui::PushID(imguiIds + 2);
 				ImGui::BeginGroup();
 				{
 					if (itemCurrentAvailableCOntainers < loadedDll.containerInfo.size())
@@ -262,7 +262,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				std::vector<pika::containerId_t> containerIds;
 				std::vector<std::string> containerNames;
 
-				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 3);
+				ImGui::PushID(imguiIds + 3);
 				ImGui::BeginGroup();
 				{
 					
@@ -292,7 +292,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 				ImGui::SameLine();
 
 				//right
-				ImGui::PushID(pikaImgui::EditorImguiIds::containersWindow + 4);
+				ImGui::PushID(imguiIds + 4);
 				ImGui::BeginGroup();
 				{
 					if (itemCurrentCreatedContainers < containerIds.size())
@@ -342,7 +342,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								ImGui::SetTooltip("Resume container.");
 							}
 						}
-						else
+						else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
 						{
 							ImGui::BeginDisabled();
 							if (ImGui::Button(ICON_FK_PAUSE))
@@ -353,6 +353,18 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 							{
 								ImGui::SetTooltip("Can't pause container while it is recorded."); //todo implement
+							}
+						}
+						else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
+						{
+							if (ImGui::Button(ICON_FK_REPEAT))
+							{
+								c.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+							}
+
+							if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							{
+								ImGui::SetTooltip("Stop playback");
 							}
 						}
 
@@ -391,104 +403,246 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 						{
 
 							ImGui::Text("Status: %s", c.flags.getStatusName());
-							
-
 							ImGui::Separator();
 
-
+							if (ImGui::BeginTabBar("##Tabs for play and record", ImGuiTabBarFlags_Reorderable))
 							{
-								if (ImGui::Button(ICON_FK_CAMERA))
+								if (ImGui::BeginTabItem(ICON_FK_CAMERA " Snapshot"))
 								{
-									if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
+									//snapshot button
 									{
-										if (!containerManager.makeSnapshot(containerIds[itemCurrentCreatedContainers], logManager, snapshotName))
+										if (ImGui::Button(ICON_FK_CAMERA))
 										{
-											logManager.log("Coultn't make snapshot", pika::logError);
+											if (pika::isFileNameValid(snapshotName, sizeof(snapshotName)))
+											{
+												if (!containerManager.makeSnapshot(containerIds[itemCurrentCreatedContainers], logManager, snapshotName))
+												{
+													logManager.log("Coultn't make snapshot", pika::logError);
+												}
+												else
+												{
+													logManager.log("Successfully created snapshot.");
+												}
+											}
+											else
+											{
+												logManager.log("File name invalid", pika::logError);
+											}
+
+										}
+										if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+										{
+											ImGui::SetTooltip("Make snapshot");
+										}
+
+										ImGui::SameLine();
+										ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
+									}
+
+									ImGui::NewLine();
+									ImGui::Separator();
+
+								#pragma region snapshots
+									{
+
+										auto snapshots = pika::getAvailableSnapshots(
+											containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]]);
+
+										auto contentSize = ImGui::GetItemRectSize();
+										contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+										contentSize.x /= 2;
+
+										ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
+											filterSnapshots, sizeof(filterSnapshots),
+											snapshots, contentSize);
+
+										ImGui::SameLine();
+
+										if (snapshots.size() == 0 || currentSelectedSnapshot >= snapshots.size())
+										{
+											ImGui::BeginDisabled(true);
 										}
 										else
 										{
-											logManager.log("Successfully created snapshot.");
+											ImGui::BeginDisabled(false);
+										}
+
+										if (ImGui::Button(ICON_FK_PLAY "##play snapshot"))
+										{
+											if (!containerManager.setSnapshotToContainer(
+												containerIds[itemCurrentCreatedContainers],
+												snapshots[currentSelectedSnapshot].c_str(), logManager
+												))
+											{
+												logManager.log("Failed to assign snapshot", pika::logError);
+											}
+										}
+
+										ImGui::EndDisabled();
+
+										if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+										{
+											ImGui::SetTooltip("Play this snapshot to this container");
+										}
+
+									}
+								#pragma endregion
+
+									ImGui::EndTabItem();
+
+								}
+
+								if (ImGui::BeginTabItem(ICON_FK_VIDEO_CAMERA " Record"))
+								{
+									//recording
+									{
+										if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING)
+										{
+											if (ImGui::Button(ICON_FK_VIDEO_CAMERA))
+											{
+												if (pika::isFileNameValid(recordingName, sizeof(recordingName)))
+												{
+													containerManager.startRecordingContainer
+													(containerIds[itemCurrentCreatedContainers], logManager, recordingName);
+												}
+												else
+												{
+													logManager.log("File name invalid", pika::logError);
+												}
+
+											}
+											if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+											{
+												ImGui::SetTooltip("start recording");
+											}
+										}
+										else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
+										{
+											if (ImGui::Button(ICON_FK_STOP_CIRCLE))
+											{
+												containerManager.stopRecordingContainer
+												(containerIds[itemCurrentCreatedContainers], logManager);
+											}
+											if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+											{
+												ImGui::SetTooltip("stop recording");
+											}
+										}
+										else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_PAUSE)
+										{
+											ImGui::BeginDisabled(1);
+											if (ImGui::Button(ICON_FK_VIDEO_CAMERA))
+											{
+
+											}
+											ImGui::EndDisabled();
+											if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+											{
+												ImGui::SetTooltip("Can't record while container is paused");
+											}
+										}
+										else if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
+										{
+											ImGui::BeginDisabled(1);
+											if (ImGui::Button(ICON_FK_VIDEO_CAMERA))
+											{
+
+											}
+											ImGui::EndDisabled();
+											if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+											{
+												ImGui::SetTooltip("Can't record while container is on playback");
+											}
+										}
+
+										ImGui::BeginDisabled(c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED);
+										ImGui::SameLine();
+										ImGui::InputText("recording name", recordingName, sizeof(recordingName));
+										ImGui::EndDisabled();
+
+									}
+
+
+									ImGui::NewLine();
+									ImGui::Separator();
+
+
+								#pragma region recordings
+
+									auto recordings = pika::getAvailableRecordings(
+										containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]]);
+
+									auto contentSize = ImGui::GetItemRectSize();
+									contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+									contentSize.x /= 2;
+
+									ImGui::ListWithFilter("##list box recordings", &currentSelectedRecording,
+										filterSnapshots, sizeof(filterSnapshots),
+										recordings, contentSize);
+
+									ImGui::SameLine();
+
+									if (recordings.size() == 0 || currentSelectedRecording >= recordings.size()
+										|| c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
+									{
+										ImGui::BeginDisabled(true);
+									}
+									else
+									{
+										ImGui::BeginDisabled(false);
+									}
+
+									if (ImGui::Button(ICON_FK_PLAY "##play recording"))
+									{
+										if (!containerManager.setRecordingToContainer(
+											containerIds[itemCurrentCreatedContainers],
+											recordings[currentSelectedSnapshot].c_str(), logManager
+											))
+										{
+											logManager.log("Failed to assign recording", pika::logError);
+										}
+									}
+
+									ImGui::EndDisabled();
+														
+									if (c.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
+									{
+										if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+										{
+											ImGui::SetTooltip("Can't play a recording because the container is being recorded at the moment");
 										}
 									}
 									else
 									{
-										logManager.log("File name invalid", pika::logError);
+										if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+										{
+											ImGui::SetTooltip("Play this recording to this container");
+										}
 									}
+									
 
-								}
-								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-								{
-									ImGui::SetTooltip("Make snapshot");
+
+
+								#pragma endregion
+
+
+									ImGui::EndTabItem();
 								}
 
-								ImGui::SameLine();
-								ImGui::InputText("snapshot name", snapshotName, sizeof(snapshotName));
+
+								ImGui::EndTabBar();
 							}
 
-							//recording
-							{
-								if (ImGui::Button(ICON_FK_VIDEO_CAMERA))
-								{
-
-								}
-								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-								{
-									ImGui::SetTooltip("start recording");
-								}
-								ImGui::SameLine();
-								ImGui::InputText("recording name", recordingName, sizeof(recordingName));
-							}
+							
 
 
-							ImGui::NewLine();
-							ImGui::Separator();
+							
 
-						#pragma region snapshots
-							{
-								static int currentSelectedSnapshot = 0; //todo move
+							
 
-								auto snapshots = pika::getAvailableSnapshots(
-									containerManager.runningContainers[containerIds[itemCurrentCreatedContainers]]);
 
-								auto contentSize = ImGui::GetItemRectSize();
-								contentSize.y -= ImGui::GetFrameHeightWithSpacing();
-								contentSize.x /= 2;
 
-								ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
-									filterSnapshots, sizeof(filterSnapshots),
-									snapshots, contentSize);
-
-								ImGui::SameLine();
-
-								if (snapshots.size() == 0 || currentSelectedSnapshot >= snapshots.size())
-								{
-									ImGui::BeginDisabled(true);
-								}
-								else
-								{
-									ImGui::BeginDisabled(false);
-								}
-
-								if(ImGui::Button(ICON_FK_PLAY "##play snapshot"))
-								{
-									if (!containerManager.setSnapshotToContainer(
-										containerIds[itemCurrentCreatedContainers],
-										snapshots[currentSelectedSnapshot].c_str(), logManager
-										))
-									{
-										logManager.log("Failed to assign snapshot", pika::logError);
-									}
-								}
-
-								ImGui::EndDisabled();
-
-								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-								{
-									ImGui::SetTooltip("Play this snapshot to this container");
-								}
-
-							}
-						#pragma endregion
+						
 
 						}
 					}

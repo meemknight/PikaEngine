@@ -48,6 +48,7 @@ namespace pika
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 
 		bool shouldReloadDll = 0;
+		int imguiId = 0;
 	};
 
 

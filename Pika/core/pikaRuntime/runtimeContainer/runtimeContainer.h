@@ -41,12 +41,16 @@ struct RuntimeContainer
 		{
 			STATUS_PAUSE = 0,
 			STATUS_RUNNING = 1,
-			STATUS_BEING_RECORDED = 1,
+			STATUS_BEING_RECORDED = 2,
+			STATUS_BEING_PLAYBACK = 3,
 		};
 
 		int status = STATUS_RUNNING;
 
 		bool shouldCallReaload = 0; //if the container happens to be on pause when the dll reloads we mark this to true
+
+		char recordingName[256] = {};
+		int frameNumber = 0;
 
 		const char *getStatusName()
 		{
@@ -70,6 +74,10 @@ struct RuntimeContainer
 			{
 				return "on recording";
 			}
+			else if (status == STATUS_BEING_PLAYBACK)
+			{
+				return "on input playback";
+			}
 		}
 		
 		const char *getStatusIcon()
@@ -85,6 +93,10 @@ struct RuntimeContainer
 			else if (status == STATUS_BEING_RECORDED)
 			{
 				return ICON_FK_VIDEO_CAMERA;
+			}
+			else if (status == STATUS_BEING_PLAYBACK)
+			{
+				return ICON_FK_REPEAT;
 			}
 		}
 

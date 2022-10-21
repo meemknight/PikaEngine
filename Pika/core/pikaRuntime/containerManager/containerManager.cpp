@@ -70,6 +70,28 @@ bool pika::ContainerManager::setSnapshotToContainer(pika::containerId_t containe
 	return true;
 }
 
+bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t containerId, const char *recordingName, pika::LogManager &logManager)
+{
+	auto c = runningContainers.find(containerId);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for setting recording: #")
+			+ std::to_string(containerId)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	if (!setSnapshotToContainer(containerId, recordingName, logManager))
+	{
+		return false;
+	}
+
+	c->second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK;
+	c->second.flags.frameNumber = 0;
+	pika::strlcpy(c->second.flags.recordingName, recordingName, sizeof(c->second.flags.recordingName));
+
+}
+
 //todo use regions further appart in production
 void* pika::ContainerManager::allocateContainerMemory(pika::RuntimeContainer &container,
 	pika::ContainerInformation containerInformation, void *memPos)
@@ -210,7 +232,8 @@ void pika::ContainerManager::init()
 {
 }
 
-void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
+void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window,
+	pika::LogManager &logs)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to update containers");
 
@@ -223,72 +246,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	{
 		reloadDll(loadedDll, window, logs); //todo return 0 on fail
 
-		//todo mark shouldCallReaload
+		//todo mark shouldCallReaload or just call reload
 		
-
-
-		//for (auto &c : runningContainers)
-		//{
-		//	if (c.second.flags.running)
-		//	{
-		//		loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-		//		//c.second.pointer->reload...
-		//		loadedDll.resetAllocatorDllRealm();
-		//	}
-		//	else
-		//	{
-		//		c.second.flags.shouldCallReaload = true;
-		//	}
-		//
-		//	
-		//}
 	}
 
-	//if (loadedDll.shouldReloadDll() || window.input.buttons[pika::Button::P].released())
-	//{
-	//	pika::LoadedDll newDll = {};
-	//
-	//
-	//	newDll.tryToloadDllUntillPossible(!loadedDll.id, logs); //create a new copy with a new id 
-	//
-	//#if 0
-	//	//clear containers that dissapeared
-	//	{
-	//		std::unordered_set<std::string> containerNames;
-	//		for (auto &c : newDll.containerInfo)
-	//		{
-	//			containerNames.insert(c.containerName);
-	//		}
-	//
-	//		std::vector<pika::containerId_t> containersToClean;
-	//		for (auto &i : runningContainers)
-	//		{
-	//			if (containerNames.find(i.second.baseContainerName) ==
-	//				containerNames.end())
-	//			{
-	//				std::string l = "Killed container because it does not exist anymore in dll: " + i.second.baseContainerName
-	//					+ " #" + std::to_string(i.first);
-	//				logs.log(l.c_str(), pika::logError);
-	//
-	//				containersToClean.push_back(i.first);
-	//			}
-	//		}
-	//
-	//		for (auto i : containersToClean)
-	//		{
-	//			destroyContainer(i, loadedDll, logs);
-	//		}
-	//	}
-	//#endif
-	//
-	//	//set new dll
-	//	loadedDll.unloadDll();
-	//
-	//	loadedDll = newDll;
-	//		
-	//	loadedDll.gameplayReload_(window.context);
-	//}
-
+	
 	
 #pragma endregion
 
@@ -300,6 +262,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 		if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING
 			||
 			c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED
+			||
+			c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK
 			)
 		{
 			
@@ -311,9 +275,91 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				c.second.imguiWindowId != 0), "we have a fbo but no imguiwindow id"
 			);
 
-			if (c.second.imguiWindowId)
+			auto windowInput = window.input;
+
+		#if PIKA_DEVELOPMENT
+
+			if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
 			{
-				//todo remove in production
+				if (!makeRecordingStep(c.first, logs, windowInput))
+				{
+
+					c.second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+
+					logs.log((std::string("Stopped container recording because we couldn't oppen file") 
+						+ std::to_string(c.first)).c_str(),
+						pika::logError);
+				}
+			}
+			
+			
+			
+		#endif
+
+			if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
+			{
+				pika::Input readInput;
+
+				std::string fileName = c.second.flags.recordingName;
+				fileName += ".recording";
+				fileName = PIKA_ENGINE_RESOURCES_PATH + fileName;
+
+				auto s = pika::getFileSize(fileName.c_str());
+				if (c.second.flags.frameNumber * sizeof(pika::Input) >= s && s != 0)
+				{
+					//todo optional logs here
+					if (!setSnapshotToContainer(c.first, c.second.flags.recordingName, logs)) 
+					{
+						logs.log((std::string("Stopped container playback because we couldn't assign it's snapshot on frame 0")
+							+ std::to_string(c.first)).c_str(),
+							pika::logError);
+						c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+						goto endContainerErrorChecking;
+					}
+					c.second.flags.frameNumber = 0;
+				}
+
+				if (s == 0)
+				{
+					logs.log((std::string("Stopped container playback because we couldn't oppen file or its content is empty")
+						+ std::to_string(c.first)).c_str(),
+						pika::logError);
+					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+				}
+				else if (s % sizeof(pika::Input) != 0)
+				{
+					logs.log((std::string("Stopped container playback because the file content is corrupt")
+						+ std::to_string(c.first)).c_str(),
+						pika::logError);
+					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+				}
+				if (!pika::readEntireFile(fileName.c_str(), &readInput, sizeof(pika::Input), sizeof(pika::Input) * c.second.flags.frameNumber))
+				{
+					logs.log((std::string("Stopped container playback because we couldn't oppen file")
+						+ std::to_string(c.first)).c_str(),
+						pika::logError);
+					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+				}
+				else
+				{
+					windowInput = readInput;
+					c.second.flags.frameNumber++;
+				}
+
+
+			}
+
+			endContainerErrorChecking:
+
+
+		#if PIKA_PRODUCTION
+			constexpr bool isProduction = 1;
+		#else
+			constexpr bool isProduction = 0;
+		#endif
+
+			if (c.second.imguiWindowId && !isProduction)
+			{
 
 				ImGui::PushID(c.second.imguiWindowId);
 				
@@ -333,30 +379,33 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				ImGui::PopID();
 
-				auto state = window.windowState;
-				state.w = s.x;
-				state.h = s.y;
+				auto windowState = window.windowState;
+				windowState.w = s.x;
+				windowState.h = s.y;
 
-				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(state.w, state.h);
+				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
 
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				c.second.pointer->update(window.input, state, c.second.requestedContainerInfo);
+				c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
 				loadedDll.resetAllocatorDllRealm();
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 
 			}
 			else
 			{
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				c.second.pointer->update(window.input, window.windowState, c.second.requestedContainerInfo);
+				c.second.pointer->update(windowInput, window.windowState, c.second.requestedContainerInfo);
 				loadedDll.resetAllocatorDllRealm();
 			}
 
 
+		}
+		else
+		{
+			//still keep it running on the same frame mabe
 		}
 
 	}
@@ -567,6 +616,87 @@ bool pika::ContainerManager::makeSnapshot(containerId_t id, pika::LogManager &lo
 	return true;
 }
 
+bool pika::ContainerManager::startRecordingContainer(containerId_t id, pika::LogManager &logManager, const char *fileName)
+{
+	auto c = runningContainers.find(id);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for making recording: #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	if(c->second.flags.status != pika::RuntimeContainer::FLAGS::STATUS_RUNNING)
+	{
+		logManager.log((std::string("Trying to record a container that is not running (on status): #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+
+	std::string filePath = PIKA_ENGINE_RESOURCES_PATH;
+	filePath += fileName;
+
+	filePath += ".recording";
+
+	if (filePath.size() > sizeof(c->second.flags.recordingName) - 1)
+	{
+		logManager.log((std::string("File path too big (on trying to record)") + std::to_string(id)).c_str(),
+			pika::logError);
+		return 0;
+	}
+
+	if (!makeSnapshot(id, logManager, fileName)) 
+	{
+		logManager.log((std::string("Couldn't make snapshot for starting recording") + std::to_string(id)).c_str(),
+			pika::logError);
+		return 0;
+	}
+
+
+
+	c->second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED;
+	pika::strlcpy(c->second.flags.recordingName, filePath, sizeof(c->second.flags.recordingName));
+
+
+
+}
+
+bool pika::ContainerManager::stopRecordingContainer(containerId_t id, pika::LogManager &logManager)
+{
+	auto c = runningContainers.find(id);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for stopping recording: #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	c->second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+
+}
+
+bool pika::ContainerManager::makeRecordingStep(containerId_t id, pika::LogManager &logManager,
+	pika::Input &input)
+{
+	auto c = runningContainers.find(id);
+	if (c == runningContainers.end())
+	{
+		logManager.log((std::string("Couldn't find container for making recording step: #") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	if (!pika::appendToFile(c->second.flags.recordingName, &input, sizeof(input)))
+	{
+		logManager.log((std::string("Couldn't append to file for recording container") + std::to_string(id)).c_str(),
+			pika::logError);
+		return false;
+	}
+
+	return true;
+}
+
 bool pika::ContainerManager::forceTerminateContainer(containerId_t id, pika::LoadedDll &loadedDll, pika::LogManager &logManager)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to destroy container");
@@ -664,6 +794,32 @@ std::vector<std::string> pika::getAvailableSnapshots(pika::RuntimeContainer &inf
 	return files;
 }
 
+std::vector<std::string> pika::getAvailableRecordings(pika::RuntimeContainer &info)
+{
+	auto snapshots = getAvailableSnapshots(info);
+	
+	std::vector<std::string> returnVec;
+	returnVec.reserve(snapshots.size());
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".recording"
+			)
+		{
+
+			if (std::find(snapshots.begin(), snapshots.end(), iter.path().stem().string()) != snapshots.end())
+			{
+				returnVec.push_back(iter.path().stem().string());
+			}
+		}
+	}
+
+	return returnVec;
+}
+
 std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::RuntimeContainer &info)
 {
 	std::vector<std::string> files;
@@ -687,6 +843,32 @@ std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::Runt
 	return files;
 }
 
+std::vector<std::string> pika::getAvailableRecordingAnyMemoryPosition(pika::RuntimeContainer &info)
+{
+	auto snapshots = getAvailableSnapshotsAnyMemoryPosition(info);
+
+	std::vector<std::string> returnVec;
+	returnVec.reserve(snapshots.size());
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".recording"
+			)
+		{
+
+			if (std::find(snapshots.begin(), snapshots.end(), iter.path().stem().string()) != snapshots.end())
+			{
+				returnVec.push_back(iter.path().stem().string());
+			}
+		}
+	}
+
+	return returnVec;
+}
+
 std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::ContainerInformation &info)
 {
 	std::vector<std::string> files;
@@ -708,6 +890,32 @@ std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::Cont
 	}
 
 	return files;
+}
+
+std::vector<std::string> pika::getAvailableRecordingsAnyMemoryPosition(pika::ContainerInformation &info)
+{
+	auto snapshots = getAvailableSnapshotsAnyMemoryPosition(info);
+
+	std::vector<std::string> returnVec;
+	returnVec.reserve(snapshots.size());
+
+	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
+
+	for (const auto &iter : curDir)
+	{
+		if (std::filesystem::is_regular_file(iter)
+			&& iter.path().extension() == ".recording"
+			)
+		{
+
+			if (std::find(snapshots.begin(), snapshots.end(), iter.path().stem().string()) != snapshots.end())
+			{
+				returnVec.push_back(iter.path().stem().string());
+			}
+		}
+	}
+
+	return returnVec;
 }
 
 bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char *snapshotName)

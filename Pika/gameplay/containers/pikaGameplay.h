@@ -75,7 +75,7 @@ struct Gameplay : public Container
 
 		*r += input.deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Green, {}, *r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Red, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{

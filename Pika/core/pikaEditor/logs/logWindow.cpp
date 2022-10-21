@@ -3,15 +3,14 @@
 #include <IconsForkAwesome.h>
 #include <pikaImgui/pikaImgui.h>
 
-void pika::LogWindow::init()
+void pika::LogWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager)
 {
-
-
+	imguiId = idManager.getImguiIds();
 }
 
 void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 {
-	ImGui::PushID(pikaImgui::EditorImguiIds::logWindow);
+	ImGui::PushID(imguiId);
 
 	if (!ImGui::Begin(ICON_NAME, &open))
 	{

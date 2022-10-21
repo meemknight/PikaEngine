@@ -4,7 +4,7 @@
 
 void pika::EditShortcutsWindow::init(pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
-	imguiId = imguiIdManager.getImguiIds();
+	imguiId = imguiIdManager.getImguiIds(2);
 	//todo save shortcuts
 }
 
@@ -14,7 +14,7 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 
 	ImGui::SetNextWindowSize({400, 500});
 
-	ImGui::PushID(pika::pikaImgui::EditorImguiIds::editShortcutWindow);
+	ImGui::PushID(imguiId);
 
 	if (ImGui::Begin(ICON_NAME, &open,
 		ImGuiWindowFlags_NoDocking | 
@@ -25,7 +25,7 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 		
 		ImGui::Text("Edit shortcuts\n");
 
-		if (ImGui::BeginChild(imguiId, {}, true))
+		if (ImGui::BeginChild(imguiId + 1, {}, true))
 		{
 
 
