@@ -58,6 +58,7 @@ PIKA_API void dissableAllocators()
 PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 {
 	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator);
+	//pika::initShortcutApi(); //todo
 
 	//todo user should have functions to specify this
 #pragma region init stuff
@@ -72,12 +73,32 @@ PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 }
 
 
+static std::stringstream buff;
+static std::streambuf *old = 0;
+
+PIKA_API std::streambuf *getConsoleBuffer()
+{
+	if (old == nullptr)
+	{
+		old = std::cout.rdbuf(buff.rdbuf());
+	}
+	else 
+	{
+		std::cout.rdbuf(buff.rdbuf());
+	}
+
+	return buff.rdbuf();
+}
+
+
+
 //this won't be ever called in production so we can remove the code
 PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 {
 #ifdef PIKA_DEVELOPMENT	
 
 	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator); //todo check if really needed
+	//pika::initShortcutApi();
 
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");
@@ -87,3 +108,52 @@ PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 
 #endif
 }
+
+#if PIKA_WINDOWS
+#ifdef PIKA_DEVELOPMENT
+
+
+#include <Windows.h>
+//https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain
+BOOL WINAPI DllMain(
+	HINSTANCE hinstDLL,  // handle to DLL module
+	DWORD fdwReason,     // reason for calling function
+	LPVOID lpvReserved)  // reserved
+{
+	// Perform actions based on the reason for calling.
+	switch (fdwReason)
+	{
+	case DLL_PROCESS_ATTACH:
+	// Initialize once for each new process.
+	// Return FALSE to fail DLL load.
+	break;
+
+	case DLL_THREAD_ATTACH:
+	// Do thread-specific initialization.
+	break;
+
+	case DLL_THREAD_DETACH:
+	// Do thread-specific cleanup.
+	break;
+
+	case DLL_PROCESS_DETACH:
+
+	if (lpvReserved != nullptr)
+	{
+		break; // do not do cleanup if process termination scenario
+	}
+
+	if (old)
+	{
+		std::cout.rdbuf(old);
+	}
+
+	// Perform any necessary cleanup.
+	break;
+	}
+	return TRUE;  // Successful DLL_PROCESS_ATTACH.
+}
+
+
+#endif
+#endif

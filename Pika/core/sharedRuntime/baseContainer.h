@@ -30,6 +30,9 @@ struct RequestedContainerInfo
 
 	pika::GL::PikaFramebuffer requestedFBO = {};
 
+	int requestedImguiIds = 0;
+	int imguiTotalRequestedIds = 0;
+
 	//todo implement
 	bool readEntireFile(const char *name, void *buffer, size_t size)
 	{
@@ -64,6 +67,8 @@ struct ContainerStaticInfo
 	//in release that fbo will just be the default framebuffer
 	bool requestImguiFbo = 0;
 
+	unsigned int requestImguiIds = 0;
+
 	bool _internalNotImplemented = 0;
 
 	bool operator==(const ContainerStaticInfo &other)
@@ -75,7 +80,8 @@ struct ContainerStaticInfo
 			this->bonusAllocators == other.bonusAllocators &&
 			this->_internalNotImplemented == other._internalNotImplemented &&
 			this->requestImguiFbo == other.requestImguiFbo;
-			;
+			this->requestImguiIds == other.requestImguiIds;
+		;
 	}
 
 	bool operator!=(const ContainerStaticInfo &other)

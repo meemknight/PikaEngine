@@ -14,6 +14,7 @@ struct ImmageViewer: public Container
 {
 
 	gl2d::Texture texture;
+	float zoom = 1.f;
 
 	static ContainerStaticInfo containerInfo()
 	{
@@ -36,30 +37,49 @@ struct ImmageViewer: public Container
 		}
 		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
 
-		//texture.cleanup();
-		//GLuint b = 0;
-		//glGenBuffers(1, &b);
-
-		//malloc(100);
-		//new int[100];
+		
 	}
 
 	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-
 		
-		if(!ImGui::Begin("immage viewer"))
+		
+		if(!ImGui::Begin("Immage title"))
 		{
 			ImGui::End();
 			return;
 		}
 
-		float xsize = 400.f;
-		float aspect = 1.f;
+		ImGui::Text("Immage title; %d, %d", 100, 100);
 
-		ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
-			{0, 1}, {1, 0});
+		auto s = ImGui::GetContentRegionMax();
+		
+		ImGui::SetItemUsingMouseWheel();
+
+		float wheel = ImGui::GetIO().MouseWheel;
+
+		//todo standard out
+
+		if (ImGui::GetIO().KeysData[ImGuiKey_LeftCtrl].Down || ImGui::GetIO().KeysData[ImGuiKey_RightCtrl].Down)
+		{
+			zoom += wheel * 0.2;
+		}
+
+		zoom = std::min(zoom, 10.f);
+		zoom = std::max(zoom, 0.2f);
+
+		if (ImGui::BeginChild(6996, {}, false, ImGuiWindowFlags_HorizontalScrollbar))
+		{
+
+			float xsize = std::max((int)(s.x*zoom) - 10, (int)(100*zoom));
+			float aspect = 1.f;
+
+			ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
+				{0, 1}, {1, 0});
+
+			ImGui::EndChild();
+		}
 
 
 		ImGui::End();

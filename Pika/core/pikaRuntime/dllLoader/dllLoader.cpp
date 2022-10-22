@@ -141,6 +141,7 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	bindAllocator_ = (bindAllocator_t *)GetProcAddress(dllHand, "bindAllocator");
 	resetAllocator_ = (resetAllocator_t *)GetProcAddress(dllHand, "resetAllocator");
 	dissableAllocators_ = (dissableAllocators_t *)GetProcAddress(dllHand, "dissableAllocators");
+	getConsoleBuffer_ = (getConsoleBuffer_t *)GetProcAddress(dllHand, "getConsoleBuffer");
 
 	if (!gameplayStart_) { return false; }
 	if (!gameplayReload_) { return false; }
@@ -150,6 +151,7 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	if (!bindAllocator_) { return false; }
 	if (!resetAllocator_) { return false; }
 	if (!dissableAllocators_) { return false; }
+	if (!getConsoleBuffer_) { return false; }
 
 	//get container info
 	getContainerInfoAndCheck(logs);
@@ -216,6 +218,8 @@ void pika::LoadedDll::unloadDll()
 
 	//dissableAllocators_();
 
+	resetAllocatorDllRealm();
+
 	FreeLibrary(dllHand);
 	dllHand = {};
 	filetime = {};
@@ -258,6 +262,7 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	bindAllocator_ = bindAllocator;
 	resetAllocator_ = resetAllocator;
 	dissableAllocators_ = dissableAllocators;
+	getConsoleBuffer_ = getConsoleBuffer;
 	getContainerInfoAndCheck(logs);
 	this->id = id;
 

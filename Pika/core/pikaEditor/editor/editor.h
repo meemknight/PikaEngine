@@ -12,6 +12,7 @@
 #include <editShortcuts/editShortcuts.h>
 #include <pushNotification/pushNotification.h>
 #include <containersWindow/containersWindow.h>
+#include <pikaConsoleManager/pikaConsoleWindow.h>
 
 namespace pika
 {
@@ -19,7 +20,8 @@ namespace pika
 	struct Editor
 	{
 
-		void init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager);
+		void init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager,
+			std::streambuf *buffer);
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
 			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager,
@@ -39,11 +41,13 @@ namespace pika
 			bool editShortcutsWindow = 0;
 			bool containerManager = 0;
 			bool transparentWindow = 0;
+			bool consoleWindow = 0;
 		}windowFlags;
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
 		pika::ContainersWindow containersWindow;
+		pika::ConsoleWindow consoleWindow;
 
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 

@@ -9,6 +9,7 @@
 #include <memoryArena/memoryArena.h>
 #include <runtimeContainer/runtimeContainer.h>
 #include <logs/log.h>
+#include <sstream>
 
 #define GAMEPLAYSTART(x) void x(pika::PikaContext &pikaContext)
 typedef GAMEPLAYSTART(gameplayStart_t);
@@ -42,6 +43,12 @@ typedef RESETALLOCATOR(resetAllocator_t)
 typedef DISSABLEALLOCATORS(dissableAllocators_t)
 #undef DISSABLEALLOCATORS
 
+#define GETCONSOLEBUFFER(x) std::streambuf * x();
+typedef GETCONSOLEBUFFER(getConsoleBuffer_t)
+#undef GETCONSOLEBUFFER
+
+
+
 #ifdef PIKA_WINDOWS
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -62,6 +69,7 @@ struct LoadedDll
 	bindAllocator_t *bindAllocator_ = {};
 	resetAllocator_t *resetAllocator_ = {};
 	dissableAllocators_t *dissableAllocators_ = {};
+	getConsoleBuffer_t *getConsoleBuffer_ = {};
 
 #ifdef PIKA_WINDOWS
 	FILETIME filetime = {};

@@ -32,7 +32,7 @@ struct RuntimeContainer
 	pika::StaticVector<pika::memory::FreeListAllocator, MaxAllocatorsCount> bonusAllocators = {};
 
 	RequestedContainerInfo requestedContainerInfo = {};
-	
+
 	int imguiWindowId = 0;
 
 	struct FLAGS

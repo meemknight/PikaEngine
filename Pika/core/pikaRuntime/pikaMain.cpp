@@ -49,10 +49,28 @@ BOOL WINAPI customConsoleHandlerRoutine(
 int main()
 {
 
+#pragma region Console
+
+	
+#ifdef PIKA_DEVELOPMENT
+	//internal console
+
+	{
+
+
+		//std::streambuf *old = std::cout.rdbuf(consoleBuffer.rdbuf());
+
+		//std::cout << "Bla" << std::endl;
+		//printf("test\n");
+		//std::cout.sync_with_stdio();
+
+		//std::string text = buffer.str();
+	}
+
+#else
+	//normal console if enabeled
 #if defined(PIKA_WINDOWS)
-
-#if PIKA_ENABLE_CONSOLE
-
+#if PIKA_ENABLE_CONSOLE_IN_PRODUCTION
 	{
 		AllocConsole();
 		(void)freopen("conin$", "r", stdin);
@@ -63,15 +81,18 @@ int main()
 		//HWND hwnd = GetConsoleWindow(); //dissable console x button
 		//HMENU hmenu = GetSystemMenu(hwnd, FALSE);
 		//EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
-		
+
 		SetConsoleCtrlHandler(0, true); //dissable ctrl+c shortcut in console
 		SetConsoleCtrlHandler(customConsoleHandlerRoutine, true); //custom exti function on clicking x button on console
 	}
-
+#endif
+#endif
 #endif
 
-#endif
-	
+
+#pragma endregion
+
+
 
 #pragma region init global variables stuff
 	pika::initShortcutApi();
@@ -126,6 +147,7 @@ int main()
 #pragma endregion
 
 #pragma region init dll reaml
+
 	loadedDll.gameplayStart_(window.context);
 
 	
@@ -140,7 +162,10 @@ int main()
 #pragma region editor
 #if !PIKA_SHOULD_REMOVE_EDITOR
 	pika::Editor editor; 
-	editor.init(shortcutManager, imguiIdsManager);
+	
+	std::streambuf *consoleBuffer = loadedDll.getConsoleBuffer_();
+
+	editor.init(shortcutManager, imguiIdsManager, consoleBuffer);
 #endif
 #pragma endregion
 
@@ -197,11 +222,18 @@ int main()
 		if (editor.shouldReloadDll)
 		{
 			editor.shouldReloadDll = false;
-			containerManager.reloadDll(loadedDll, window, logs);
+			consoleBuffer = loadedDll.getConsoleBuffer_();
+			containerManager.reloadDll(loadedDll, window, logs, consoleBuffer);
 		}
 	#endif
-		
-		containerManager.update(loadedDll, window, logs);
+
+	#ifdef PIKA_DEVELOPMENT
+		containerManager.update(loadedDll, window, logs, imguiIdsManager, consoleBuffer);
+		consoleBuffer = loadedDll.getConsoleBuffer_();
+	#else
+		containerManager.update(loadedDll, window, logs, imguiIdsManager, nullptr);
+	#endif
+
 
 	#pragma endregion
 

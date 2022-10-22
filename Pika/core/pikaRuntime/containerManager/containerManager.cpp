@@ -31,7 +31,8 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 	return 0;
 }
 
-bool pika::ContainerManager::setSnapshotToContainer(pika::containerId_t containerId, const char *snapshotName, pika::LogManager &logManager)
+bool pika::ContainerManager::setSnapshotToContainer(pika::containerId_t containerId, const char *snapshotName, pika::LogManager &logManager
+	, pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
 	auto c = runningContainers.find(containerId);
 	if (c == runningContainers.end())
@@ -66,11 +67,15 @@ bool pika::ContainerManager::setSnapshotToContainer(pika::containerId_t containe
 	pika::readEntireFile(file.c_str(), c->second.getBaseAdress(),
 		c->second.totalSize, sizeof(pika::RuntimeContainer));
 
+	//c->second.requestedContainerInfo.requestedImguiIds 
+	//	= imguiIdManager.getImguiIds(c->second.requestedContainerInfo.imguiTotalRequestedIds);
+
 	logManager.log("Loaded snapshot");
 	return true;
 }
 
-bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t containerId, const char *recordingName, pika::LogManager &logManager)
+bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t containerId, const char *recordingName, 
+	pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
 	auto c = runningContainers.find(containerId);
 	if (c == runningContainers.end())
@@ -80,8 +85,8 @@ bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t contain
 			pika::logError);
 		return false;
 	}
-
-	if (!setSnapshotToContainer(containerId, recordingName, logManager))
+	//todo not reset imgui id on input recording
+	if (!setSnapshotToContainer(containerId, recordingName, logManager, imguiIdManager))
 	{
 		return false;
 	}
@@ -213,6 +218,9 @@ pika::containerId_t pika::ContainerManager::createContainer
 
 	container.requestedContainerInfo.mainAllocator = &container.allocator;
 	container.requestedContainerInfo.bonusAllocators = &container.bonusAllocators;
+	container.requestedContainerInfo.requestedImguiIds =
+		imguiIDsManager.getImguiIds(containerInformation.containerStaticInfo.requestImguiIds);
+	container.requestedContainerInfo.imguiTotalRequestedIds = containerInformation.containerStaticInfo.requestImguiIds;
 
 #pragma endregion
 
@@ -233,7 +241,7 @@ void pika::ContainerManager::init()
 }
 
 void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window,
-	pika::LogManager &logs)
+	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager, std::streambuf *consoleBuffer)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to update containers");
 
@@ -244,7 +252,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 	if (loadedDll.shouldReloadDll())
 	{
-		reloadDll(loadedDll, window, logs); //todo return 0 on fail
+		reloadDll(loadedDll, window, logs, consoleBuffer); //todo return 0 on fail
+		consoleBuffer = loadedDll.getConsoleBuffer_();
 
 		//todo mark shouldCallReaload or just call reload
 		
@@ -308,7 +317,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				if (c.second.flags.frameNumber * sizeof(pika::Input) >= s && s != 0)
 				{
 					//todo optional logs here
-					if (!setSnapshotToContainer(c.first, c.second.flags.recordingName, logs)) 
+					if (!setSnapshotToContainer(c.first, c.second.flags.recordingName, logs, imguiIdManager))
 					{
 						logs.log((std::string("Stopped container playback because we couldn't assign it's snapshot on frame 0")
 							+ std::to_string(c.first)).c_str(),
@@ -413,7 +422,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 }
 
-void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
+void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs,
+	std::streambuf *consoleBuffer)
 {
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(200)); // make sure that the compiler had enough time 
@@ -936,6 +946,11 @@ bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char 
 
 	//todo mabe a method here?
 	if (loadedInfo.allocator.originalBaseMemory != info.allocator.originalBaseMemory)
+	{
+		return false;
+	}
+
+	if (loadedInfo.requestedContainerInfo.imguiTotalRequestedIds != info.requestedContainerInfo.imguiTotalRequestedIds)
 	{
 		return false;
 	}

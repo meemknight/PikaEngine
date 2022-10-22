@@ -68,7 +68,15 @@ struct Gameplay : public Container
 		{
 			std::cout << "save\n";
 		}
-		
+
+		//std::cout << "save\n";
+
+
+		if (input.buttons[pika::Button::P].held())
+		{
+			std::cout << input.deltaTime;
+		}
+
 
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(windowState.w, windowState.h);

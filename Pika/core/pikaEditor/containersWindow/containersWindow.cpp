@@ -192,7 +192,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 											if (c != 0)
 											{
 												if (!containerManager.setSnapshotToContainer(c,
-													s.c_str(), logManager))
+													s.c_str(), logManager, imguiIdsManager))
 												{
 													containerManager.destroyContainer(c, loadedDll, logManager);
 												}
@@ -471,7 +471,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 										{
 											if (!containerManager.setSnapshotToContainer(
 												containerIds[itemCurrentCreatedContainers],
-												snapshots[currentSelectedSnapshot].c_str(), logManager
+												snapshots[currentSelectedSnapshot].c_str(), logManager, imguiIdsManager
 												))
 											{
 												logManager.log("Failed to assign snapshot", pika::logError);
@@ -596,7 +596,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 									{
 										if (!containerManager.setRecordingToContainer(
 											containerIds[itemCurrentCreatedContainers],
-											recordings[currentSelectedSnapshot].c_str(), logManager
+											recordings[currentSelectedSnapshot].c_str(), logManager, imguiIdsManager
 											))
 										{
 											logManager.log("Failed to assign recording", pika::logError);

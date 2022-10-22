@@ -17,8 +17,9 @@
 #define CONTAINERS_SHORTCUTS ICON_FK_MICROCHIP " Containers window"
 #define RELOAD_DLL_SHORTCUTS ICON_FK_REFRESH " Reload dll"
 #define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE "Transparent Editor window"
+#define CONSOLE_WINDOW ICON_FK_TERMINAL "Console window"
 
-void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager)
+void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager, std::streambuf *buffer)
 {
 
 	shortcutManager.registerShortcut(DOCK_MAIN_WINDOW_SHORTCUT, "Ctrl+Alt+D", &optionsFlags.hideMainWindow);
@@ -27,13 +28,14 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	shortcutManager.registerShortcut(CONTAINERS_SHORTCUTS, "Ctrl+M", &windowFlags.containerManager);
 	shortcutManager.registerShortcut(RELOAD_DLL_SHORTCUTS, "Ctrl+Alt+R", &shouldReloadDll);
 	shortcutManager.registerShortcut(TRANSPARENT_EDITOR_WINDOW, "Ctrl+Alt+T", &windowFlags.transparentWindow);
+	shortcutManager.registerShortcut(CONSOLE_WINDOW, "Ctrl+C", &windowFlags.consoleWindow);
 
 	imguiId = imguiIDManager.getImguiIds(1);
 
 	logWindow.init(imguiIDManager);
 	editShortcutsWindow.init(imguiIDManager);
 	containersWindow.init(imguiIDManager);
-
+	consoleWindow.init(imguiIDManager, buffer);
 	
 	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
 	{
@@ -154,6 +156,9 @@ void pika::Editor::update(const pika::Input &input,
 					ImGui::MenuItem(pika::ContainersWindow::ICON_NAME,
 						shortcutManager.getShortcut(CONTAINERS_SHORTCUTS), &windowFlags.containerManager);
 
+					ImGui::MenuItem(pika::ConsoleWindow::ICON_NAME,
+						shortcutManager.getShortcut(CONSOLE_WINDOW), &windowFlags.consoleWindow);
+
 					ImGui::EndMenu();
 
 				}
@@ -218,6 +223,12 @@ void pika::Editor::update(const pika::Input &input,
 	}
 #pragma endregion
 
+#pragma region console
+	if (windowFlags.consoleWindow)
+	{
+		consoleWindow.update(logs, windowFlags.consoleWindow);
+	}
+#pragma endregion
 
 
 

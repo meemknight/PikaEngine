@@ -33,10 +33,10 @@ namespace pika
 			pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, size_t memoryPos = 0);
 
 		bool setSnapshotToContainer(pika::containerId_t containerId, const char* snapshotName,
-			pika::LogManager &logManager);
+			pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIdManager);
 
 		bool setRecordingToContainer(pika::containerId_t containerId, const char *recordingName,
-			pika::LogManager &logManager);
+			pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIdManager);
 
 		void* allocateContainerMemory(pika::RuntimeContainer &container, pika::ContainerInformation containerInformation, void *memPos = 0);
 
@@ -53,11 +53,14 @@ namespace pika
 		void update(
 			pika::LoadedDll &loadedDll,
 			pika::PikaWindow &window,
-			pika::LogManager &logs);
+			pika::LogManager &logs,
+			pika::pikaImgui::ImGuiIdsManager &imguiIdManager,
+			std::streambuf *consoleBuffer);
 
 		void reloadDll(pika::LoadedDll &loadedDll,
 			pika::PikaWindow &window,
-			pika::LogManager &logs);
+			pika::LogManager &logs,
+			std::streambuf *consoleBuffer);
 
 		bool destroyContainer(containerId_t id, pika::LoadedDll &loadedDll,
 			pika::LogManager &logManager);

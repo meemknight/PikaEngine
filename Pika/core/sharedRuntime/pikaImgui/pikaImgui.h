@@ -53,6 +53,8 @@ namespace pika
 			//if you want 5 ids and the function returns 10, then ids 10 11 12 13 14 will be reserved.
 			int getImguiIds(unsigned int count = 1)
 			{
+				if (count == 0) { return 0; }
+
 				return counter + count;
 			}
 		};
