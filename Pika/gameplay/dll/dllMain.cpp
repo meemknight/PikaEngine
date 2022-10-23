@@ -73,23 +73,30 @@ PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 }
 
 
-static std::stringstream buff;
 static std::streambuf *old = 0;
 
-PIKA_API std::streambuf *getConsoleBuffer()
+PIKA_API void setConsoleBuffer(std::streambuf *buf)
 {
-	if (old == nullptr)
+	if (buf) 
 	{
-		old = std::cout.rdbuf(buff.rdbuf());
+		if (old == nullptr)
+		{
+			old = std::cout.rdbuf(buf);
+		}
+		else
+		{
+			std::cout.rdbuf(buf);
+		}
 	}
-	else 
+	else
 	{
-		std::cout.rdbuf(buff.rdbuf());
+		if (old) 
+		{
+			std::cout.rdbuf(old);
+		}
 	}
-
-	return buff.rdbuf();
+	
 }
-
 
 
 //this won't be ever called in production so we can remove the code
@@ -143,10 +150,10 @@ BOOL WINAPI DllMain(
 		break; // do not do cleanup if process termination scenario
 	}
 
-	if (old)
-	{
-		std::cout.rdbuf(old);
-	}
+	//if (old)
+	//{
+	//	std::cout.rdbuf(old);
+	//}
 
 	// Perform any necessary cleanup.
 	break;

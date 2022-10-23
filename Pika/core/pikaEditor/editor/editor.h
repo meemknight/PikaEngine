@@ -20,8 +20,7 @@ namespace pika
 	struct Editor
 	{
 
-		void init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager,
-			std::streambuf *buffer);
+		void init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager);
 
 		void update(const pika::Input &input, pika::ShortcutManager &shortcutManager
 			,pika::LogManager &logs, pika::PushNotificationManager &pushNotificationManager,

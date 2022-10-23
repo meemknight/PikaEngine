@@ -52,7 +52,7 @@ int main()
 #pragma region Console
 
 	
-#ifdef PIKA_DEVELOPMENT
+#if !(PIKA_SHOULD_REMOVE_EDITOR)
 	//internal console
 
 	{
@@ -70,6 +70,7 @@ int main()
 #else
 	//normal console if enabeled
 #if defined(PIKA_WINDOWS)
+#ifdef PIKA_PRODUCTION
 #if PIKA_ENABLE_CONSOLE_IN_PRODUCTION
 	{
 		AllocConsole();
@@ -85,6 +86,7 @@ int main()
 		SetConsoleCtrlHandler(0, true); //dissable ctrl+c shortcut in console
 		SetConsoleCtrlHandler(customConsoleHandlerRoutine, true); //custom exti function on clicking x button on console
 	}
+#endif
 #endif
 #endif
 #endif
@@ -163,9 +165,8 @@ int main()
 #if !PIKA_SHOULD_REMOVE_EDITOR
 	pika::Editor editor; 
 	
-	std::streambuf *consoleBuffer = loadedDll.getConsoleBuffer_();
 
-	editor.init(shortcutManager, imguiIdsManager, consoleBuffer);
+	editor.init(shortcutManager, imguiIdsManager);
 #endif
 #pragma endregion
 
@@ -222,14 +223,12 @@ int main()
 		if (editor.shouldReloadDll)
 		{
 			editor.shouldReloadDll = false;
-			consoleBuffer = loadedDll.getConsoleBuffer_();
-			containerManager.reloadDll(loadedDll, window, logs, consoleBuffer);
+			containerManager.reloadDll(loadedDll, window, logs);
 		}
 	#endif
 
-	#ifdef PIKA_DEVELOPMENT
-		containerManager.update(loadedDll, window, logs, imguiIdsManager, consoleBuffer);
-		consoleBuffer = loadedDll.getConsoleBuffer_();
+	#if !PIKA_SHOULD_REMOVE_EDITOR
+		containerManager.update(loadedDll, window, logs, imguiIdsManager, &editor.consoleWindow);
 	#else
 		containerManager.update(loadedDll, window, logs, imguiIdsManager, nullptr);
 	#endif

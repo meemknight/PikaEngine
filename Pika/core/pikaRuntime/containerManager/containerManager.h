@@ -11,6 +11,7 @@
 #include <windowSystemm/window.h>
 
 #include <pikaImgui/pikaImgui.h>
+#include <pikaConsoleManager/pikaConsoleWindow.h>
 
 namespace pika
 {
@@ -55,12 +56,11 @@ namespace pika
 			pika::PikaWindow &window,
 			pika::LogManager &logs,
 			pika::pikaImgui::ImGuiIdsManager &imguiIdManager,
-			std::streambuf *consoleBuffer);
+			pika::ConsoleWindow *console);
 
 		void reloadDll(pika::LoadedDll &loadedDll,
 			pika::PikaWindow &window,
-			pika::LogManager &logs,
-			std::streambuf *consoleBuffer);
+			pika::LogManager &logs);
 
 		bool destroyContainer(containerId_t id, pika::LoadedDll &loadedDll,
 			pika::LogManager &logManager);

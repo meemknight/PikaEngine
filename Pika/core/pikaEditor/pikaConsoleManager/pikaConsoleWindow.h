@@ -8,7 +8,7 @@ namespace pika
 	struct ConsoleWindow
 	{
 
-		void init(pika::pikaImgui::ImGuiIdsManager &idManager, std::streambuf *buffer);
+		void init(pika::pikaImgui::ImGuiIdsManager &idManager);
 
 		void update(pika::LogManager &logManager, bool &open);
 
@@ -18,7 +18,6 @@ namespace pika
 
 		int imguiId = 0;
 
-		std::streambuf *buffer = 0;
 		std::string s;
 	};
 

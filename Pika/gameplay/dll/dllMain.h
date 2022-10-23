@@ -16,7 +16,7 @@
 #include <sstream>
 
 PIKA_API void gameplayStart(pika::PikaContext &pikaContext);
-PIKA_API std::streambuf *getConsoleBuffer();
+PIKA_API void setConsoleBuffer(std::streambuf *buf);
 PIKA_API void gameplayReload(pika::PikaContext &pikaContext);
 PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info);
 PIKA_API bool constructContainer(Container **c, pika::memory::MemoryArena *arena, const char *name);

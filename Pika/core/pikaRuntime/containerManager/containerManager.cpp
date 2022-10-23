@@ -10,6 +10,7 @@
 #include <stringManipulation/stringManipulation.h>
 #include <filesystem>
 #include <imgui.h>
+#include <containersWindow/containersWindow.h>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
@@ -241,7 +242,7 @@ void pika::ContainerManager::init()
 }
 
 void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window,
-	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager, std::streambuf *consoleBuffer)
+	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager, pika::ConsoleWindow *console)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to update containers");
 
@@ -252,8 +253,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 	if (loadedDll.shouldReloadDll())
 	{
-		reloadDll(loadedDll, window, logs, consoleBuffer); //todo return 0 on fail
-		consoleBuffer = loadedDll.getConsoleBuffer_();
+		reloadDll(loadedDll, window, logs); //todo return 0 on fail
 
 		//todo mark shouldCallReaload or just call reload
 		
@@ -367,6 +367,21 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			constexpr bool isProduction = 0;
 		#endif
 
+			auto callUpdate = [&](pika::WindowState &windowState)
+			{
+
+				std::stringstream buf;
+
+				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
+				{
+					loadedDll.setConsoleBuffer_(buf.rdbuf());
+					c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
+					loadedDll.setConsoleBuffer_(nullptr); //reset console buffer
+					
+				}
+				loadedDll.resetAllocatorDllRealm();
+			};
+
 			if (c.second.imguiWindowId && !isProduction)
 			{
 
@@ -396,18 +411,14 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
 
-				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
-				loadedDll.resetAllocatorDllRealm();
+				callUpdate(windowState);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			}
 			else
 			{
-				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				c.second.pointer->update(windowInput, window.windowState, c.second.requestedContainerInfo);
-				loadedDll.resetAllocatorDllRealm();
+				callUpdate(window.windowState);
 			}
 
 
@@ -422,8 +433,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 }
 
-void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs,
-	std::streambuf *consoleBuffer)
+void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
 {
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(200)); // make sure that the compiler had enough time 

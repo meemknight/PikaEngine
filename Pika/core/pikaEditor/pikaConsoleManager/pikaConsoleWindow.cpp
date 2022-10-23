@@ -6,21 +6,20 @@ namespace pika
 {
 
 
-	void ConsoleWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager, std::streambuf *buffer)
+	void ConsoleWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager)
 	{
-		this->buffer = buffer;
 		imguiId = idManager.getImguiIds();
+		s.reserve(4000);
 	}
 
 	void ConsoleWindow::update(pika::LogManager &logManager, bool &open)
 	{
-		PIKA_DEVELOPMENT_ONLY_ASSERT(buffer, "invalid buffer");
 
 		//s += buffer->get;
 		//*buffer = std::streambuf();
 
-		s += std::string{(std::istreambuf_iterator<char>(buffer)),
-			std::istreambuf_iterator<char>()};
+		//s += std::string{(std::istreambuf_iterator<char>(buffer)),
+		//	std::istreambuf_iterator<char>()};
 
 		constexpr int SIZE = 3000; //todo
 		

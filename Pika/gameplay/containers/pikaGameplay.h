@@ -66,7 +66,7 @@ struct Gameplay : public Container
 
 		if (pika::shortcut(input, "Ctrl + S"))
 		{
-			std::cout << "save\n";
+			std::cout << "save \n";
 		}
 
 		//std::cout << "save\n";

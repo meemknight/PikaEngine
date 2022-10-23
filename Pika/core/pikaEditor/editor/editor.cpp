@@ -19,7 +19,7 @@
 #define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE "Transparent Editor window"
 #define CONSOLE_WINDOW ICON_FK_TERMINAL "Console window"
 
-void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager, std::streambuf *buffer)
+void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager)
 {
 
 	shortcutManager.registerShortcut(DOCK_MAIN_WINDOW_SHORTCUT, "Ctrl+Alt+D", &optionsFlags.hideMainWindow);
@@ -35,7 +35,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	logWindow.init(imguiIDManager);
 	editShortcutsWindow.init(imguiIDManager);
 	containersWindow.init(imguiIDManager);
-	consoleWindow.init(imguiIDManager, buffer);
+	consoleWindow.init(imguiIDManager);
 	
 	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
 	{
