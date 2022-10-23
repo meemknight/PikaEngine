@@ -227,12 +227,7 @@ int main()
 		}
 	#endif
 
-	#if !PIKA_SHOULD_REMOVE_EDITOR
-		containerManager.update(loadedDll, window, logs, imguiIdsManager, &editor.consoleWindow);
-	#else
-		containerManager.update(loadedDll, window, logs, imguiIdsManager, nullptr);
-	#endif
-
+	containerManager.update(loadedDll, window, logs, imguiIdsManager);
 
 	#pragma endregion
 

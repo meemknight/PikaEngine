@@ -43,9 +43,6 @@ typedef RESETALLOCATOR(resetAllocator_t)
 typedef DISSABLEALLOCATORS(dissableAllocators_t)
 #undef DISSABLEALLOCATORS
 
-#define SETCONSOLEBUFFER(x) void x(std::streambuf *buf);
-typedef SETCONSOLEBUFFER(setConsoleBuffer_t)
-#undef SETCONSOLEBUFFER
 
 
 
@@ -69,7 +66,6 @@ struct LoadedDll
 	bindAllocator_t *bindAllocator_ = {};
 	resetAllocator_t *resetAllocator_ = {};
 	dissableAllocators_t *dissableAllocators_ = {};
-	setConsoleBuffer_t *setConsoleBuffer_ = {};
 
 #ifdef PIKA_WINDOWS
 	FILETIME filetime = {};

@@ -73,32 +73,6 @@ PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 }
 
 
-static std::streambuf *old = 0;
-
-PIKA_API void setConsoleBuffer(std::streambuf *buf)
-{
-	if (buf) 
-	{
-		if (old == nullptr)
-		{
-			old = std::cout.rdbuf(buf);
-		}
-		else
-		{
-			std::cout.rdbuf(buf);
-		}
-	}
-	else
-	{
-		if (old) 
-		{
-			std::cout.rdbuf(old);
-		}
-	}
-	
-}
-
-
 //this won't be ever called in production so we can remove the code
 PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 {

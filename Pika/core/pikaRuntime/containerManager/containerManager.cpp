@@ -242,7 +242,7 @@ void pika::ContainerManager::init()
 }
 
 void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window,
-	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager, pika::ConsoleWindow *console)
+	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to update containers");
 
@@ -369,16 +369,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			auto callUpdate = [&](pika::WindowState &windowState)
 			{
-
-				std::stringstream buf;
-
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				{
-					loadedDll.setConsoleBuffer_(buf.rdbuf());
-					c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
-					loadedDll.setConsoleBuffer_(nullptr); //reset console buffer
-					
-				}
+				c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
 				loadedDll.resetAllocatorDllRealm();
 			};
 
