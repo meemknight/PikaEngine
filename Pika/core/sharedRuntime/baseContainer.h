@@ -6,6 +6,7 @@
 #include <pikaAllocator/freeListAllocator.h>
 #include <staticVector.h>
 #include <pikaGL/frameBuffer.h>
+#include <pikaConsoleManager/pikaConsoleWindow.h>
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
 typedef READENTIREFILE(readEntireFile_t);
@@ -32,6 +33,19 @@ struct RequestedContainerInfo
 
 	int requestedImguiIds = 0;
 	int imguiTotalRequestedIds = 0;
+
+	pika::ConsoleWindow *consoleWindow = nullptr;
+
+	//returns true if succeded (can return false if console is disabeled)
+	bool consoleWrite(const char* c)
+	{
+		//do not allocate memory here!
+		//console window is from core realm
+
+		if (!consoleWindow) { return false; }
+		consoleWindow->write(c);
+		return true;
+	}
 
 	//todo implement
 	bool readEntireFile(const char *name, void *buffer, size_t size)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <gl2d/gl2d.h>
 #include <imgui.h>
 #include <baseContainer.h>
@@ -19,7 +18,7 @@ struct Gameplay : public Container
 
 	gl2d::Renderer2D renderer;
 
-	float *r =0;
+	float *r = 0;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -52,7 +51,7 @@ struct Gameplay : public Container
 	{
 		renderer.create();
 		//pika::initShortcutApi();
-		r = new float(0);
+		r = new float;
 
 		//void *test = new char[pika::MB(10)]; //todo let the allocator tell the engine somehow that it is out of memory
 	}
@@ -64,17 +63,17 @@ struct Gameplay : public Container
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		if (pika::shortcut(input, "Ctrl + S"))
+		//if (pika::shortcut(input, "Ctrl + S"))
+		if (input.buttons[pika::Button::S].released())
 		{
-			std::cout << "save \n";
+			requestedInfo.consoleWrite("save\n");
 		}
 
-		//std::cout << "save\n";
 
 
 		if (input.buttons[pika::Button::P].held())
 		{
-			std::cout << input.deltaTime;
+			requestedInfo.consoleWrite(std::to_string(input.deltaTime).c_str());
 		}
 
 
@@ -83,7 +82,7 @@ struct Gameplay : public Container
 
 		*r += input.deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Red, {}, *r);
+		renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
 
 		//if (input.lMouse.pressed())
 		//{

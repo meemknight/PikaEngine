@@ -52,44 +52,44 @@ int main()
 #pragma region Console
 
 	
-#if !(PIKA_SHOULD_REMOVE_EDITOR)
-	//internal console
-
-	{
-
-
-		//std::streambuf *old = std::cout.rdbuf(consoleBuffer.rdbuf());
-
-		//std::cout << "Bla" << std::endl;
-		//printf("test\n");
-		//std::cout.sync_with_stdio();
-
-		//std::string text = buffer.str();
-	}
-
-#else
-	//normal console if enabeled
-#if defined(PIKA_WINDOWS)
-#ifdef PIKA_PRODUCTION
-#if PIKA_ENABLE_CONSOLE_IN_PRODUCTION
-	{
-		AllocConsole();
-		(void)freopen("conin$", "r", stdin);
-		(void)freopen("conout$", "w", stdout);
-		(void)freopen("conout$", "w", stderr);
-		std::cout.sync_with_stdio();
-
-		//HWND hwnd = GetConsoleWindow(); //dissable console x button
-		//HMENU hmenu = GetSystemMenu(hwnd, FALSE);
-		//EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
-
-		SetConsoleCtrlHandler(0, true); //dissable ctrl+c shortcut in console
-		SetConsoleCtrlHandler(customConsoleHandlerRoutine, true); //custom exti function on clicking x button on console
-	}
-#endif
-#endif
-#endif
-#endif
+//#if !(PIKA_SHOULD_REMOVE_EDITOR)
+//	//internal console
+//
+//	{
+//
+//
+//		//std::streambuf *old = std::cout.rdbuf(consoleBuffer.rdbuf());
+//
+//		//std::cout << "Bla" << std::endl;
+//		//printf("test\n");
+//		//std::cout.sync_with_stdio();
+//
+//		//std::string text = buffer.str();
+//	}
+//
+//#else
+//	//normal console if enabeled
+//#if defined(PIKA_WINDOWS)
+//#ifdef PIKA_PRODUCTION
+//#if PIKA_ENABLE_CONSOLE_IN_PRODUCTION
+//	{
+//		AllocConsole();
+//		(void)freopen("conin$", "r", stdin);
+//		(void)freopen("conout$", "w", stdout);
+//		(void)freopen("conout$", "w", stderr);
+//		std::cout.sync_with_stdio();
+//
+//		//HWND hwnd = GetConsoleWindow(); //dissable console x button
+//		//HMENU hmenu = GetSystemMenu(hwnd, FALSE);
+//		//EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
+//
+//		SetConsoleCtrlHandler(0, true); //dissable ctrl+c shortcut in console
+//		SetConsoleCtrlHandler(customConsoleHandlerRoutine, true); //custom exti function on clicking x button on console
+//	}
+//#endif
+//#endif
+//#endif
+//#endif
 
 
 #pragma endregion
@@ -225,9 +225,13 @@ int main()
 			editor.shouldReloadDll = false;
 			containerManager.reloadDll(loadedDll, window, logs);
 		}
+
+		containerManager.update(loadedDll, window, logs, imguiIdsManager, &editor.consoleWindow);
+
+	#else
+		containerManager.update(loadedDll, window, logs, imguiIdsManager, nullptr);
 	#endif
 
-	containerManager.update(loadedDll, window, logs, imguiIdsManager);
 
 	#pragma endregion
 

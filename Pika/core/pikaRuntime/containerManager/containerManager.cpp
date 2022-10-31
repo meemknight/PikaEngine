@@ -242,7 +242,7 @@ void pika::ContainerManager::init()
 }
 
 void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow &window,
-	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager)
+	pika::LogManager &logs, pika::pikaImgui::ImGuiIdsManager &imguiIdManager, pika::ConsoleWindow *consoleWindow)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(loadedDll.dllHand != 0, "dll not loaded when trying to update containers");
 
@@ -260,13 +260,15 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	}
 
 	
-	
 #pragma endregion
 
 
 #pragma region running containers
 	for (auto &c : runningContainers)
 	{
+
+		c.second.requestedContainerInfo.consoleWindow = consoleWindow;
+
 
 		if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING
 			||
