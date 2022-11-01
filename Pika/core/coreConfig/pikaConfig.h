@@ -52,10 +52,6 @@
 #define PIKA_CLEAR_SCREEN_BY_ENGINE_IN_PRODUCTION 0
 #define PIKA_CLEAR_DEPTH_BY_ENGINE_IN_PRODUCTION 0
 
-//todo ? not implemented
-//makes the main window a docking space or not in production build
-#define PIKA_REMOVE_INGUI_DOCK_SPACE_IN_PRODUCTION 1 
-
 
 #define PIKA_REMOVE_IMGUI_IN_PRODUCTION 0
 
@@ -65,4 +61,3 @@
 
 #include <pikaConfigInternal.h>
 
-//todo flag remove imgui

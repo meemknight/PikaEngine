@@ -13,6 +13,7 @@
 #include <pushNotification/pushNotification.h>
 #include <containersWindow/containersWindow.h>
 #include <pikaConsoleManager/pikaConsoleWindow.h>
+#include <assetManagerWindow/assetManagerWindow.h>
 
 namespace pika
 {
@@ -41,12 +42,14 @@ namespace pika
 			bool containerManager = 0;
 			bool transparentWindow = 0;
 			bool consoleWindow = 0;
+			bool assetManagerWindow = 0;
 		}windowFlags;
 
 		pika::LogWindow logWindow;
 		pika::EditShortcutsWindow editShortcutsWindow;
 		pika::ContainersWindow containersWindow;
 		pika::ConsoleWindow consoleWindow;
+		pika::AssetManagerWindow assetManagerWindow;
 
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 

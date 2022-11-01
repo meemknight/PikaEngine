@@ -1,3 +1,7 @@
+#include "pikaConfig.h"
+
+#if !PIKA_SHOULD_REMOVE_IMGUI
+
 #include "containersWindow.h"
 #include <pikaImgui/pikaImgui.h>
 #include "imguiComboSearch.h"
@@ -678,3 +682,5 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 }
 
 //todo options hide show push notidications also engine push notifications that are forced
+
+#endif

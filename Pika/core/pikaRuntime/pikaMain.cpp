@@ -8,7 +8,12 @@
 
 #include "logs/assert.h"
 #include "dllLoader/dllLoader.h"
-#include "pikaImgui/pikaImgui.h"
+
+#if PIKA_SHOULD_REMOVE_EDITOR
+
+#else
+	#include "pikaImgui/pikaImgui.h"
+#endif
 
 #include <memoryArena/memoryArena.h>
 #include <runtimeContainer/runtimeContainer.h>

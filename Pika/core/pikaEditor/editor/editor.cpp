@@ -16,8 +16,11 @@
 #define EDIT_SHORTCUTS ICON_FK_PENCIL_SQUARE " Edit shortcuts window"
 #define CONTAINERS_SHORTCUTS ICON_FK_MICROCHIP " Containers window"
 #define RELOAD_DLL_SHORTCUTS ICON_FK_REFRESH " Reload dll"
-#define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE "Transparent Editor window"
-#define CONSOLE_WINDOW ICON_FK_TERMINAL "Console window"
+#define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE " Transparent Editor window"
+#define CONSOLE_WINDOW ICON_FK_TERMINAL " Console window"
+#define ASSET_MANAGER_WINDOW ICON_FK_FILES_O " Asset manager"
+
+#if !PIKA_SHOULD_REMOVE_EDITOR
 
 void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager)
 {
@@ -29,6 +32,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	shortcutManager.registerShortcut(RELOAD_DLL_SHORTCUTS, "Ctrl+Alt+R", &shouldReloadDll);
 	shortcutManager.registerShortcut(TRANSPARENT_EDITOR_WINDOW, "Ctrl+Alt+T", &windowFlags.transparentWindow);
 	shortcutManager.registerShortcut(CONSOLE_WINDOW, "Ctrl+C", &windowFlags.consoleWindow);
+	shortcutManager.registerShortcut(ASSET_MANAGER_WINDOW, "Ctrl+Alt+A", &windowFlags.assetManagerWindow);
 
 	imguiId = imguiIDManager.getImguiIds(1);
 
@@ -36,7 +40,8 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	editShortcutsWindow.init(imguiIDManager);
 	containersWindow.init(imguiIDManager);
 	consoleWindow.init(imguiIDManager);
-	
+	assetManagerWindow.init(imguiIDManager);
+
 	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
 	{
 		optionsFlags = {};
@@ -159,6 +164,9 @@ void pika::Editor::update(const pika::Input &input,
 					ImGui::MenuItem(pika::ConsoleWindow::ICON_NAME,
 						shortcutManager.getShortcut(CONSOLE_WINDOW), &windowFlags.consoleWindow);
 
+					ImGui::MenuItem(pika::AssetManagerWindow::ICON_NAME,
+						shortcutManager.getShortcut(ASSET_MANAGER_WINDOW), &windowFlags.assetManagerWindow);
+
 					ImGui::EndMenu();
 
 				}
@@ -230,6 +238,15 @@ void pika::Editor::update(const pika::Input &input,
 	}
 #pragma endregion
 
+#pragma region asset manager window
+
+	if (windowFlags.assetManagerWindow)
+	{
+		assetManagerWindow.update(windowFlags.assetManagerWindow);
+	}
+
+#pragma endregion
+
 
 
 }
@@ -242,3 +259,5 @@ void pika::Editor::saveFlagsData()
 
 
 }
+
+#endif
