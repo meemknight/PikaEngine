@@ -32,24 +32,40 @@ namespace pika
 		//todo: for all windows
 		ImGui::SetWindowSize({300,100}, ImGuiCond_FirstUseEver);
 
-		if(!std::filesystem::equivalent(currentPath, PIKA_RESOURCES_PATH))
+		if(std::filesystem::equivalent(currentPath, PIKA_RESOURCES_PATH) || searchText[0] != '\0')
 		{
-			if (ImGui::Button(ICON_FK_ARROW_UP))
-			{
-				currentPath = currentPath.parent_path();
-			}
+			ImGui::BeginDisabled(1);
 		}
+		else
+		{
+			ImGui::BeginDisabled(0);
+		}
+
+		if (ImGui::Button(ICON_FK_ARROW_UP))
+		{
+			currentPath = currentPath.parent_path();
+		}
+
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+
+		ImGui::InputText("Search file", searchText, sizeof(searchText));
+
 
 		ImGui::Separator();
 
-		ImGui::Columns(5, 0, false);
-
+		float contentW = ImGui::GetContentRegionAvail().x;
 		const float size = 160;
+		const float padding = 10;
 
-		for (auto &p : std::filesystem::directory_iterator(currentPath))
+		ImGui::Columns( std::max(1, (int)(contentW / (size + padding))), 0, false);
+
+		//returns 1 if should break
+		auto displayItem = [&](const std::filesystem::directory_entry &p) -> bool
 		{
-			if (ImGui::BeginChild(p.path().filename().string().c_str(), {}, false, 
-				ImGuiWindowFlags_NoScrollbar| ImGuiWindowFlags_NoScrollWithMouse))
+			if (ImGui::BeginChild(p.path().filename().string().c_str(), {size, size + 40}, false,
+				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 			{
 				//ImGui::
 				ImFontAtlas *atlas = ImGui::GetIO().Fonts;
@@ -59,15 +75,15 @@ namespace pika
 				if (p.is_directory())
 				{
 
-
 					if (ImGui::Button(ICON_FK_FOLDER_O, {size ,size}))
 					{
 						currentPath = p;
-						
+
 						//todo deffer
 						ImGui::PopFont();
 						ImGui::EndChild();
-						break;
+						ImGui::Columns();
+						return 1;
 					}
 				}
 				else
@@ -81,11 +97,12 @@ namespace pika
 				ImGui::PopFont();
 
 				ImGui::Text(p.path().filename().string().c_str());
-				
+
 				if (ImGui::BeginPopupContextWindow())
 				{
 					if (ImGui::Button("reveal in explorer"))
 					{
+
 					#if PIKA_WINDOWS
 						if (p.is_directory())
 						{
@@ -121,12 +138,50 @@ namespace pika
 				}
 
 
-				ImGui::EndChild();
 			}
 
-			ImGui::NextColumn();
+			ImGui::EndChild();
 
+			return 0;
+		};
+
+		if (searchText[0] == '\0')
+		{
+			for (auto &p : std::filesystem::directory_iterator(currentPath))
+			{
+				if (displayItem(p))
+				{
+					break;
+				}
+
+				ImGui::NextColumn();
+
+			}
 		}
+		else
+		{
+			//search filter
+			for (auto &p : std::filesystem::recursive_directory_iterator(PIKA_RESOURCES_PATH))
+			{
+				if (p.is_regular_file())
+				{
+					auto rez = p.path().filename().string();
+
+					if (rez.find(searchText) != std::string::npos)
+					{
+						if (displayItem(p))
+						{
+							break;
+						}
+
+						ImGui::NextColumn();
+					}
+
+				}
+			}
+		}
+
+		
 
 		ImGui::Columns(1);
 

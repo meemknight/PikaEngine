@@ -24,6 +24,7 @@ namespace pika
 		static constexpr char *ICON_NAME = ICON_FK_FILES_O " Asset manager";
 
 		int imguiId = 0;
+		char searchText[100] = {};
 
 		std::filesystem::path currentPath = PIKA_RESOURCES_PATH;
 	};
