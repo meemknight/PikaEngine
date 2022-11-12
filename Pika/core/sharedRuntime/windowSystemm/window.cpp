@@ -145,7 +145,6 @@ void pika::PikaWindow::update()
 	double mouseX = 0;
 	double mouseY = 0;
 	glfwGetCursorPos(context.wind, &mouseX, &mouseY);
-
 	input.mouseX = (int)mouseX;
 	input.mouseY = (int)mouseY;
 

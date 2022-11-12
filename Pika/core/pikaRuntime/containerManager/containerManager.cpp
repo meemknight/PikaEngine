@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <imgui.h>
 #include <containersWindow/containersWindow.h>
+#include <imgui_internal.h>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
@@ -262,6 +263,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	
 #pragma endregion
 
+	
+
 
 #pragma region running containers
 	for (auto &c : runningContainers)
@@ -378,7 +381,6 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			if (c.second.imguiWindowId && !isProduction)
 			{
-
 				ImGui::PushID(c.second.imguiWindowId);
 				
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.0f));
@@ -386,6 +388,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImGui::Begin( (std::string("gameplay window id: ") + std::to_string(c.first)).c_str(),
 					0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 				
+				auto windowPos = ImGui::GetWindowPos();
+
 				auto s = ImGui::GetContentRegionMax();
 
 				ImGui::Image((void *)c.second.requestedContainerInfo.requestedFBO.texture, s, {0, 1}, {1, 0},
@@ -400,6 +404,21 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				auto windowState = window.windowState;
 				windowState.w = s.x;
 				windowState.h = s.y;
+
+				ImVec2 globalMousePos = {};
+				{
+					ImGuiContext *g = ImGui::GetCurrentContext();
+					globalMousePos = g->IO.MousePos;
+				}
+
+				windowInput.mouseX = globalMousePos.x;
+				windowInput.mouseY = globalMousePos.y;
+
+				ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+				windowInput.mouseX -= windowPos.x + vMin.x;
+				windowInput.mouseY -= windowPos.y + vMin.y;
+
+
 
 				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
 
@@ -417,7 +436,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 
 		}
-		else
+		else //on pause
 		{
 			//still keep it running on the same frame mabe
 		}

@@ -60,7 +60,7 @@ namespace pika
 		Button lMouse = {};
 		Button rMouse = {};
 
-		//mouse position relevant to window
+		//mouse position relative to window
 		int mouseX = 0;
 		int mouseY = 0;
 
