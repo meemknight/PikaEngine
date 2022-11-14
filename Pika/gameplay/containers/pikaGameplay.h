@@ -82,15 +82,22 @@ struct Gameplay : public Container
 
 		*r += input.deltaTime * 4.f;
 
-		renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
+		if (input.hasFocus)
+		{
+			renderer.renderRectangle({10, 10, 100, 100}, Colors_Green, {}, *r);
+		}
+		else
+		{
+			renderer.renderRectangle({10, 10, 100, 100}, Colors_Blue, {}, *r);
+		}
 		
 		int size = 11;
 		renderer.renderRectangle({input.mouseX-size/2, input.mouseY-size/2, size, size},
 			Colors_Red, {}, 0.f);
 
 
-		requestedInfo.consoleWrite((std::string("Mouse: ") + std::to_string(input.mouseX) + " " +
-			std::to_string(input.mouseY) + "\n").c_str());
+		//requestedInfo.consoleWrite((std::string("Mouse: ") + std::to_string(input.mouseX) + " " +
+		//	std::to_string(input.mouseY) + "\n").c_str());
 
 
 		//if (input.lMouse.pressed())

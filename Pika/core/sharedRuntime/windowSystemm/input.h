@@ -66,6 +66,9 @@ namespace pika
 
 		Button buttons[Button::BUTTONS_COUNT] = {};
 		
+		//focus is here because it makes sense for the replay
+		bool hasFocus = 0;
+
 		float deltaTime = 0;
 	};
 

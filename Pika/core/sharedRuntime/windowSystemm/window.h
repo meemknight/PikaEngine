@@ -13,7 +13,6 @@ namespace pika
 	{
 		int w = 0;
 		int h = 0;
-		bool hasFocus = 0;
 
 
 	};

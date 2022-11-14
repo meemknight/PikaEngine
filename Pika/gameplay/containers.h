@@ -13,6 +13,6 @@
 Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena);
 
 
-
 #include "containers/pikaGameplay.h"
+#include "containers/threedtest.h"
 #include "pluggins/immageviewer.h"

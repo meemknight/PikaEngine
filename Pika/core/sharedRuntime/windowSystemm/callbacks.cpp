@@ -9,11 +9,11 @@ void windowFocusCallback(GLFWwindow *window, int focused)
 
 	if (focused)
 	{
-		pikaWindow.windowState.hasFocus = 1;
+		pikaWindow.input.hasFocus = 1;
 	}
 	else
 	{
-		pikaWindow.windowState.hasFocus = 0;
+		pikaWindow.input.hasFocus = 0;
 	}
 }
 

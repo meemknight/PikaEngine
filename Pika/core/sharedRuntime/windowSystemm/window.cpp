@@ -33,11 +33,14 @@ void pika::PikaWindow::create()
 	{
 		wr = {};
 	}
+	
+	//todo debug from engine
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 	context.wind = glfwCreateWindow(wr.z, wr.w, "Pika", NULL, NULL);
 	glfwSetWindowPos(context.wind, wr.x, wr.y);
 
-	windowState.hasFocus = true;
+	input.hasFocus = true;
 
 	PIKA_PERMA_ASSERT(context.wind, "problem initializing window");
 	glfwMakeContextCurrent(context.wind);

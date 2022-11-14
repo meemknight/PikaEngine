@@ -227,7 +227,7 @@ void pika::Editor::update(const pika::Input &input,
 	if (windowFlags.containerManager)
 	{
 		containersWindow.update(logs, windowFlags.containerManager, 
-			loadedDll, containerManager, imguiIDsManager);
+			loadedDll, containerManager, imguiIDsManager, &consoleWindow);
 	}
 #pragma endregion
 

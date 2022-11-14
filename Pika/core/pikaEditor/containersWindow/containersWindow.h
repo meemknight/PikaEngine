@@ -14,7 +14,8 @@ namespace pika
 		void init(pika::pikaImgui::ImGuiIdsManager &imguiIdsManager);
 
 		void update(pika::LogManager &logManager, bool &open, pika::LoadedDll &loadedDll,
-			pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager);
+			pika::ContainerManager &containerManager, pika::pikaImgui::ImGuiIdsManager &imguiIdsManager,
+			pika::ConsoleWindow *consoleWindow);
 
 		static constexpr char *ICON = ICON_FK_MICROCHIP;
 		static constexpr char *NAME = "Containers manager";

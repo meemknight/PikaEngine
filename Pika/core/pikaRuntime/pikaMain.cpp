@@ -175,9 +175,15 @@ int main()
 #endif
 #pragma endregion
 
-	
+#if !PIKA_SHOULD_REMOVE_EDITOR
 	auto container = containerManager.createContainer
-		(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager);
+	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, &editor.consoleWindow);
+#else
+	auto container = containerManager.createContainer
+	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, nullptr);
+#endif
+
+	
 
 	while (!shouldClose)
 	{

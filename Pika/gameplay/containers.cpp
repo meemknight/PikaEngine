@@ -16,6 +16,7 @@ Container *getContainer(const char *name, pika::memory::MemoryArena *memoryArena
 
 	PIKA_MAKE_CONTAINER_GET(Gameplay)
 	PIKA_MAKE_CONTAINER_GET(ImmageViewer)
+	PIKA_MAKE_CONTAINER_GET(ThreeDTest)
 	{
 		//"invalid container name: "
 		return nullptr;

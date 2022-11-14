@@ -15,7 +15,7 @@
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
-	pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, size_t memoryPos)
+	pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, ConsoleWindow *consoleWindow, size_t memoryPos)
 {
 	
 	for(auto &i : loadedDll.containerInfo)
@@ -23,7 +23,7 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 		
 		if (i.containerName == containerName)
 		{
-			return createContainer(i, loadedDll, logManager, imguiIDsManager, memoryPos);
+			return createContainer(i, loadedDll, logManager, imguiIDsManager, consoleWindow, memoryPos);
 		}
 
 	}
@@ -165,6 +165,7 @@ void pika::ContainerManager::freeContainerStuff(pika::RuntimeContainer &containe
 pika::containerId_t pika::ContainerManager::createContainer
 (pika::ContainerInformation containerInformation,
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager,
+	ConsoleWindow *consoleWindow,
 	size_t memoryPos)
 {	
 	containerId_t id = ++idCounter;
@@ -224,6 +225,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 		imguiIDsManager.getImguiIds(containerInformation.containerStaticInfo.requestImguiIds);
 	container.requestedContainerInfo.imguiTotalRequestedIds = containerInformation.containerStaticInfo.requestImguiIds;
 
+	container.requestedContainerInfo.consoleWindow = consoleWindow;
 #pragma endregion
 
 	
@@ -381,6 +383,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			if (c.second.imguiWindowId && !isProduction)
 			{
+
+			#pragma region imguiwindow
 				ImGui::PushID(c.second.imguiWindowId);
 				
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.0f));
@@ -389,6 +393,12 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 				
 				auto windowPos = ImGui::GetWindowPos();
+			
+				//todo	
+				//https://github.com/ocornut/imgui/issues/5882
+				auto io = ImGui::GetIO();
+				windowInput.hasFocus = ImGui::IsWindowFocused() && !io.AppFocusLost;
+				
 
 				auto s = ImGui::GetContentRegionMax();
 
@@ -400,7 +410,9 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImGui::PopStyleColor();
 
 				ImGui::PopID();
+			#pragma endregion
 
+			#pragma region mouse pos
 				auto windowState = window.windowState;
 				windowState.w = s.x;
 				windowState.h = s.y;
@@ -417,8 +429,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImVec2 vMin = ImGui::GetWindowContentRegionMin();
 				windowInput.mouseX -= windowPos.x + vMin.x;
 				windowInput.mouseY -= windowPos.y + vMin.y;
-
-
+			#pragma endregion
 
 				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
 

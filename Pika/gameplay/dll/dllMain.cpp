@@ -22,6 +22,7 @@ PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 	info.clear();
 	info.push_back(PIKA_MAKE_CONTAINER_INFO(Gameplay));
 	info.push_back(PIKA_MAKE_CONTAINER_INFO(ImmageViewer));
+	info.push_back(PIKA_MAKE_CONTAINER_INFO(ThreeDTest));
 }
 
 //this should not allocate memory
