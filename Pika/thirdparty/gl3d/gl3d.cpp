@@ -31259,7 +31259,6 @@ void gl3d::ErrorReporter::callErrorCallback(std::string s)
 
 void gl3d::defaultErrorCallback(std::string err, void *userData)
 {
-	std::cout << err << "\n";
 }
 
 #pragma endregion

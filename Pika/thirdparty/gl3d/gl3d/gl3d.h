@@ -219,7 +219,6 @@ namespace gl3d
 #pragma once
 
 #include <string>
-#include <iostream> //you can remove this if neded to. It is just used for the default errorcallback
 
 namespace gl3d
 {

@@ -12,6 +12,7 @@
 #include <imgui.h>
 #include <containersWindow/containersWindow.h>
 #include <imgui_internal.h>
+#include <fstream>
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
@@ -292,6 +293,12 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			);
 
 			auto windowInput = window.input;
+		
+
+		#pragma region mouse pos
+			
+			
+		#pragma endregion
 
 		#if PIKA_DEVELOPMENT
 
@@ -308,13 +315,9 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				}
 			}
 			
-			
-			
-		#endif
-
 			if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
 			{
-				pika::Input readInput;
+				pika::Input readInput = {};
 
 				std::string fileName = c.second.flags.recordingName;
 				fileName += ".recording";
@@ -329,7 +332,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 						logs.log((std::string("Stopped container playback because we couldn't assign it's snapshot on frame 0")
 							+ std::to_string(c.first)).c_str(),
 							pika::logError);
-						c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+						c.second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
 						goto endContainerErrorChecking;
 					}
 					c.second.flags.frameNumber = 0;
@@ -340,21 +343,21 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					logs.log((std::string("Stopped container playback because we couldn't oppen file or its content is empty")
 						+ std::to_string(c.first)).c_str(),
 						pika::logError);
-					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+					c.second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
 				}
 				else if (s % sizeof(pika::Input) != 0)
 				{
 					logs.log((std::string("Stopped container playback because the file content is corrupt")
 						+ std::to_string(c.first)).c_str(),
 						pika::logError);
-					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+					c.second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
 				}
 				if (!pika::readEntireFile(fileName.c_str(), &readInput, sizeof(pika::Input), sizeof(pika::Input) * c.second.flags.frameNumber))
 				{
 					logs.log((std::string("Stopped container playback because we couldn't oppen file")
 						+ std::to_string(c.first)).c_str(),
 						pika::logError);
-					c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
+					c.second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_RUNNING;
 				}
 				else
 				{
@@ -364,6 +367,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 
 			}
+		#endif
+
 
 			endContainerErrorChecking:
 
@@ -392,12 +397,29 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImGui::Begin( (std::string("gameplay window id: ") + std::to_string(c.first)).c_str(),
 					0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 				
-				auto windowPos = ImGui::GetWindowPos();
-			
-				//todo	
-				//https://github.com/ocornut/imgui/issues/5882
-				auto io = ImGui::GetIO();
-				windowInput.hasFocus = ImGui::IsWindowFocused() && !io.AppFocusLost;
+				//mouse pos and focus
+				if(c.second.flags.status != pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
+				{
+					auto windowPos = ImGui::GetWindowPos();
+
+					ImVec2 globalMousePos = {};
+					{
+						ImGuiContext *g = ImGui::GetCurrentContext();
+						globalMousePos = g->IO.MousePos;
+					}
+
+					windowInput.mouseX = globalMousePos.x;
+					windowInput.mouseY = globalMousePos.y;
+
+					ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+					windowInput.mouseX -= windowPos.x + vMin.x;
+					windowInput.mouseY -= windowPos.y + vMin.y;
+				
+					//todo	
+					//https://github.com/ocornut/imgui/issues/5882
+					auto io = ImGui::GetIO();
+					windowInput.hasFocus = ImGui::IsWindowFocused() && !io.AppFocusLost;
+				}
 				
 
 				auto s = ImGui::GetContentRegionMax();
@@ -412,24 +434,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImGui::PopID();
 			#pragma endregion
 
-			#pragma region mouse pos
 				auto windowState = window.windowState;
 				windowState.w = s.x;
 				windowState.h = s.y;
 
-				ImVec2 globalMousePos = {};
-				{
-					ImGuiContext *g = ImGui::GetCurrentContext();
-					globalMousePos = g->IO.MousePos;
-				}
-
-				windowInput.mouseX = globalMousePos.x;
-				windowInput.mouseY = globalMousePos.y;
-
-				ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-				windowInput.mouseX -= windowPos.x + vMin.x;
-				windowInput.mouseY -= windowPos.y + vMin.y;
-			#pragma endregion
+			
 
 				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
 
@@ -697,7 +706,17 @@ bool pika::ContainerManager::startRecordingContainer(containerId_t id, pika::Log
 		return 0;
 	}
 
-
+	//cear file
+	{
+		std::ofstream record(filePath);
+		if (!record.is_open())
+		{
+			logManager.log((std::string("Couldn't open recording file for starting recording") + std::to_string(id)).c_str(),
+				pika::logError);
+			return 0;
+		}
+		record.close();
+	}
 
 	c->second.flags.status = pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED;
 	pika::strlcpy(c->second.flags.recordingName, filePath, sizeof(c->second.flags.recordingName));
