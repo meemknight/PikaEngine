@@ -30,14 +30,31 @@ struct ImmageViewer: public Container
 	{
 		
 
+		//pika::memory::setGlobalAllocatorToStandard();
+		//{
+		//	texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
+		//}
+		//pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
 
-		pika::memory::setGlobalAllocatorToStandard();
+
+		size_t size = 0;
+		if (!requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "map.png", size))
 		{
-			texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
+			//return 0; //todo
 		}
-		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
-
 		
+		unsigned char *buffer = new unsigned char[size];
+		
+		if (!requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "map.png", buffer, size))
+		{
+			//no need to clear memory since the engine clears it for us
+			//return 0; //todo
+		}
+		
+		texture.createFromFileData(buffer, size, true, true);
+		
+		delete[] buffer;
+
 	}
 
 	void update(pika::Input input, pika::WindowState windowState,

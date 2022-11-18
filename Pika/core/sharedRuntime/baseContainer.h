@@ -7,6 +7,8 @@
 #include <staticVector.h>
 #include <pikaGL/frameBuffer.h>
 #include <pikaConsoleManager/pikaConsoleWindow.h>
+#include <globalAllocator/globalAllocator.h>
+#include <fstream>
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
 typedef READENTIREFILE(readEntireFile_t);
@@ -47,24 +49,100 @@ struct RequestedContainerInfo
 		return true;
 	}
 
-	//todo implement
+	bool readEntireFileBinary(const char *name, void *buffer, size_t size)
+	{
+		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
+		bool success = true;
+
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			std::ifstream f(name, std::ios::binary);
+
+			if (!f.is_open())
+			{
+				success = false;
+			}
+			else
+			{
+				f.read((char*)buffer, size);
+				f.close();
+			}
+		}
+		pika::memory::setGlobalAllocator(mainAllocator);
+
+		return success;
+	}
+
 	bool readEntireFile(const char *name, void *buffer, size_t size)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
+		bool success = true;
 
-		//bool rez = readEntireFilePointer(name, buffer, size);
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			std::ifstream f(name);
 
-		//pika::memory::setGlobalAllocator(mainAllocator);
+			if (!f.is_open())
+			{
+				success = false;
+			}
+			else
+			{
+				f.read((char *)buffer, size);
+				f.close();
+			}
+		}
+		pika::memory::setGlobalAllocator(mainAllocator);
 
-		//return rez;
+		return success;
+	}
+
+	bool getFileSizeBinary(const char *name, size_t &size)
+	{
+		//PIKA_DEVELOPMENT_ONLY_ASSERT(getFileSizePointer, "get file size pointer not assigned");
+
+		bool success = true;
+		size = 0;
+
+		//todo push pop allocator or use that pointer thing (and don't forget to only use explicit allocators calls or sthing)
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			std::ifstream f(name, std::ifstream::ate | std::ifstream::binary);
+			if (!f.is_open())
+			{
+				success = false;
+			}
+			else
+			{
+				size = f.tellg();
+				f.close();
+			}
+		}
+		pika::memory::setGlobalAllocator(mainAllocator);
+
+		return size;
 	}
 
 	bool getFileSize(const char *name, size_t &size)
 	{
-		//PIKA_DEVELOPMENT_ONLY_ASSERT(getFileSizePointer, "get file size pointer not assigned");
+		bool success = true;
+		size = 0;
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			std::ifstream f(name, std::ifstream::ate);
+			if (!f.is_open())
+			{
+				success = false;
+			}
+			else
+			{
+				size = f.tellg();
+				f.close();
+			}
+		}
+		pika::memory::setGlobalAllocator(mainAllocator);
 
-
-
+		return size;
 	}
 };
 

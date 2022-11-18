@@ -414,11 +414,13 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					ImVec2 vMin = ImGui::GetWindowContentRegionMin();
 					windowInput.mouseX -= windowPos.x + vMin.x;
 					windowInput.mouseY -= windowPos.y + vMin.y;
-				
-					//todo	
+
+
 					//https://github.com/ocornut/imgui/issues/5882
+					ImGuiViewport *viewPort = ImGui::GetWindowViewport();
 					auto io = ImGui::GetIO();
-					windowInput.hasFocus = ImGui::IsWindowFocused() && !io.AppFocusLost;
+					//windowInput.hasFocus = ImGui::GetPlatformIO().Platform_GetWindowFocus(viewPort) && !io.AppFocusLost;
+					windowInput.hasFocus = windowInput.hasFocus && !io.AppFocusLost;
 				}
 				
 

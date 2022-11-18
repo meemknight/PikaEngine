@@ -15,6 +15,62 @@ void inline errorCallbackCustom(std::string err, void *userData)
 	data->consoleWrite(err.c_str());
 }
 
+std::string inline readEntireFileCustom(const char *fileName, bool &couldNotOpen, void *userData)
+{
+	RequestedContainerInfo *data = (RequestedContainerInfo *)userData;
+	couldNotOpen = false;
+
+	size_t size = 0;
+	if (!data->getFileSize(fileName, size))
+	{
+		couldNotOpen = true;
+		return "";
+	}
+
+	std::string buffer;
+	buffer.resize(size+1);
+
+	if (!data->readEntireFile(fileName, &buffer.at(0), size))
+	{
+		couldNotOpen = true;
+		return "";
+	}
+
+	return buffer;
+}
+
+std::vector<char> inline readEntireFileBinaryCustom(const char *fileName, bool &couldNotOpen, void *userData)
+{
+	RequestedContainerInfo *data = (RequestedContainerInfo *)userData;
+	couldNotOpen = false;
+
+	size_t size = 0;
+	if (!data->getFileSizeBinary(fileName, size))
+	{
+		couldNotOpen = true;
+		return {};
+	}
+
+	std::vector<char> buffer;
+	buffer.resize(size + 1, 0);
+
+	if (!data->readEntireFileBinary(fileName, &buffer.at(0), size))
+	{
+		couldNotOpen = true;
+		return {};
+	}
+
+	return buffer;
+}
+
+bool inline defaultFileExistsCustom(const char *fileName, void *userData)
+{
+	RequestedContainerInfo *data = (RequestedContainerInfo *)userData;
+	size_t s=0;
+	return data->getFileSizeBinary(fileName, s);
+}
+
+
 struct ThreeDTest: public Container
 {
 
@@ -38,12 +94,17 @@ struct ThreeDTest: public Container
 	void create(RequestedContainerInfo &requestedInfo)
 	{
 	
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		//glEnable(GL_DEBUG_OUTPUT);
+		//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		//glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
+		//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
+		renderer.fileOpener.userData = &requestedInfo;
+		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
+		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
+		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
+
 		renderer.init(1, 1, requestedInfo.requestedFBO.fbo);
 		//renderer.skyBox = renderer.atmosfericScattering({0.2,1,0.3}, {0.9,0.1,0.1}, {0.4, 0.4, 0.8}, 0.8f); //todo a documentation
 		//todo api for skybox stuff
@@ -58,6 +119,7 @@ struct ThreeDTest: public Container
 			PIKA_RESOURCES_PATH "/skyBoxes/ocean/back.jpg"};
 
 		renderer.skyBox = renderer.loadSkyBox(names, requestedInfo.requestedFBO.fbo);
+		//renderer.skyBox.color = {0.2,0.3,0.8};
 
 	}
 
@@ -66,6 +128,10 @@ struct ThreeDTest: public Container
 	{
 		glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
+		renderer.fileOpener.userData = &requestedInfo;
+		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
+		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
+		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
 
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

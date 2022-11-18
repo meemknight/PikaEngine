@@ -1,15 +1,4 @@
-#2022-11-15 19:40:40: Created container: Gameplay
-#2022-11-15 19:40:56: Loaded snapshot
-#2022-11-15 19:40:59: Loaded snapshot
-#2022-11-15 19:41:02: Loaded snapshot
-#2022-11-15 19:41:04: Loaded snapshot
-#2022-11-15 19:41:07: Loaded snapshot
-#2022-11-15 19:41:10: Loaded snapshot
-#2022-11-15 19:41:13: Loaded snapshot
-#2022-11-15 19:41:16: Loaded snapshot
-#2022-11-15 19:41:18: Loaded snapshot
-#2022-11-15 19:41:21: Loaded snapshot
-#2022-11-15 19:41:23: Loaded snapshot
-#2022-11-15 19:41:26: Loaded snapshot
-#2022-11-15 19:41:29: Loaded snapshot
-#2022-11-15 19:41:32: Destroyed continer: Gameplay #1
+#2022-11-18 11:38:17: Created container: Gameplay
+#2022-11-18 11:38:20: Created container: ThreeDTest
+#2022-11-18 11:38:30: Destroyed continer: Gameplay #1
+#2022-11-18 11:38:30: Destroyed continer: ThreeDTest #2
