@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2022-11-18
+//built on 2022-11-22
 ////////////////////////////////////////////////
 
 
@@ -15,7 +15,6 @@
 
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
-
 
 
 #include <glm/vec4.hpp>
@@ -33925,7 +33924,7 @@ namespace gl3d
 	//todo this will probably dissapear
 	struct LightShader
 	{
-		std::string create(ErrorReporter &errorReporter, FileOpener &fileOpener);
+		std::string create(ErrorReporter &errorReporter, FileOpener &fileOpener, const char *BRDFIntegrationMapFileLocation);
 
 		void getSubroutines(ErrorReporter &errorReporter);
 
@@ -34509,8 +34508,9 @@ namespace gl3d
 	struct Renderer3D
 
 	{
+		//todo store the default fbo
 		//size of the screen and the default frameBuffer
-		void init(int x, int y, GLuint frameBuffer);
+		void init(int x, int y, GLuint frameBuffer, const char *BRDFIntegrationMapFileLocation);
 		
 		ErrorReporter errorReporter;
 		FileOpener fileOpener;
@@ -34802,8 +34802,12 @@ namespace gl3d
 
 		#pragma endregion
 		
-		//saves the current settings to a file;
-		std::string saveSettingsToFileData();
+		//saves the current settings to a string;
+		std::string saveSettingsToJson();
+
+		//this will terminate if data is not a valid json
+		void loadSettingsFromJson(const char *data);
+
 
 	#pragma endregion
 			

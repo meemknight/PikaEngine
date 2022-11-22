@@ -1,0 +1,17 @@
+# Material Count: 1
+
+newmtl Helmet_01_Mat
+Ns 18.000005
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd helmet_basecolor.tga
+norm helmet_normal.tga
+map_Pm helmet_metalness.tga
+map_Ao helmet_occlusion.tga
+map_Pr helmet_roughness.tga
+map_emissive helmet_emission.tga

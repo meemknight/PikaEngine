@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2022-11-18
+//built on 2022-11-22
 ////////////////////////////////////////////////
 
 #include "gl3d.h"
@@ -31295,7 +31295,7 @@ void gl3d::defaultErrorCallback(std::string err, void *userData)
 
 std::string gl3d::defaultReadEntireFile(const char* fileName, bool &couldNotOpen, void *userData)
 {
-	return "";
+	return {};
 }
 
 std::vector<char> gl3d::defaultReadEntireFileBinary(const char *fileName, bool &couldNotOpen, void *userData)
@@ -34362,12 +34362,13 @@ namespace gl3d
 
 
 	//todo move
-	std::string LightShader::create(ErrorReporter &errorReporter, FileOpener &fileOpener)
+	std::string LightShader::create(ErrorReporter &errorReporter, FileOpener &fileOpener, 
+		const char *BRDFIntegrationMapFileLocation)
 	{
 		std::string error = "";
 
 	#pragma region brdf texture
-		error += brdfTexture.loadTextureFromFile("resources/BRDFintegrationMap.png", fileOpener, TextureLoadQuality::leastPossible, 3);
+		error += brdfTexture.loadTextureFromFile(BRDFIntegrationMapFileLocation, fileOpener, TextureLoadQuality::leastPossible, 3);
 		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -35918,7 +35919,7 @@ namespace gl3d
 {
 	
 
-	void Renderer3D::init(int x, int y, GLuint frameBuffer)
+	void Renderer3D::init(int x, int y, GLuint frameBuffer, const char *BRDFIntegrationMapFileLocation)
 	{
 		internal.w = x; internal.h = y;
 		internal.adaptiveW = x;
@@ -35928,7 +35929,7 @@ namespace gl3d
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 
-		errorReporter.callErrorCallback(internal.lightShader.create(errorReporter, fileOpener));
+		errorReporter.callErrorCallback(internal.lightShader.create(errorReporter, fileOpener, BRDFIntegrationMapFileLocation));
 		vao.createVAOs();
 		internal.skyBoxLoaderAndDrawer.createGpuData(errorReporter, fileOpener, frameBuffer);
 
@@ -38337,7 +38338,8 @@ namespace gl3d
 		return antiAlias.usingFXAA;
 	}
 
-	std::string Renderer3D::saveSettingsToFileData()
+	//todo flags
+	std::string Renderer3D::saveSettingsToJson()
 	{
 		using Json = nlohmann::json;
 
@@ -38347,7 +38349,80 @@ namespace gl3d
 		j["normal mapping"] = isNormalMappingEnabeled();
 		j["light subscatter"] = isLightSubScatteringEnabeled();
 
+		//fxaa
+		{
+			j["fxaa"] = isFXAAenabeled();
+			Json fxaaData;
+			auto data = getFxaaSettings();
+
+			fxaaData["edgeDarkTreshold"] = data.edgeDarkTreshold;
+			fxaaData["edgeMinTreshold"] = data.edgeMinTreshold;
+			fxaaData["qualityMultiplyer"] = data.quaityMultiplier;
+			fxaaData["iterations"] = data.ITERATIONS;
+			fxaaData["subPixelQuality"] = data.SUBPIXEL_QUALITY;
+
+			j["fxaaData"] = fxaaData;
+		}
+		
+		//todo separate thing
+		j["adaptiveResolution"] = adaptiveResolution.useAdaptiveResolution; //todo setter getter
+		j["zprePass"] = zPrePass; //todo setter getter
+		j["frustumCulling"] = frustumCulling; 
+
+
+		//ssao
+		{
+			j["ssao"] = isSSAOenabeled();
+			Json ssaoData;
+			ssaoData["bias"] = getSSAOBias();
+			ssaoData["radius"] = getSSAORadius();
+			ssaoData["sampleCount"] = getSSAOSampleCount();
+			ssaoData["exponent"] = getSSAOExponent();
+			
+			j["ssaoData"] = ssaoData;
+		}
+
+		//chromatic aberation
+		{
+			j["chromaticAberation"] = chromaticAberation();
+			
+			Json chromaticAberationData;
+			chromaticAberationData["strength"] = getChromaticAberationStrength();
+			chromaticAberationData["unfocusDistance"] = getChromaticAberationUnfocusDistance();
+
+			j["chromaticAberationData"] = chromaticAberationData;
+		}
+
 		return j.dump();
+	}
+
+	void Renderer3D::loadSettingsFromJson(const char *data)
+	{
+		using Json = nlohmann::json;
+
+		auto rez = Json::parse(data);
+
+		{
+			auto exposure = rez["exposure"];
+			if (exposure.is_number_float())
+			{
+				setExposure(exposure);
+			}
+
+			auto normalMapping = rez["normal mapping"];
+			if (normalMapping.is_boolean())
+			{
+				this->enableNormalMapping(normalMapping);
+			}
+
+			auto lightSubscatter = rez["light subscatter"];
+
+			if (lightSubscatter.is_boolean())
+			{
+				enableLightSubScattering(lightSubscatter);
+			}
+		}
+
 	}
 
 	//todo look into  glProgramUniform

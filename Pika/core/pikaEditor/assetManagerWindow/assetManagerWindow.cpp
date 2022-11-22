@@ -52,6 +52,32 @@ namespace pika
 
 		ImGui::InputText("Search file", searchText, sizeof(searchText));
 
+		ImGui::SameLine();
+
+		if (ImGui::Button("Open resources folder"))
+		{
+		#if PIKA_WINDOWS
+			ShellExecute(NULL, "open", PIKA_RESOURCES_PATH, NULL, NULL, SW_RESTORE);
+		#endif
+		}
+
+		std::string longPath = currentPath.string();
+		std::string root = PIKA_RESOURCES_PATH;
+		std::string enginePath = "PIKA_RESOURCES_PATH/";
+		if (longPath.size() > root.size())
+		{
+			enginePath += (longPath.c_str() + root.size());
+		}
+
+		for (char &c : enginePath)
+		{
+			if (c == '\\')
+			{
+				c = '/';
+			}
+		}
+
+		ImGui::Text(enginePath.c_str());
 
 		ImGui::Separator();
 
@@ -123,6 +149,14 @@ namespace pika
 						ImGui::CloseCurrentPopup();
 					}
 
+					if (ImGui::Button("copy file location for engine"))
+					{
+						std::string s = "\"" + enginePath + "\"";
+
+						ImGui::SetClipboardText(s.c_str());
+						ImGui::CloseCurrentPopup();
+					}
+
 					if (!p.is_directory())
 					{
 						if (ImGui::Button("open file"))
@@ -133,6 +167,8 @@ namespace pika
 							ImGui::CloseCurrentPopup();
 						}
 					}
+
+					
 
 					ImGui::EndPopup();
 				}

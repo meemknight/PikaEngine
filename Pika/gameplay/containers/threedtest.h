@@ -89,7 +89,8 @@ struct ThreeDTest: public Container
 	}
 
 	gl3d::Renderer3D renderer;
-
+	gl3d::Model helmetModel;
+	gl3d::Entity helmetEntity;
 
 	void create(RequestedContainerInfo &requestedInfo)
 	{
@@ -105,7 +106,7 @@ struct ThreeDTest: public Container
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
 
-		renderer.init(1, 1, requestedInfo.requestedFBO.fbo);
+		renderer.init(1, 1, requestedInfo.requestedFBO.fbo, PIKA_RESOURCES_PATH "BRDFintegrationMap.png");
 		//renderer.skyBox = renderer.atmosfericScattering({0.2,1,0.3}, {0.9,0.1,0.1}, {0.4, 0.4, 0.8}, 0.8f); //todo a documentation
 		//todo api for skybox stuff
 		//renderer.skyBox.color = {0.2,0.3,0.9};
@@ -121,12 +122,20 @@ struct ThreeDTest: public Container
 		renderer.skyBox = renderer.loadSkyBox(names, requestedInfo.requestedFBO.fbo);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 
+		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", requestedInfo.requestedFBO.fbo);
+		
+		gl3d::Transform t;
+		t.position = {0, 0, -3};
+		t.rotation = {1.5, 0 , 0};
+
+		helmetEntity = renderer.createEntity(helmetModel, t);
+
 	}
 
 	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-		glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
+		//glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
@@ -160,8 +169,10 @@ struct ThreeDTest: public Container
 				lastMousePos = {input.mouseX, input.mouseY};
 			}
 		}
+		
 
 		renderer.render(input.deltaTime, requestedInfo.requestedFBO.fbo);
+
 
 		glDisable(GL_DEPTH_TEST);
 	}

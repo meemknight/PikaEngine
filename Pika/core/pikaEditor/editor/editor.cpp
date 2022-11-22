@@ -19,6 +19,7 @@
 #define TRANSPARENT_EDITOR_WINDOW ICON_FK_EYE " Transparent Editor window"
 #define CONSOLE_WINDOW ICON_FK_TERMINAL " Console window"
 #define ASSET_MANAGER_WINDOW ICON_FK_FILES_O " Asset manager"
+#define OPENGL_ERRORS_WINDOW ICON_FK_EXCLAMATION_TRIANGLE " opengl errors"
 
 #if !PIKA_SHOULD_REMOVE_EDITOR
 
@@ -33,6 +34,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	shortcutManager.registerShortcut(TRANSPARENT_EDITOR_WINDOW, "Ctrl+Alt+T", &windowFlags.transparentWindow);
 	shortcutManager.registerShortcut(CONSOLE_WINDOW, "Ctrl+C", &windowFlags.consoleWindow);
 	shortcutManager.registerShortcut(ASSET_MANAGER_WINDOW, "Ctrl+Alt+A", &windowFlags.assetManagerWindow);
+	shortcutManager.registerShortcut(OPENGL_ERRORS_WINDOW, "Ctrl+Alt+O", &windowFlags.openglErrorsWindow);
 
 	imguiId = imguiIDManager.getImguiIds(1);
 
@@ -41,6 +43,7 @@ void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui:
 	containersWindow.init(imguiIDManager);
 	consoleWindow.init(imguiIDManager);
 	assetManagerWindow.init(imguiIDManager);
+	openglLogsWindow.init(imguiIDManager);
 
 	if (sfs::safeLoad(&optionsFlags, sizeof(optionsFlags), PIKA_ENGINE_SAVES_PATH "options", false) != sfs::noError)
 	{
@@ -167,6 +170,9 @@ void pika::Editor::update(const pika::Input &input,
 					ImGui::MenuItem(pika::AssetManagerWindow::ICON_NAME,
 						shortcutManager.getShortcut(ASSET_MANAGER_WINDOW), &windowFlags.assetManagerWindow);
 
+					ImGui::MenuItem(pika::OpenglLogsWindow::ICON_NAME,
+						shortcutManager.getShortcut(OPENGL_ERRORS_WINDOW), &windowFlags.openglErrorsWindow);
+
 					ImGui::EndMenu();
 
 				}
@@ -247,6 +253,14 @@ void pika::Editor::update(const pika::Input &input,
 
 #pragma endregion
 
+#pragma region opengl logs
+
+	if (windowFlags.openglErrorsWindow)
+	{
+		openglLogsWindow.update(windowFlags.openglErrorsWindow);
+	}
+
+#pragma endregion
 
 
 }

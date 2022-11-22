@@ -14,6 +14,7 @@
 #include <containersWindow/containersWindow.h>
 #include <pikaConsoleManager/pikaConsoleWindow.h>
 #include <assetManagerWindow/assetManagerWindow.h>
+#include <openglLogs/openglLogs.h>
 
 namespace pika
 {
@@ -43,6 +44,7 @@ namespace pika
 			bool transparentWindow = 0;
 			bool consoleWindow = 0;
 			bool assetManagerWindow = 0;
+			bool openglErrorsWindow = 0;
 		}windowFlags;
 
 		pika::LogWindow logWindow;
@@ -50,6 +52,7 @@ namespace pika
 		pika::ContainersWindow containersWindow;
 		pika::ConsoleWindow consoleWindow;
 		pika::AssetManagerWindow assetManagerWindow;
+		pika::OpenglLogsWindow openglLogsWindow;
 
 		bool lastHideWindowState = optionsFlags.hideMainWindow;
 
