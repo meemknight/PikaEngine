@@ -419,8 +419,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					//https://github.com/ocornut/imgui/issues/5882
 					ImGuiViewport *viewPort = ImGui::GetWindowViewport();
 					auto io = ImGui::GetIO();
-					//windowInput.hasFocus = ImGui::GetPlatformIO().Platform_GetWindowFocus(viewPort) && !io.AppFocusLost;
-					windowInput.hasFocus = windowInput.hasFocus && !io.AppFocusLost;
+					
+					windowInput.hasFocus = viewPort->PlatformUserData && ImGui::GetPlatformIO().Platform_GetWindowFocus(viewPort) && !io.AppFocusLost;
+					
+					
+					//windowInput.hasFocus = windowInput.hasFocus && !io.AppFocusLost;
 				}
 				
 

@@ -90,7 +90,7 @@ struct ImmageViewer: public Container
 		{
 
 			float xsize = std::max((int)(s.x*zoom) - 10, (int)(100*zoom));
-			float aspect = 1.f;
+			float aspect = 1.f; //todo
 
 			ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
 				{0, 1}, {1, 0});
