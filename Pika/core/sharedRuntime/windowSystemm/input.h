@@ -66,6 +66,8 @@ namespace pika
 
 		Button buttons[Button::BUTTONS_COUNT] = {};
 		
+		char typedInput[20] = {};
+
 		//focus is here because it makes sense for the replay
 		bool hasFocus = 0;
 

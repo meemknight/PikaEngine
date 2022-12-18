@@ -1,6 +1,27 @@
 #include "callbacks.h"
 #include "window.h"
+#include <string.h>
 
+void addTypedInput(pika::Input &input, unsigned int c)
+{
+	if (c < 127)
+	{
+		auto l = strlen(input.typedInput);
+		if (l < sizeof(input.typedInput) - 1)
+		{
+			input.typedInput[l++] = c;
+			input.typedInput[l] = 0;
+		}
+	}
+}
+
+void characterCallback(GLFWwindow *window, unsigned int codepoint)
+{
+	auto ptr = glfwGetWindowUserPointer(window);
+	pika::PikaWindow &pikaWindow = *(pika::PikaWindow *)ptr;
+
+	addTypedInput(pikaWindow.input, codepoint);
+}
 
 void windowFocusCallback(GLFWwindow *window, int focused)
 {
@@ -40,6 +61,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 {
 	auto ptr = glfwGetWindowUserPointer(window);
 	pika::PikaWindow &pikaWindow = *(pika::PikaWindow *)ptr;
+
+	if ((action == GLFW_REPEAT || action == GLFW_PRESS) && key == GLFW_KEY_BACKSPACE)
+	{
+		addTypedInput(pikaWindow.input, 8);
+	}
 
 	if(key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
 	{

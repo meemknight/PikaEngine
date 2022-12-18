@@ -49,6 +49,7 @@ void pika::PikaWindow::create()
 
 	glfwSetMouseButtonCallback(context.wind, mouseCallback);
 	glfwSetWindowFocusCallback(context.wind, windowFocusCallback);
+	glfwSetCharCallback(context.wind, characterCallback);
 	glfwSetKeyCallback(context.wind, keyCallback);
 
 	//todo macro
@@ -123,10 +124,14 @@ void pika::PikaWindow::update()
 		processInputBefore(input.buttons[i]);
 	}
 
+	memset(input.typedInput, 0, sizeof(input.typedInput));
+
 #pragma endregion
+
 
 	glfwPollEvents();
 	glfwSwapBuffers(context.wind);
+
 
 #pragma region window state
 

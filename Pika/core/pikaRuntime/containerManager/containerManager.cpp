@@ -421,8 +421,6 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					auto io = ImGui::GetIO();
 					
 					windowInput.hasFocus = viewPort->PlatformUserData && ImGui::GetPlatformIO().Platform_GetWindowFocus(viewPort) && !io.AppFocusLost;
-					
-					
 					//windowInput.hasFocus = windowInput.hasFocus && !io.AppFocusLost;
 				}
 				

@@ -69,6 +69,8 @@ struct Gameplay : public Container
 			requestedInfo.consoleWrite("save\n");
 		}
 
+		requestedInfo.consoleWrite(input.typedInput);
+
 
 
 		if (input.buttons[pika::Button::P].held())
@@ -94,6 +96,7 @@ struct Gameplay : public Container
 		int size = 11;
 		renderer.renderRectangle({input.mouseX-size/2, input.mouseY-size/2, size, size},
 			Colors_Red, {}, 0.f);
+
 
 
 		//requestedInfo.consoleWrite((std::string("Mouse: ") + std::to_string(input.mouseX) + " " +
