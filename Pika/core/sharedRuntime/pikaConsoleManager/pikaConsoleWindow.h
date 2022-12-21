@@ -1,4 +1,8 @@
 #pragma once
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
 #include <pikaImgui/pikaImgui.h>
 #include <logs/log.h>
 #include <pikaSizes.h>
@@ -31,3 +35,5 @@ namespace pika
 
 
 };
+
+#endif

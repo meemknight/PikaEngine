@@ -1,4 +1,9 @@
 #pragma once
+
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
 #include <IconsForkAwesome.h>
 #include <shortcutApi/shortcutApi.h>
 #include <pikaImgui/pikaImgui.h>
@@ -23,6 +28,6 @@ namespace pika
 
 
 
-
-
 };
+
+#endif

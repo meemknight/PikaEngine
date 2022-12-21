@@ -1,7 +1,17 @@
-﻿#include "logWindow.h"
+﻿
+
+
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
+
+#include "logWindow.h"
 #include <imgui.h>
 #include <IconsForkAwesome.h>
 #include <pikaImgui/pikaImgui.h>
+
+
 
 void pika::LogWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager)
 {
@@ -74,5 +84,5 @@ void pika::LogWindow::update(pika::LogManager &logManager, bool &open)
 	ImGui::PopID();
 }
 
-
+#endif
 

@@ -1,3 +1,8 @@
+
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
 #include "editShortcuts.h"
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
@@ -74,3 +79,4 @@ void pika::EditShortcutsWindow::update(pika::ShortcutManager &shortcutManager, b
 
 }
 
+#endif

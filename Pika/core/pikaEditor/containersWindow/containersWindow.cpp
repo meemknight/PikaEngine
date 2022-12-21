@@ -1,6 +1,6 @@
 #include "pikaConfig.h"
 
-#if !PIKA_SHOULD_REMOVE_IMGUI
+#if !PIKA_SHOULD_REMOVE_EDITOR
 
 #include "containersWindow.h"
 #include <pikaImgui/pikaImgui.h>

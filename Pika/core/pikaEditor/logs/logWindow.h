@@ -4,6 +4,11 @@
 #include <imgui.h>
 #include <pikaImgui/pikaImgui.h>
 
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
+
 namespace pika
 {
 
@@ -25,3 +30,6 @@ namespace pika
 	};
 
 }
+
+
+#endif

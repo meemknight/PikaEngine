@@ -1,3 +1,12 @@
+//////////////////////////////////////////
+//pikaConsoleWindow.cpp
+//Luta Vlad(c) 2022
+//https://github.com/meemknight/PikaEngine
+//////////////////////////////////////////
+
+#include <pikaConfig.h>
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
 #include "pikaConsoleWindow.h"
 #include <logs/assert.h>
 #include <iostream>
@@ -87,3 +96,4 @@ namespace pika
 
 };
 
+#endif

@@ -4,12 +4,16 @@
 //https://github.com/meemknight/PikaEngine
 //////////////////////////////////////////
 
+#if !PIKA_SHOULD_REMOVE_EDITOR
+
 #include "editor.h"
 #include <iostream>
 #include "IconsForkAwesome.h"
 #include "shortcutApi/shortcutApi.h"
 #include <editShortcuts/editShortcuts.h>
 #include <safeSave.h>
+
+
 
 #define DOCK_MAIN_WINDOW_SHORTCUT ICON_FK_EYE_SLASH " Hide main window"
 #define LOGS_SHORTCUT ICON_FK_COMMENT_O " Logs window"
@@ -273,5 +277,7 @@ void pika::Editor::saveFlagsData()
 
 
 }
+
+#endif
 
 #endif
