@@ -151,7 +151,7 @@ namespace pika
 
 					if (ImGui::Button("copy file location for engine"))
 					{
-						std::string s = "\"" + enginePath + "\"";
+						std::string s =  "PIKA_RESOURCES_PATH \"" + p.path().filename().string() + "\"";
 
 						ImGui::SetClipboardText(s.c_str());
 						ImGui::CloseCurrentPopup();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2022-11-22
+//built on 2023-01-23
 ////////////////////////////////////////////////
 
 
@@ -34321,7 +34321,7 @@ namespace gl3d
 		unsigned char flags = {}; // lsb -> 1 static, visible, shadows
 
 		GL3D_ADD_FLAG(isStatic, setStatic, 0);
-		GL3D_ADD_FLAG(isVisible, setVisible, 1);
+		GL3D_ADD_FLAG(isVisible, setVisible, 1); //set by user
 		GL3D_ADD_FLAG(castShadows, setCastShadows, 2);
 		GL3D_ADD_FLAG(animate, setAnimate, 3);
 
@@ -34353,7 +34353,7 @@ namespace gl3d
 		GLuint vertexBuffer = 0;
 		GLuint captureFBO;
 
-		void createGpuData(ErrorReporter &errorReporter, FileOpener &fileOpener,  GLuint frameBuffer);
+		void createGpuData(ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
 
 		struct
 		{
@@ -34510,8 +34510,10 @@ namespace gl3d
 	{
 		//todo store the default fbo
 		//size of the screen and the default frameBuffer
-		void init(int x, int y, GLuint frameBuffer, const char *BRDFIntegrationMapFileLocation);
+		void init(int x, int y, const char *BRDFIntegrationMapFileLocation, GLuint frameBuffer = 0);
 		
+		GLuint frameBuffer = 0;
+
 		ErrorReporter errorReporter;
 		FileOpener fileOpener;
 
@@ -34520,14 +34522,14 @@ namespace gl3d
 
 	#pragma region material
 		
-		Material createMaterial(GLuint frameBuffer, glm::vec4 kd = glm::vec4(1), 
+		Material createMaterial(glm::vec4 kd = glm::vec4(1), 
 			float roughness = 0.5f, float metallic = 0.1, float ao = 1.f, std::string name = "",
 			gl3d::Texture albedoTexture = {}, gl3d::Texture normalTexture = {}, gl3d::Texture roughnessTexture = {}, gl3d::Texture metallicTexture = {},
 			gl3d::Texture occlusionTexture = {}, gl3d::Texture emmisiveTexture = {});
 
-		Material createMaterial(Material m, GLuint frameBuffer);
+		Material createMaterial(Material m);
 
-		std::vector<Material> loadMaterial(std::string file,  GLuint frameBuffer);
+		std::vector<Material> loadMaterial(std::string file);
 
 		bool deleteMaterial(Material m);  
 		bool copyMaterialData(Material dest, Material source);
@@ -34564,19 +34566,19 @@ namespace gl3d
 		Texture createIntenralTexture(GLuint id_, int alphaData, int alphaValues, const std::string &name = "");
 
 		PBRTexture createPBRTexture(Texture& roughness, Texture& metallic,
-			Texture& ambientOcclusion, GLuint frameBuffer);
+			Texture& ambientOcclusion);
 		void deletePBRTexture(PBRTexture &t);
 
 	#pragma endregion
 
 	#pragma region skyBox
 
-		SkyBox loadSkyBox(const char* names[6], GLuint frameBuffer);
+		SkyBox loadSkyBox(const char* names[6]);
 		SkyBox loadSkyBox(const char* name, int format = 0);
-		SkyBox loadHDRSkyBox(const char* name, GLuint frameBuffer);
+		SkyBox loadHDRSkyBox(const char* name);
 		void deleteSkyBoxTextures(SkyBox& skyBox);
 
-		SkyBox atmosfericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2, float g, GLuint frameBuffer);
+		SkyBox atmosfericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2, float g);
 
 	#pragma endregion
 
@@ -34584,7 +34586,7 @@ namespace gl3d
 
 		//todo implement stuff here
 
-		Model loadModel(std::string path, GLuint frameBuffer, float scale = 1);
+		Model loadModel(std::string path, float scale = 1);
 		bool isModel(Model& m);
 		void deleteModel(Model &m);
 
@@ -34684,7 +34686,7 @@ namespace gl3d
 		Entity createEntity(Model m, Transform transform = {}, 
 			bool staticGeometry = 1, bool visible = 1, bool castShadows = 1);
 
-		Entity duplicateEntity(Entity &e, GLuint frameBuffer);
+		Entity duplicateEntity(Entity &e);
 
 		void setEntityModel(Entity& e, Model m);
 		void clearEntityModel(Entity& e);
@@ -34722,15 +34724,15 @@ namespace gl3d
 
 		int getEntityMeshesCount(Entity& e);
 		MaterialValues getEntityMeshMaterialValues(Entity& e, int meshIndex);
-		void setEntityMeshMaterialValues(Entity& e, int meshIndex, MaterialValues mat, GLuint frameBuffer);
+		void setEntityMeshMaterialValues(Entity& e, int meshIndex, MaterialValues mat);
 
 		std::string getEntityMeshMaterialName(Entity& e, int meshIndex);
-		void setEntityMeshMaterialName(Entity& e, int meshIndex, const std::string &name, GLuint frameBuffer);
+		void setEntityMeshMaterialName(Entity& e, int meshIndex, const std::string &name);
 		
 		void setEntityMeshMaterial(Entity& e, int meshIndex, Material mat);
 		
 		TextureDataForMaterial getEntityMeshMaterialTextures(Entity& e, int meshIndex);
-		void setEntityMeshMaterialTextures(Entity& e, int meshIndex, TextureDataForMaterial texture, GLuint frameBuffer);
+		void setEntityMeshMaterialTextures(Entity& e, int meshIndex, TextureDataForMaterial texture);
 
 	#pragma endregion
 
@@ -34929,46 +34931,67 @@ namespace gl3d
 			}showNormalsProgram;
 
 			struct SSAO
+			{
+				//https://learnopengl.com/Advanced-Lighting/SSAO
+
+				void create(int w, int h, ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
+				void resize(int w, int h);
+
+				glm::ivec2 currentDimensions = {};
+
+				GLuint noiseTexture;
+				GLuint ssaoFBO;
+				GLuint ssaoColorBuffer;
+
+				Shader shader;
+
+				GLuint ssaoUniformBlockBuffer;
+				struct SsaoShaderUniformBlockData
 				{
-					//https://learnopengl.com/Advanced-Lighting/SSAO
+					float radius = 0.2;
+					float bias = 0.025;
+					int samplesTestSize = 16; // should be less than kernelSize (64)
 
-					void create(int w, int h, ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
-					void resize(int w, int h);
+				}ssaoShaderUniformBlockData;
 
-					glm::ivec2 currentDimensions = {};
+				GLint u_projection = -1;
+				GLint u_view = -1;
+				GLint u_gPosition = -1;
+				GLint u_gNormal = -1;
+				GLint u_texNoise = -1;
+				GLint u_samples = -1;
+				GLuint u_SSAODATA;
+				GLint u_depthBuffer = -1;
+				GLint u_aspectRatio = -1;
+				GLint u_tanHalfFOV = -1;
+				GLint u_farPlane = -1;
+				GLint u_closePlane = -1;
 
-					GLuint noiseTexture;
-					GLuint ssaoFBO;
-					GLuint ssaoColorBuffer;
 
-					Shader shader;
+				std::vector<glm::vec3> ssaoKernel;
 
-					GLuint ssaoUniformBlockBuffer;
-					struct SsaoShaderUniformBlockData
-					{
-						float radius = 0.2;
-						float bias = 0.025;
-						int samplesTestSize = 16; // should be less than kernelSize (64)
+				GLuint blurBuffer;
+				GLuint blurColorBuffer;
+				GLint u_ssaoInput;
+				Shader blurShader;
 
-					}ssaoShaderUniformBlockData;
+				float ssao_finalColor_exponent = 5.f;
+			}ssao;
 
-					GLint u_projection = -1;
-					GLint u_view = -1;
-					GLint u_gPosition = -1;
-					GLint u_gNormal = -1;
-					GLint u_texNoise = -1;
-					GLint u_samples = -1;
-					GLuint u_SSAODATA;
+			struct HBAO
+			{
+				//https://developer.download.nvidia.com/presentations/2008/SIGGRAPH/HBAO_SIG08b.pdf
 
-					std::vector<glm::vec3> ssaoKernel;
+				void create(ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
+				Shader shader;
 
-					GLuint blurBuffer;
-					GLuint blurColorBuffer;
-					GLint u_ssaoInput;
-					Shader blurShader;
+				GLint u_projection = -1;
+				GLint u_view = -1;
+				GLint u_gPosition = -1;
+				GLint u_gNormal = -1;
+				GLint u_texNoise = -1;
 
-					float ssao_finalColor_exponent = 5.f;
-				}ssao;
+			}hbao;
 
 			struct GBuffer
 			{
@@ -35201,7 +35224,7 @@ namespace gl3d
 		}renderDepthMap;
 		void renderADepthMap(GLuint texture, GLuint frameBuffer);
 
-		void render(float deltaTime, GLuint frameBuffer = 0);
+		void render(float deltaTime);
 		void updateWindowMetrics(int x, int y);
 
 		bool frustumCulling = 1;

@@ -84,151 +84,139 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 						selectedContainerToLaunch = c.containerName;
 
+						ImGui::Text(ICON_FK_PIE_CHART " Memory");
+						ImGui::Separator();
 
-						if (ImGui::BeginTabBar("##Tabs for container info", ImGuiTabBarFlags_Reorderable))
-						{
+						ImGui::NewLine();
 
-							if (ImGui::BeginTabItem(ICON_FK_PIE_CHART " Memory"))
+						#pragma region total memory requirement
+							size_t totalHeapMemory = c.containerStaticInfo.defaultHeapMemorySize;
+							for (auto i : c.containerStaticInfo.bonusAllocators)
 							{
-								ImGui::NewLine();
+								totalHeapMemory += i;
+							}
 
-							#pragma region total memory requirement
-								size_t totalHeapMemory = c.containerStaticInfo.defaultHeapMemorySize;
+							size_t totalMemory = totalHeapMemory + c.containerStructBaseSize;
+
+							ImGui::Text("Total Memory requirement: ");
+							ImGui::SameLine();
+							pika::pikaImgui::displayMemorySizeValue(totalMemory);
+
+							ImGui::Text("Total Heap requirement: ");
+							ImGui::SameLine();
+							pika::pikaImgui::displayMemorySizeValue(totalHeapMemory);
+						#pragma endregion
+
+						ImGui::NewLine();
+
+						ImGui::Text("Static Memory requirement: ");
+						ImGui::SameLine();
+						pika::pikaImgui::displayMemorySizeValue(c.containerStructBaseSize);
+
+						ImGui::Text("Default Heap Memory requirement: ");
+						ImGui::SameLine();
+						pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.defaultHeapMemorySize);
+
+						ImGui::Text("Other Heap Memory Allocators count: ");
+						ImGui::SameLine();
+						pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.bonusAllocators.size());
+
+
+						if (!c.containerStaticInfo.bonusAllocators.empty())
+						{
+							if (ImGui::BeginChild("##heap allocators",
+								{0, 100}, true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+							{
+
 								for (auto i : c.containerStaticInfo.bonusAllocators)
 								{
-									totalHeapMemory += i;
-								}
-
-								size_t totalMemory = totalHeapMemory + c.containerStructBaseSize;
-
-								ImGui::Text("Total Memory requirement: ");
-								ImGui::SameLine();
-								pika::pikaImgui::displayMemorySizeValue(totalMemory);
-
-								ImGui::Text("Total Heap requirement: ");
-								ImGui::SameLine();
-								pika::pikaImgui::displayMemorySizeValue(totalHeapMemory);
-							#pragma endregion
-
-								ImGui::NewLine();
-
-								ImGui::Text("Static Memory requirement: ");
-								ImGui::SameLine();
-								pika::pikaImgui::displayMemorySizeValue(c.containerStructBaseSize);
-
-								ImGui::Text("Default Heap Memory requirement: ");
-								ImGui::SameLine();
-								pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.defaultHeapMemorySize);
-
-								ImGui::Text("Other Heap Memory Allocators count: ");
-								ImGui::SameLine();
-								pika::pikaImgui::displayMemorySizeValue(c.containerStaticInfo.bonusAllocators.size());
-
-
-								if (!c.containerStaticInfo.bonusAllocators.empty())
-								{
-									if (ImGui::BeginChild("##heap allocators",
-										{0, 100}, true, ImGuiWindowFlags_AlwaysVerticalScrollbar))
-									{
-
-										for (auto i : c.containerStaticInfo.bonusAllocators)
-										{
-											pika::pikaImgui::displayMemorySizeValue(i);
-										}
-
-
-									}
-									ImGui::EndChild();
+									pika::pikaImgui::displayMemorySizeValue(i);
 								}
 
 
-								ImGui::EndTabItem();
 							}
-
-							if (ImGui::BeginTabItem(ICON_FK_PLUS_SQUARE_O" Launch"))
-							{
-								ImGui::NewLine();
-
-
-								if (!selectedContainerToLaunch.empty()
-									&& ImGui::Button(ICON_FK_PLAY " Launch a default configuration"))
-								{
-									if (createAtSpecificMemoryRegion)
-									{
-										containerManager.createContainer(selectedContainerToLaunch, loadedDll,
-											logManager, imguiIdsManager, consoleWindow, pika::TB(1));
-									}
-									else
-									{
-										containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager,
-											imguiIdsManager, consoleWindow);
-									}
-								}
-
-								ImGui::Checkbox("allocate at specific memory region", &createAtSpecificMemoryRegion);
-
-
-								//ImGui::NewLine();
-
-								{
-									static int currentSelectedSnapshot = 0;
-									auto snapshots = pika::getAvailableSnapshotsAnyMemoryPosition(c);
-
-									if (!selectedContainerToLaunch.empty()
-										&& ImGui::Button(ICON_FK_PICTURE_O " Launch a snapshot"))
-									{
-										auto s = snapshots[currentSelectedSnapshot];
-
-										auto memPos = getSnapshotMemoryPosition(s.c_str());
-
-										if (memPos == nullptr)
-										{
-											logManager.log("Failes to get snapshot info", pika::logError);
-										}
-										else
-										{
-
-											auto c = containerManager.createContainer(
-												selectedContainerToLaunch, loadedDll, logManager,
-												imguiIdsManager, consoleWindow, (size_t)memPos);
-
-											//no need to log error since create container does that
-											if (c != 0)
-											{
-												if (!containerManager.setSnapshotToContainer(c,
-													s.c_str(), logManager, imguiIdsManager))
-												{
-													containerManager.destroyContainer(c, loadedDll, logManager);
-												}
-											}
-
-
-										}
-
-										
-									
-									
-									}
-
-
-									auto contentSize = ImGui::GetItemRectSize();
-									contentSize.y -= ImGui::GetFrameHeightWithSpacing();
-									//contentSize.x /= 2;
-
-									ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
-										filterSnapshots, sizeof(filterSnapshots),
-										snapshots, contentSize);
-								}
-
-								
-
-								ImGui::EndTabItem();
-							}
-
-							ImGui::EndTabBar();
+							ImGui::EndChild();
 						}
 
 
+
+							ImGui::NewLine();
+							ImGui::Text(ICON_FK_PLUS_SQUARE_O " Launch");
+							ImGui::Separator();
+
+							ImGui::NewLine();
+
+							if (!selectedContainerToLaunch.empty()
+								&& ImGui::Button(ICON_FK_PLAY " Launch a default configuration"))
+							{
+								if (createAtSpecificMemoryRegion)
+								{
+									containerManager.createContainer(selectedContainerToLaunch, loadedDll,
+										logManager, imguiIdsManager, consoleWindow, pika::TB(1));
+								}
+								else
+								{
+									containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager,
+										imguiIdsManager, consoleWindow);
+								}
+							}
+
+							ImGui::Checkbox("allocate at specific memory region", &createAtSpecificMemoryRegion);
+
+
+							//ImGui::NewLine();
+
+							{
+								static int currentSelectedSnapshot = 0;
+								auto snapshots = pika::getAvailableSnapshotsAnyMemoryPosition(c);
+
+								if (!selectedContainerToLaunch.empty()
+									&& ImGui::Button(ICON_FK_PICTURE_O " Launch a snapshot"))
+								{
+									auto s = snapshots[currentSelectedSnapshot];
+
+									auto memPos = getSnapshotMemoryPosition(s.c_str());
+
+									if (memPos == nullptr)
+									{
+										logManager.log("Failes to get snapshot info", pika::logError);
+									}
+									else
+									{
+
+										auto c = containerManager.createContainer(
+											selectedContainerToLaunch, loadedDll, logManager,
+											imguiIdsManager, consoleWindow, (size_t)memPos);
+
+										//no need to log error since create container does that
+										if (c != 0)
+										{
+											if (!containerManager.setSnapshotToContainer(c,
+												s.c_str(), logManager, imguiIdsManager))
+											{
+												containerManager.destroyContainer(c, loadedDll, logManager);
+											}
+										}
+
+
+									}
+
+									
+								
+								
+								}
+
+
+								auto contentSize = ImGui::GetItemRectSize();
+								contentSize.y -= ImGui::GetFrameHeightWithSpacing();
+								//contentSize.x /= 2;
+
+								ImGui::ListWithFilter("##list box snapshots", &currentSelectedSnapshot,
+									filterSnapshots, sizeof(filterSnapshots),
+									snapshots, contentSize);
+							}
+
+								
 
 					}
 					else

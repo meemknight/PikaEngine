@@ -20,7 +20,7 @@ namespace pika
 		imguiId = idManager.getImguiIds();
 	}
 
-	void ConsoleWindow::update(pika::LogManager &logManager, bool &open)
+	void ConsoleWindow::update(bool &open)
 	{
 
 		//s += buffer->get;
@@ -92,6 +92,31 @@ namespace pika
 			}
 		}
 
+	}
+
+};
+
+#else
+
+#include "pikaConsoleWindow.h"
+
+//todo log console in production flag
+
+namespace pika
+{
+
+
+
+	void ConsoleWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager)
+	{
+	}
+
+	void ConsoleWindow::update(bool &open)
+	{
+	}
+
+	void ConsoleWindow::write(const char *c)
+	{
 	}
 
 };

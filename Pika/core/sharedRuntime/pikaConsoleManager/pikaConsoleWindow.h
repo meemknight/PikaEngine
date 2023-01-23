@@ -1,7 +1,6 @@
 #pragma once
 
 #include <pikaConfig.h>
-#if !PIKA_SHOULD_REMOVE_EDITOR
 
 #include <pikaImgui/pikaImgui.h>
 #include <logs/log.h>
@@ -15,7 +14,7 @@ namespace pika
 
 		void init(pika::pikaImgui::ImGuiIdsManager &idManager);
 
-		void update(pika::LogManager &logManager, bool &open);
+		void update(bool &open);
 
 		static constexpr char *ICON = ICON_FK_TERMINAL;
 		static constexpr char *NAME = "console";
@@ -36,4 +35,3 @@ namespace pika
 
 };
 
-#endif

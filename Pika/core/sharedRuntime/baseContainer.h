@@ -38,6 +38,8 @@ struct RequestedContainerInfo
 
 	pika::ConsoleWindow *consoleWindow = nullptr;
 
+	//todo add logs here
+
 	//returns true if succeded (can return false if console is disabeled)
 	bool consoleWrite(const char* c)
 	{

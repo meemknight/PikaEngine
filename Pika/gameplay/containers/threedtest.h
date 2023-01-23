@@ -12,7 +12,7 @@ void inline errorCallbackCustom(std::string err, void *userData)
 {
 	RequestedContainerInfo *data = (RequestedContainerInfo*)userData;
 
-	data->consoleWrite(err.c_str());
+	data->consoleWrite((err+"\n").c_str());
 }
 
 std::string inline readEntireFileCustom(const char *fileName, bool &couldNotOpen, void *userData)
@@ -100,13 +100,15 @@ struct ThreeDTest: public Container
 		//glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
 		//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
+
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
 
-		renderer.init(1, 1, requestedInfo.requestedFBO.fbo, PIKA_RESOURCES_PATH "BRDFintegrationMap.png");
+		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
+
 		//renderer.skyBox = renderer.atmosfericScattering({0.2,1,0.3}, {0.9,0.1,0.1}, {0.4, 0.4, 0.8}, 0.8f); //todo a documentation
 		//todo api for skybox stuff
 		//renderer.skyBox.color = {0.2,0.3,0.9};
@@ -119,11 +121,12 @@ struct ThreeDTest: public Container
 			PIKA_RESOURCES_PATH "/skyBoxes/ocean/front.jpg",
 			PIKA_RESOURCES_PATH "/skyBoxes/ocean/back.jpg"};
 
-		renderer.skyBox = renderer.loadSkyBox(names, requestedInfo.requestedFBO.fbo);
+		renderer.skyBox = renderer.loadSkyBox(names);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 
-		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", requestedInfo.requestedFBO.fbo);
-		
+		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
+		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf", 1.f);
+
 		gl3d::Transform t;
 		t.position = {0, 0, -3};
 		t.rotation = {1.5, 0 , 0};
@@ -135,7 +138,7 @@ struct ThreeDTest: public Container
 	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-		//glDebugMessageCallback(gl3d::glDebugOutput, &renderer.errorReporter);
+
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
@@ -171,7 +174,7 @@ struct ThreeDTest: public Container
 		}
 		
 
-		renderer.render(input.deltaTime, requestedInfo.requestedFBO.fbo);
+		renderer.render(input.deltaTime);
 
 
 		glDisable(GL_DEPTH_TEST);

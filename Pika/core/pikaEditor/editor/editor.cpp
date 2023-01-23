@@ -4,6 +4,7 @@
 //https://github.com/meemknight/PikaEngine
 //////////////////////////////////////////
 
+#include "pikaConfig.h"
 #if !PIKA_SHOULD_REMOVE_EDITOR
 
 #include "editor.h"
@@ -25,7 +26,6 @@
 #define ASSET_MANAGER_WINDOW ICON_FK_FILES_O " Asset manager"
 #define OPENGL_ERRORS_WINDOW ICON_FK_EXCLAMATION_TRIANGLE " opengl errors"
 
-#if !PIKA_SHOULD_REMOVE_EDITOR
 
 void pika::Editor::init(pika::ShortcutManager &shortcutManager, pika::pikaImgui::ImGuiIdsManager &imguiIDManager)
 {
@@ -244,7 +244,7 @@ void pika::Editor::update(const pika::Input &input,
 #pragma region console
 	if (windowFlags.consoleWindow)
 	{
-		consoleWindow.update(logs, windowFlags.consoleWindow);
+		consoleWindow.update(windowFlags.consoleWindow);
 	}
 #pragma endregion
 
@@ -280,4 +280,3 @@ void pika::Editor::saveFlagsData()
 
 #endif
 
-#endif

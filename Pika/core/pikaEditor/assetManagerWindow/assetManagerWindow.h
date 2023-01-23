@@ -1,4 +1,6 @@
 #pragma once
+
+#include "pikaConfig.h"
 #if !PIKA_SHOULD_REMOVE_IMGUI
 
 #include <logs/log.h>
