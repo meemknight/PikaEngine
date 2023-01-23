@@ -295,11 +295,6 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			auto windowInput = window.input;
 		
 
-		#pragma region mouse pos
-			
-			
-		#pragma endregion
-
 		#if PIKA_DEVELOPMENT
 
 			if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_BEING_RECORDED)
@@ -381,9 +376,29 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			auto callUpdate = [&](pika::WindowState &windowState)
 			{
+
+				auto t1 = std::chrono::high_resolution_clock::now();
+
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
 				c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
 				loadedDll.resetAllocatorDllRealm();
+
+				auto t2 = std::chrono::high_resolution_clock::now();
+				
+				auto milliseconds = (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1)).count()/1000.f;
+
+				c.second.frameTimer += milliseconds;
+				c.second.frameCounter++;
+				if (c.second.frameCounter >= 100)
+				{
+					c.second.currentMs = c.second.frameTimer/100.f;
+
+					c.second.frameTimer = 0;
+					c.second.frameCounter = 0;
+				}
+				
+
+
 			};
 
 			if (c.second.imguiWindowId && !isProduction)

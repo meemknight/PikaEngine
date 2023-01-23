@@ -395,6 +395,9 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 						{
 
 							ImGui::Text("Status: %s", c.flags.getStatusName());
+
+							ImGui::Text("Time (ms): %f", c.currentMs);
+
 							ImGui::Separator();
 
 							if (ImGui::BeginTabBar("##Tabs for play and record", ImGuiTabBarFlags_Reorderable))

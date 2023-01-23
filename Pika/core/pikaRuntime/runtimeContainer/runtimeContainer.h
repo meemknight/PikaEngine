@@ -35,6 +35,10 @@ struct RuntimeContainer
 
 	int imguiWindowId = 0;
 
+	unsigned int frameCounter = 0;
+	float frameTimer = 0;
+	float currentMs = 0;
+
 	struct FLAGS
 	{
 		enum

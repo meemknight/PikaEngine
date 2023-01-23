@@ -78,7 +78,6 @@ struct Gameplay : public Container
 			requestedInfo.consoleWrite(std::to_string(input.deltaTime).c_str());
 		}
 
-
 		gl2d::enableNecessaryGLFeatures();
 		renderer.updateWindowMetrics(windowState.w, windowState.h);
 
