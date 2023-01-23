@@ -139,6 +139,8 @@ int main()
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
 
+	//logs.log((const char*)glGetString(GL_VERSION));
+
 
 	pika::pikaImgui::initImgui(window.context);
 

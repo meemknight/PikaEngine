@@ -31289,24 +31289,103 @@ void gl3d::ErrorReporter::callErrorCallback(std::string s)
 	}
 }
 
+
 void gl3d::defaultErrorCallback(std::string err, void *userData)
 {
-	//std::cout << err << "\n";
+#if GL3D_REMOVE_IOSTREAM == 0
+	std::cout << err << "\n";
+#endif
 }
 
 std::string gl3d::defaultReadEntireFile(const char* fileName, bool &couldNotOpen, void *userData)
 {
+#if GL3D_REMOVE_FSTREAM == 0
+
+	std::ifstream file;
+	file.open(fileName);
+
+	if (!file.is_open())
+	{
+		couldNotOpen = true;
+		return "";
+}
+
+	couldNotOpen = false;
+
+	size_t size = 0;
+	file.seekg(0, file.end);
+	size = file.tellg();
+	file.seekg(0, file.beg);
+
+	std::string ret;
+	ret.reserve(size + 1);
+
+	ret.assign((std::istreambuf_iterator<char>(file)),
+		std::istreambuf_iterator<char>());
+
+	file.close();
+
+	return ret;
+
+#else
+
 	return "";
+
+#endif
 }
 
 std::vector<char> gl3d::defaultReadEntireFileBinary(const char *fileName, bool &couldNotOpen, void *userData)
 {
+#if GL3D_REMOVE_FSTREAM == 0
+	std::ifstream file;
+	file.open(fileName, std::ios::binary);
+
+	if (!file.is_open())
+	{
+		couldNotOpen = true;
+		return {};
+	}
+
+	couldNotOpen = false;
+
+	size_t size = 0;
+	file.seekg(0, file.end);
+	size = file.tellg();
+	file.seekg(0, file.beg);
+
+	std::vector<char> ret;
+	ret.reserve(size + 1);
+
+	ret.assign((std::istreambuf_iterator<char>(file)),
+		std::istreambuf_iterator<char>());
+
+	file.close();
+
+	return ret;
+#else
 	return {};
+#endif
 }
 
 bool gl3d::defaultFileExists(const char *fileName, void *userData)
 {
-	return 0;
+
+#if GL3D_REMOVE_FSTREAM == 0
+	std::ifstream file;
+	file.open(fileName);
+
+	if (!file.is_open())
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+#else
+	return false;
+#endif
+	
 }
 
 #pragma endregion
@@ -31974,7 +32053,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"skyBox.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "layout (location = 0) in vec3 aPos;\n"
 "out vec3 v_texCoords;\n"
 "uniform mat4 u_viewProjection;\n"
@@ -32114,7 +32192,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"hdrToCubeMap.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "layout (location = 0) in vec3 aPos;\n"
 "out vec3 v_localPos;\n"
 "uniform mat4 u_viewProjection;\n"
@@ -32296,7 +32373,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"pointShadow.vert", "#version 430\n"
-"#pragma debug(on)\n"
 "layout(location = 0) in vec3 a_positions;\n"
 "layout(location = 1) in vec3 a_normals; \n"
 "layout(location = 2) in vec2 a_texCoord;\n"
@@ -32828,7 +32904,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"zPrePass.vert", "#version 430\n"
-"#pragma debug(on)\n"
 "layout(location = 0) in vec3 a_positions;\n"
 "layout(location = 2) in vec2 a_texCoord;\n"
 "layout(location = 3) in ivec4 a_jointsId;\n"
@@ -32876,7 +32951,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"lightingPass.frag", "#version 430 core\n"
-"#pragma debug(on)\n"
 "#extension GL_ARB_bindless_texture: require\n"
 "layout(location = 0) out vec4 a_outColor;\n"
 "layout(location = 1) out vec4 a_outBloom;\n"
@@ -33584,7 +33658,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"geometryPass.vert", "#version 430\n"
-"#pragma debug(on)\n"
 "layout(location = 0) in vec3 a_positions;\n"
 "layout(location = 1) in vec3 a_normals;\n"
 "layout(location = 2) in vec2 a_texCoord;\n"
@@ -33632,7 +33705,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"geometryPass.frag", "#version 430\n"
-"#pragma debug(on)\n"
 "#extension GL_ARB_bindless_texture: require\n"
 "layout(location = 0) out vec3 a_pos;\n"
 "layout(location = 1) out ivec3 a_normal;\n"
@@ -33902,7 +33974,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"stencil.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "in layout(location = 0) vec3 a_positions;\n"
 "in layout(location = 1) vec3 a_normals;\n"
 "uniform mat4 u_transform;\n"
@@ -33920,7 +33991,6 @@ namespace gl3d
       std::pair<std::string, const char*>{"stencil.frag", "#pragma once\n"},
 
       std::pair<std::string, const char*>{"showNormals.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "in layout(location = 0) vec3 a_positions;\n"
 "in layout(location = 1) vec3 a_normals;\n"
 "uniform mat4 u_modelTransform; \n"
@@ -33965,7 +34035,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"normals.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "in layout(location = 0) vec3 a_positions;\n"
 "in layout(location = 1) vec3 a_normals;\n"
 "in layout(location = 2) vec2 a_texCoord;\n"
@@ -33984,7 +34053,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"normals.frag", "#version 430\n"
-"#pragma debug(on)\n"
 "#extension GL_NV_shadow_samplers_cube : enable\n"
 "out layout(location = 0) vec4 a_outColor;\n"
 "in vec3 v_normals;\n"
@@ -34216,7 +34284,6 @@ namespace gl3d
 "}\n"},
 
       std::pair<std::string, const char*>{"color.vert", "#version 330\n"
-"#pragma debug(on)\n"
 "in layout(location = 0) vec3 positions;\n"
 "in layout(location = 1) vec3 colors;\n"
 "uniform mat4 u_transform;\n"
@@ -35790,6 +35857,7 @@ namespace gl3d
 	void SkyBoxLoaderAndDrawer::createConvolutedAndPrefilteredTextureData(SkyBox &skyBox
 		, GLuint frameBuffer, float sampleQuality, unsigned int specularSamples)
 	{
+
 		glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.texture);
 		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -38980,7 +39048,9 @@ namespace gl3d
 
 	void Renderer3D::render(float deltaTime)
 	{
-	
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+
 		if (internal.w <= 0 || internal.h <= 0)
 		{
 			return;

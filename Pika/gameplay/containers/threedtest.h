@@ -83,7 +83,7 @@ struct ThreeDTest: public Container
 		info.defaultHeapMemorySize = pika::MB(20);
 
 		info.requestImguiFbo = true;
-
+		info.requestImguiIds = 1;
 
 		return info;
 	}
@@ -138,6 +138,7 @@ struct ThreeDTest: public Container
 	void update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+		
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -178,6 +179,20 @@ struct ThreeDTest: public Container
 
 
 		glDisable(GL_DEPTH_TEST);
+
+
+		//if (!ImGui::Begin("Test window"))
+		//{
+		//	ImGui::End();
+		//	return;
+		//}
+		//
+		//auto t = renderer.getEntityMeshMaterialTextures(helmetEntity, 0);
+		//
+		//ImGui::Image((void*)renderer.getTextureOpenglId(t.albedoTexture), {200, 200});
+		//
+		//ImGui::End();
+
 	}
 
 };

@@ -17,6 +17,20 @@
 #include <stb_image/stb_image.h>
 
 
+#define GL3D_REMOVE_IOSTREAM 1 //you can remove this if neded to. It is just used for the default errorcallback
+#define GL3D_REMOVE_FSTREAM 1 //you can remove this if neded to. It is used for the default file callback, supply your own function for file oppening so the library still works :))
+
+
+#if GL3D_REMOVE_IOSTREAM == 0
+#include <iostream> 
+#endif
+
+#if GL3D_REMOVE_FSTREAM == 0
+#include <fstream> 
+#endif
+
+
+
 #include <glm/vec4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -34461,6 +34475,7 @@ namespace gl3d
 #include <algorithm>
 
 
+//todo get mesh material?
 
 namespace gl3d
 {

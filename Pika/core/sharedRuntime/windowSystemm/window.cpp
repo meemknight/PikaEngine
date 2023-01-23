@@ -35,7 +35,13 @@ void pika::PikaWindow::create()
 	}
 	
 	//todo debug from engine
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	//glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
+	//glfwWindowHint(GLFW_SAMPLES, 1);
+
+	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	context.wind = glfwCreateWindow(wr.z, wr.w, "Pika", NULL, NULL);
 	glfwSetWindowPos(context.wind, wr.x, wr.y);
@@ -51,6 +57,7 @@ void pika::PikaWindow::create()
 	glfwSetWindowFocusCallback(context.wind, windowFocusCallback);
 	glfwSetCharCallback(context.wind, characterCallback);
 	glfwSetKeyCallback(context.wind, keyCallback);
+
 
 	//todo macro
 	context.imguiAllocator.init(malloc(pika::MB(20)), pika::MB(20));
