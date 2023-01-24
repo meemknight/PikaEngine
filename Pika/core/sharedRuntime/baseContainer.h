@@ -155,6 +155,12 @@ struct ContainerStaticInfo
 	//this is the main heap allocator memory size
 	size_t defaultHeapMemorySize = 0;
 	
+
+	//this will use the global allocator. you won't be able to use input recording or snapshots, and the 
+	//memory leak protection won't be possible.
+	bool useDefaultAllocator = 0;
+
+
 	pika::StaticVector<size_t, MaxAllocatorsCount> bonusAllocators = {};
 
 	//the engine will create a new window for your container and give you the fbo to bind to
@@ -173,8 +179,9 @@ struct ContainerStaticInfo
 			this->defaultHeapMemorySize == other.defaultHeapMemorySize &&
 			this->bonusAllocators == other.bonusAllocators &&
 			this->_internalNotImplemented == other._internalNotImplemented &&
-			this->requestImguiFbo == other.requestImguiFbo;
-			this->requestImguiIds == other.requestImguiIds;
+			this->requestImguiFbo == other.requestImguiFbo &&
+			this->requestImguiIds == other.requestImguiIds &&
+			this->useDefaultAllocator == other.useDefaultAllocator;
 		;
 	}
 

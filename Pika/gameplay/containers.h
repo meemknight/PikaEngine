@@ -19,7 +19,6 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "pluggins/threeDEditor.h"
 
 
-
 #define PIKA_ALL_CONTAINERS() \
 	PIKA_DECLARE_CONTAINER(Gameplay) \
 	PIKA_DECLARE_CONTAINER(ImmageViewer) \

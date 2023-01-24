@@ -100,22 +100,22 @@ bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t contain
 
 }
 
-//todo use regions further appart in production
+//todo mabe use regions further appart in production
 void* pika::ContainerManager::allocateContainerMemory(pika::RuntimeContainer &container,
 	pika::ContainerInformation containerInformation, void *memPos)
 {
-	size_t memoryRequired = containerInformation.calculateMemoryRequirements();
+		size_t memoryRequired = containerInformation.calculateMemoryRequirements();
 
-	void * baseMemory = allocateOSMemory(memoryRequired, memPos);
+		void *baseMemory = allocateOSMemory(memoryRequired, memPos);
 
-	if (baseMemory == nullptr) { return 0; }
+		if (baseMemory == nullptr) { return 0; }
 
-	container.totalSize = memoryRequired;
+		container.totalSize = memoryRequired;
 
-	allocateContainerMemoryAtBuffer(container,
-		containerInformation, baseMemory);
+		allocateContainerMemoryAtBuffer(container,
+			containerInformation, baseMemory);
 
-	return baseMemory;
+		return baseMemory;
 }
 
 void pika::ContainerManager::allocateContainerMemoryAtBuffer(pika::RuntimeContainer &container,
@@ -183,7 +183,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	pika::RuntimeContainer container = {};
 	pika::strlcpy(container.baseContainerName, containerInformation.containerName,
 		sizeof(container.baseContainerName));
-	
+
 	if (!allocateContainerMemory(container, containerInformation, (void*)memoryPos))
 	{
 		logManager.log((std::string("Couldn't allocate memory for constructing container: #") 
