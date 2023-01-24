@@ -16,3 +16,13 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "containers/pikaGameplay.h"
 #include "containers/threedtest.h"
 #include "pluggins/immageviewer.h"
+#include "pluggins/threeDEditor.h"
+
+
+
+#define PIKA_ALL_CONTAINERS() \
+	PIKA_DECLARE_CONTAINER(Gameplay) \
+	PIKA_DECLARE_CONTAINER(ImmageViewer) \
+	PIKA_DECLARE_CONTAINER(ThreeDTest) \
+	PIKA_DECLARE_CONTAINER(ThreeDEditor) 
+

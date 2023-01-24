@@ -15,15 +15,16 @@
 
 //todo use a global static array that can be accessed from other cpps and the macro will create an instance of a struct 
 //that will push that container
-#define PIKA_MAKE_CONTAINER_INFO(x) pika::ContainerInformation(sizeof(x), #x, x::containerInfo())
+#define PIKA_DECLARE_CONTAINER(x) info.push_back( pika::ContainerInformation(sizeof(x), #x, x::containerInfo()) );
 
 PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 {
 	info.clear();
-	info.push_back(PIKA_MAKE_CONTAINER_INFO(Gameplay));
-	info.push_back(PIKA_MAKE_CONTAINER_INFO(ImmageViewer));
-	info.push_back(PIKA_MAKE_CONTAINER_INFO(ThreeDTest));
+	PIKA_ALL_CONTAINERS()
+
 }
+
+#undef PIKA_DECLARE_CONTAINER
 
 //this should not allocate memory
 PIKA_API bool constructContainer(Container **c, pika::memory::MemoryArena *arena, const char *name)
