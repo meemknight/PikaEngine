@@ -9,6 +9,8 @@
 #include <pikaConsoleManager/pikaConsoleWindow.h>
 #include <globalAllocator/globalAllocator.h>
 #include <fstream>
+#include <staticString.h>
+
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
 typedef READENTIREFILE(readEntireFile_t);
@@ -37,6 +39,7 @@ struct RequestedContainerInfo
 	int imguiTotalRequestedIds = 0;
 
 	pika::ConsoleWindow *consoleWindow = nullptr;
+
 
 	//todo add logs here
 
@@ -162,6 +165,9 @@ struct ContainerStaticInfo
 
 
 	pika::StaticVector<size_t, MaxAllocatorsCount> bonusAllocators = {};
+
+	//add file extensions here so that the engine knows that your container can open them.
+	pika::StaticVector<pika::StaticString<16>, 16> extensionsSuported = {};
 
 	//the engine will create a new window for your container and give you the fbo to bind to
 	//in release that fbo will just be the default framebuffer

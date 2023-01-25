@@ -25,8 +25,15 @@ namespace pika
 
 		static constexpr unsigned int MAX_SIZE = N;
 
-
 		StaticVector() {};
+
+		StaticVector(std::initializer_list<T> &&l)
+		{
+			for (auto &i : l)
+			{
+				push_back(i);
+			}
+		};
 
 		StaticVector(StaticVector &&other)
 		{
@@ -156,7 +163,6 @@ namespace pika
 			size_--;
 		}
 
-	private:
 
 		size_t size_ = 0;
 		T beg_[N];

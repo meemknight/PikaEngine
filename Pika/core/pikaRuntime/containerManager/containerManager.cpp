@@ -580,8 +580,9 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 	}
 
-
 	loadedDll.gameplayReload_(window.context);
+	
+
 
 	logs.log("Reloaded dll");
 

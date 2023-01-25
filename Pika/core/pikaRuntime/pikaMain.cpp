@@ -50,7 +50,6 @@ BOOL WINAPI customConsoleHandlerRoutine(
 
 #endif
 
-
 int main()
 {
 

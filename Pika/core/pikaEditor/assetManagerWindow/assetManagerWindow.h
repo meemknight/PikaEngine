@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pikaConfig.h"
-#if !PIKA_SHOULD_REMOVE_IMGUI
+#if !PIKA_SHOULD_REMOVE_EDITOR
 
 #include <logs/log.h>
 #include <IconsForkAwesome.h>
@@ -9,6 +9,7 @@
 #include <pikaImgui/pikaImgui.h>
 #include <filesystem>
 #include <string>
+#include <containerManager/containerManager.h>
 
 namespace pika
 {
@@ -19,7 +20,8 @@ namespace pika
 
 		void init(pika::pikaImgui::ImGuiIdsManager &idManager);
 
-		void update(bool &open);
+		void update(bool &open, ContainerManager &containerManager, LoadedDll &currentDll,
+			pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, ConsoleWindow *consoleWindow);
 
 		static constexpr char *ICON = ICON_FK_FILES_O;
 		static constexpr char *NAME = "Asset manager";

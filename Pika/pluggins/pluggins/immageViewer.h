@@ -21,6 +21,10 @@ struct ImmageViewer: public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(20);
 
+		//todo to lower
+		info.extensionsSuported = {".png", ".bmp", ".psd", ".tga", ".gif", ".hdr", ".pic", ".ppm", ".pgm", ".jpg", ".jpeg"};
+
+
 		//todo imgui ids
 
 		return info;

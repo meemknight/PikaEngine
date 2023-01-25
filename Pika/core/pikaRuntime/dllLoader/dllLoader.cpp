@@ -10,7 +10,6 @@ static std::filesystem::path dllPath = std::filesystem::current_path();
 	#ifdef PIKA_WINDOWS
 	
 	#define NOMINMAX
-	#define WIN32_LEAN_AND_MEAN
 	#include <Windows.h>
 
 	static FILETIME getLastWriteFile(const char *name)
@@ -38,6 +37,22 @@ static std::filesystem::path dllPath = std::filesystem::current_path();
 
 #endif
 
+
+void pika::LoadedDll::reloadContainerExtensionsSupport()
+{
+#pragma region reload extension support
+	{
+		containerExtensionsSupport.clear();
+		for (auto &c : containerInfo)
+		{
+			for (auto &e : c.containerStaticInfo.extensionsSuported)
+			{
+				containerExtensionsSupport[e.to_string()] = c.containerName;
+			}
+		}
+	}
+#pragma endregion
+}
 
 bool pika::LoadedDll::constructRuntimeContainer(RuntimeContainer &c, const char *name)
 {
@@ -155,6 +170,8 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	getContainerInfoAndCheck(logs);
 	this->id = id;
 
+	reloadContainerExtensionsSupport();
+
 	return	true;
 }
 
@@ -262,6 +279,8 @@ bool pika::LoadedDll::loadDll(int id, pika::LogManager &logs)
 	dissableAllocators_ = dissableAllocators;
 	getContainerInfoAndCheck(logs);
 	this->id = id;
+
+	reloadContainerExtensionsSupport();
 
 	return	true;
 }

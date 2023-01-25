@@ -10,6 +10,8 @@
 #include <runtimeContainer/runtimeContainer.h>
 #include <logs/log.h>
 #include <sstream>
+#include <unordered_map>
+#include <string>
 
 #define GAMEPLAYSTART(x) void x(pika::PikaContext &pikaContext)
 typedef GAMEPLAYSTART(gameplayStart_t);
@@ -48,7 +50,6 @@ typedef DISSABLEALLOCATORS(dissableAllocators_t)
 
 #ifdef PIKA_WINDOWS
 #define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
 
@@ -86,7 +87,11 @@ struct LoadedDll
 
 	bool shouldReloadDll();
 
+	void reloadContainerExtensionsSupport();
+
 	std::vector<pika::ContainerInformation> containerInfo;
+
+	std::unordered_map<std::string, std::string> containerExtensionsSupport;
 
 	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);
 

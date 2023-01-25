@@ -6,18 +6,18 @@
 #include <Windows.h>
 #endif
 
-#if !PIKA_SHOULD_REMOVE_IMGUI
+#if !PIKA_SHOULD_REMOVE_EDITOR
 
 namespace pika
 {
-
 
 	void AssetManagerWindow::init(pika::pikaImgui::ImGuiIdsManager &idManager)
 	{
 		imguiId = idManager.getImguiIds();
 	}
 	
-	void AssetManagerWindow::update(bool &open)
+	void AssetManagerWindow::update(bool &open, ContainerManager &containerManager, LoadedDll &currentDll,
+		pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, ConsoleWindow *consoleWindow)
 	{
 		ImGui::PushID(imguiId);
 
@@ -57,7 +57,7 @@ namespace pika
 		if (ImGui::Button("Open resources folder"))
 		{
 		#if PIKA_WINDOWS
-			ShellExecute(NULL, "open", PIKA_RESOURCES_PATH, NULL, NULL, SW_RESTORE);
+			ShellExecuteA(NULL, "open", PIKA_RESOURCES_PATH, NULL, NULL, SW_RESTORE);
 		#endif
 		}
 
@@ -132,12 +132,12 @@ namespace pika
 					#if PIKA_WINDOWS
 						if (p.is_directory())
 						{
-							ShellExecute(NULL, "open", p.path().string().c_str(), NULL, NULL, SW_RESTORE);
+							ShellExecuteA(NULL, "open", p.path().string().c_str(), NULL, NULL, SW_RESTORE);
 						}
 						else
 						{
 							auto path = p.path().parent_path().string();
-							ShellExecute(NULL, "open", path.c_str(), NULL, NULL, SW_RESTORE);
+							ShellExecuteA(NULL, "open", path.c_str(), NULL, NULL, SW_RESTORE);
 						}
 					#endif
 						ImGui::CloseCurrentPopup();
@@ -162,13 +162,23 @@ namespace pika
 						if (ImGui::Button("open file"))
 						{
 						#if PIKA_WINDOWS
-							ShellExecute(NULL, "open", p.path().string().c_str(), NULL, NULL, SW_RESTORE);
+							ShellExecuteA(NULL, "open", p.path().string().c_str(), NULL, NULL, SW_RESTORE);
 						#endif
 							ImGui::CloseCurrentPopup();
 						}
 					}
-
 					
+					{
+						auto it = currentDll.containerExtensionsSupport.find(p.path().filename().extension().string());
+						if (it!= currentDll.containerExtensionsSupport.end())
+						{
+							//todo name						
+							if (ImGui::Button("Open In engine"))
+							{
+								containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow);
+							}
+						}
+					}
 
 					ImGui::EndPopup();
 				}

@@ -20,9 +20,8 @@ namespace pika
 	struct ContainerManager
 	{
 
-
 		std::unordered_map<containerId_t, pika::RuntimeContainer> runningContainers;
-
+		
 		containerId_t createContainer(
 			pika::ContainerInformation containerInformation,
 			pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
