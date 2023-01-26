@@ -1,51 +1,6 @@
-#2023-01-26 12:45:59: Created container: Gameplay
-#2023-01-26 12:46:07: Created container: ImmageViewer
-#2023-01-26 12:46:08: Created container: ImmageViewer
-#2023-01-26 12:46:33: Reloaded dll
-#2023-01-26 12:46:33: Terminated container because it returned 0: ImmageViewer #2
-#2023-01-26 12:46:33: Destroyed continer: ImmageViewer #2
-#2023-01-26 12:46:33: Terminated container because it returned 0: ImmageViewer #3
-#2023-01-26 12:46:33: Destroyed continer: ImmageViewer #3
-#2023-01-26 12:47:21: Reloaded dll
-#2023-01-26 12:47:23: Created container: ImmageViewer
-#2023-01-26 12:47:25: Terminated container because it returned 0: ImmageViewer #4
-#2023-01-26 12:47:25: Destroyed continer: ImmageViewer #4
-#2023-01-26 12:47:27: Created container: ImmageViewer
-#2023-01-26 12:47:28: Created container: ImmageViewer
-#2023-01-26 12:47:37: Created container: ImmageViewer
-#2023-01-26 12:47:43: Created container: ImmageViewer
-#2023-01-26 12:47:53: Terminated container because it returned 0: ImmageViewer #6
-#2023-01-26 12:47:53: Destroyed continer: ImmageViewer #6
-#2023-01-26 12:47:56: Terminated container because it returned 0: ImmageViewer #8
-#2023-01-26 12:47:56: Destroyed continer: ImmageViewer #8
-#2023-01-26 12:48:01: Terminated container because it returned 0: ImmageViewer #5
-#2023-01-26 12:48:01: Destroyed continer: ImmageViewer #5
-#2023-01-26 12:48:03: Terminated container because it returned 0: ImmageViewer #7
-#2023-01-26 12:48:03: Destroyed continer: ImmageViewer #7
-#2023-01-26 12:48:32: Reloaded dll
-#2023-01-26 12:48:36: Created container: ImmageViewer
-#2023-01-26 12:48:36: Created container: ImmageViewer
-#2023-01-26 12:48:41: Terminated container because it returned 0: ImmageViewer #10
-#2023-01-26 12:48:41: Destroyed continer: ImmageViewer #10
-#2023-01-26 12:48:42: Terminated container because it returned 0: ImmageViewer #9
-#2023-01-26 12:48:42: Destroyed continer: ImmageViewer #9
-#2023-01-26 12:48:44: Created container: ImmageViewer
-#2023-01-26 12:48:45: Created container: ImmageViewer
-#2023-01-26 12:48:45: Created container: ImmageViewer
-#2023-01-26 12:48:45: Created container: ImmageViewer
-#2023-01-26 12:48:45: Created container: ImmageViewer
-#2023-01-26 12:48:49: Terminated container because it returned 0: ImmageViewer #14
-#2023-01-26 12:48:49: Destroyed continer: ImmageViewer #14
-#2023-01-26 12:48:50: Terminated container because it returned 0: ImmageViewer #12
-#2023-01-26 12:48:50: Destroyed continer: ImmageViewer #12
-#2023-01-26 12:48:52: Terminated container because it returned 0: ImmageViewer #15
-#2023-01-26 12:48:52: Destroyed continer: ImmageViewer #15
-#2023-01-26 12:48:55: Terminated container because it returned 0: ImmageViewer #13
-#2023-01-26 12:48:55: Destroyed continer: ImmageViewer #13
-#2023-01-26 12:48:59: Terminated container because it returned 0: ImmageViewer #11
-#2023-01-26 12:48:59: Destroyed continer: ImmageViewer #11
-#2023-01-26 12:49:07: Created container: ImmageViewer
-#2023-01-26 12:49:07: Created container: ImmageViewer
-#2023-01-26 12:49:11: Destroyed continer: ImmageViewer #17
-#2023-01-26 12:49:11: Destroyed continer: Gameplay #1
-#2023-01-26 12:49:11: Destroyed continer: ImmageViewer #16
+#2023-01-26 15:42:05: Created container: Gameplay
+#2023-01-26 15:42:07: Created container: PikaTextEditor
+#2023-01-26 15:42:18: Created container: PikaTextEditor
+#2023-01-26 15:42:20: Destroyed continer: Gameplay #1
+#2023-01-26 15:42:20: Destroyed continer: PikaTextEditor #2
+#2023-01-26 15:42:20: Destroyed continer: PikaTextEditor #3
