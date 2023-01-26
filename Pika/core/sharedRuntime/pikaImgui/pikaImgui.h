@@ -54,8 +54,9 @@ namespace pika
 			int getImguiIds(unsigned int count = 1)
 			{
 				if (count == 0) { return 0; }
-
-				return counter + count;
+				auto c = counter;
+				counter += count;
+				return c;
 			}
 		};
 

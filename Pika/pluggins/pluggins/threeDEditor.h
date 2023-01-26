@@ -31,7 +31,7 @@ struct ThreeDEditor: public Container
 	gl3d::Model helmetModel;
 	gl3d::Entity helmetEntity;
 
-	void create(RequestedContainerInfo &requestedInfo)
+	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 
 
@@ -67,10 +67,10 @@ struct ThreeDEditor: public Container
 		
 		helmetEntity = renderer.createEntity(helmetModel, t);
 
+		return true;
 	}
 
-	//todo return value
-	void update(pika::Input input, pika::WindowState windowState,
+	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
 
@@ -114,6 +114,7 @@ struct ThreeDEditor: public Container
 		glDisable(GL_DEPTH_TEST);
 
 
+		return true;
 	}
 
 };

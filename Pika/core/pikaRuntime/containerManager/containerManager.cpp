@@ -16,7 +16,7 @@
 
 pika::containerId_t pika::ContainerManager::createContainer(std::string containerName, 
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, 
-	pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, ConsoleWindow *consoleWindow, size_t memoryPos)
+	pika::pikaImgui::ImGuiIdsManager &imguiIDsManager, ConsoleWindow *consoleWindow, std::string &cmd, size_t memoryPos)
 {
 	
 	for(auto &i : loadedDll.containerInfo)
@@ -24,7 +24,7 @@ pika::containerId_t pika::ContainerManager::createContainer(std::string containe
 		
 		if (i.containerName == containerName)
 		{
-			return createContainer(i, loadedDll, logManager, imguiIDsManager, consoleWindow, memoryPos);
+			return createContainer(i, loadedDll, logManager, imguiIDsManager, consoleWindow, cmd, memoryPos);
 		}
 
 	}
@@ -166,7 +166,7 @@ void pika::ContainerManager::freeContainerStuff(pika::RuntimeContainer &containe
 pika::containerId_t pika::ContainerManager::createContainer
 (pika::ContainerInformation containerInformation,
 	pika::LoadedDll &loadedDll, pika::LogManager &logManager, pika::pikaImgui::ImGuiIdsManager &imguiIDsManager,
-	ConsoleWindow *consoleWindow,
+	ConsoleWindow *consoleWindow, std::string &cmd,
 	size_t memoryPos)
 {	
 	containerId_t id = ++idCounter;
@@ -196,7 +196,6 @@ pika::containerId_t pika::ContainerManager::createContainer
 		container.requestedContainerInfo.requestedFBO.createFramebuffer(400, 400); //todo resize small or sthing
 		container.imguiWindowId = imguiIDsManager.getImguiIds();
 	}
-
 
 	loadedDll.bindAllocatorDllRealm(&container.allocator);
 	
@@ -229,14 +228,36 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.consoleWindow = consoleWindow;
 #pragma endregion
 
+	pika::StaticString<256> cmdArgs;
 	
+	if (cmd.size() > cmdArgs.MAX_SIZE)
+	{
+		logManager.log(std::string(std::string("Couldn't pass cmd argument because it is too big ")
+			+ container.baseContainerName + " #" + std::to_string(id)).c_str(), pika::logError);
+	}
+	else
+	{
+		cmdArgs = cmd.c_str();
+	}
+
 	loadedDll.bindAllocatorDllRealm(&container.allocator);
-	container.pointer->create(container.requestedContainerInfo); //this calls create() (from the dll realm)
+	bool rezult = container.pointer->create(container.requestedContainerInfo, cmdArgs); //this calls create() (from the dll realm)
 	loadedDll.resetAllocatorDllRealm();//sets the global allocator back to standard (used for runtime realm)
 
 	runningContainers[id] = container;
 
-	logManager.log(("Created container: " + std::string(container.baseContainerName) ).c_str());
+	if (!rezult)
+	{
+		logManager.log((std::string("Couldn't create container because it returned 0")
+			+ container.baseContainerName + " #" + std::to_string(id)).c_str(), pika::logWarning);
+		destroyContainer(id, loadedDll, logManager);
+		return 0;
+	}
+	else
+	{
+		logManager.log(("Created container: " + std::string(container.baseContainerName)).c_str());
+	}
+
 
 	return id;
 }
@@ -267,7 +288,6 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 #pragma endregion
 
 	
-
 
 #pragma region running containers
 	for (auto &c : runningContainers)
@@ -374,13 +394,13 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			constexpr bool isProduction = 0;
 		#endif
 
-			auto callUpdate = [&](pika::WindowState &windowState)
+			auto callUpdate = [&](pika::WindowState &windowState) -> bool
 			{
 
 				auto t1 = std::chrono::high_resolution_clock::now();
 
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
-				c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
+				bool rez = c.second.pointer->update(windowInput, windowState, c.second.requestedContainerInfo);
 				loadedDll.resetAllocatorDllRealm();
 
 				auto t2 = std::chrono::high_resolution_clock::now();
@@ -397,20 +417,23 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					c.second.frameCounter = 0;
 				}
 				
-
+				return rez;
 
 			};
+
+			bool rez = 0;
 
 			if (c.second.imguiWindowId && !isProduction)
 			{
 
 			#pragma region imguiwindow
 				ImGui::PushID(c.second.imguiWindowId);
-				
+				bool isOpen = 1;
+
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.0f));
 				ImGui::SetNextWindowSize({200,200}, ImGuiCond_Once);
 				ImGui::Begin( (std::string("gameplay window id: ") + std::to_string(c.first)).c_str(),
-					0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+					&isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 				
 				//mouse pos and focus
 				if(c.second.flags.status != pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
@@ -462,16 +485,28 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
 
-				callUpdate(windowState);
+				rez = callUpdate(windowState);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				if (!isOpen)
+				{
+					rez = 1;
+					destroyContainer(c.first, loadedDll, logs);
+				}
 
 			}
 			else
 			{
-				callUpdate(window.windowState);
+				rez = callUpdate(window.windowState);
 			}
 
+			if (!rez) 
+			{
+				logs.log(("Terminated container because it returned 0: " + std::string(c.second.baseContainerName)
+					+ " #" + std::to_string(c.first)).c_str());
+				destroyContainer(c.first, loadedDll, logs);
+			}
 
 		}
 		else //on pause
@@ -588,6 +623,7 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 }
 
+//not verbose flag
 bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll &loadedDll,
 	pika::LogManager &logManager)
 {

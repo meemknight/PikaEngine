@@ -152,12 +152,12 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 								if (createAtSpecificMemoryRegion)
 								{
 									containerManager.createContainer(selectedContainerToLaunch, loadedDll,
-										logManager, imguiIdsManager, consoleWindow, pika::TB(1));
+										logManager, imguiIdsManager, consoleWindow, std::string(), pika::TB(1));
 								}
 								else
 								{
 									containerManager.createContainer(selectedContainerToLaunch, loadedDll, logManager,
-										imguiIdsManager, consoleWindow);
+										imguiIdsManager, consoleWindow, std::string());
 								}
 							}
 
@@ -186,7 +186,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 										auto c = containerManager.createContainer(
 											selectedContainerToLaunch, loadedDll, logManager,
-											imguiIdsManager, consoleWindow, (size_t)memPos);
+											imguiIdsManager, consoleWindow, std::string(), (size_t)memPos);
 
 										//no need to log error since create container does that
 										if (c != 0)

@@ -31,7 +31,7 @@ struct ThreeDTest: public Container
 	gl3d::Model helmetModel;
 	gl3d::Entity helmetEntity;
 
-	void create(RequestedContainerInfo &requestedInfo)
+	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 	
 		//glEnable(GL_DEBUG_OUTPUT);
@@ -72,9 +72,10 @@ struct ThreeDTest: public Container
 
 		helmetEntity = renderer.createEntity(helmetModel, t);
 
+		return true;
 	}
 
-	void update(pika::Input input, pika::WindowState windowState,
+	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
 		
@@ -132,6 +133,7 @@ struct ThreeDTest: public Container
 		//
 		//ImGui::End();
 
+		return true;
 	}
 
 };

@@ -178,10 +178,10 @@ int main()
 
 #if !PIKA_SHOULD_REMOVE_EDITOR
 	auto container = containerManager.createContainer
-	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, &editor.consoleWindow);
+	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, &editor.consoleWindow, std::string());
 #else
 	auto container = containerManager.createContainer
-	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, nullptr);
+	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, nullptr, std::string());
 #endif
 
 	

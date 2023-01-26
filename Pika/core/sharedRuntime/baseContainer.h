@@ -210,9 +210,9 @@ struct Container
 	static ContainerStaticInfo containerInfo() { ContainerStaticInfo c; c._internalNotImplemented = true; return c; };
 	
 
-	virtual void create(RequestedContainerInfo &requestedInfo) = 0;
+	virtual bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument) = 0;
 
-	virtual void update(
+	virtual bool update(
 		pika::Input input, 
 		pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) = 0;

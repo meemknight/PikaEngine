@@ -15,24 +15,27 @@ struct ImmageViewer: public Container
 
 	gl2d::Texture texture;
 	float zoom = 1.f;
+	glm::ivec2 immageSize;
 
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(20);
+		info.defaultHeapMemorySize = pika::MB(30);
 
 		//todo to lower
 		info.extensionsSuported = {".png", ".bmp", ".psd", ".tga", ".gif", ".hdr", ".pic", ".ppm", ".pgm", ".jpg", ".jpeg"};
 
-
-		//todo imgui ids
+		info.requestImguiIds = 1;
 
 		return info;
 	}
 
-	void create(RequestedContainerInfo &requestedInfo)
+	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument) override
 	{
-		
+		//todo logs from containers
+		//requestedInfo.
+
+		std::string file = commandLineArgument.to_string();
 
 		//pika::memory::setGlobalAllocatorToStandard();
 		//{
@@ -42,35 +45,60 @@ struct ImmageViewer: public Container
 
 
 		size_t size = 0;
-		if (!requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "map.png", size))
+		if (!requestedInfo.getFileSizeBinary(file.c_str(), size))
 		{
-			//return 0; //todo
+			return 0; //todo
 		}
 		
 		unsigned char *buffer = new unsigned char[size];
 		
-		if (!requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "map.png", buffer, size))
+		if (!requestedInfo.readEntireFileBinary(file.c_str(), buffer, size))
 		{
-			//no need to clear memory since the engine clears it for us
-			//return 0; //todo
+			delete[] buffer;
+			return 0; //todo
 		}
 		
 		texture.createFromFileData(buffer, size, true, true);
 		
+		immageSize = texture.GetSize();
+
+
 		delete[] buffer;
 
+		return true;
 	}
 
-	void update(pika::Input input, pika::WindowState windowState,
-		RequestedContainerInfo &requestedInfo)
+	bool update(pika::Input input, pika::WindowState windowState,
+		RequestedContainerInfo &requestedInfo) override
 	{
+
+		//todo deffer
+		ImGui::PushID(requestedInfo.requestedImguiIds);
+
+		ImGui::SetNextWindowSize(ImVec2{(float)immageSize.x, (float)immageSize.y}, ImGuiCond_Appearing);
 		
-		
-		if(!ImGui::Begin("Immage title"))
+		bool open = 1;
+		if(!ImGui::Begin( std::string( "Immage viewer##" + std::to_string(requestedInfo.requestedImguiIds)).c_str() , &open))
+		{
+			if (!open)
+			{
+				ImGui::End();
+				ImGui::PopID();
+				return false;
+			}
+
+			ImGui::End();
+			ImGui::PopID();
+			return true;
+		}
+
+		if (!open)
 		{
 			ImGui::End();
-			return;
+			ImGui::PopID();
+			return false;
 		}
+
 
 		ImGui::Text("Immage title; %d, %d", 100, 100);
 
@@ -104,6 +132,9 @@ struct ImmageViewer: public Container
 
 
 		ImGui::End();
+		ImGui::PopID();
+
+		return true;
 	}
 
 };

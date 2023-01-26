@@ -116,7 +116,12 @@ namespace pika
 				{
 					if (ImGui::Button(ICON_FK_FILE_O, {size ,size}))
 					{
-						//
+						auto it = currentDll.containerExtensionsSupport.find(p.path().filename().extension().string());
+						if (it != currentDll.containerExtensionsSupport.end())
+						{
+							//todo name						
+							containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
+						}
 					}
 				}
 
@@ -168,17 +173,19 @@ namespace pika
 						}
 					}
 					
+				
 					{
 						auto it = currentDll.containerExtensionsSupport.find(p.path().filename().extension().string());
-						if (it!= currentDll.containerExtensionsSupport.end())
+						if (it != currentDll.containerExtensionsSupport.end())
 						{
 							//todo name						
 							if (ImGui::Button("Open In engine"))
 							{
-								containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow);
+								containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
 							}
 						}
 					}
+					
 
 					ImGui::EndPopup();
 				}

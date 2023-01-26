@@ -51,6 +51,7 @@ void pika::initShortcutApi()
 		{ "space", {pika::Button::Space , ImGuiKey_Space}},
 		{ "enter", {pika::Button::Enter, ImGuiKey_Enter} },
 		{ "escape", {pika::Button::Escape, ImGuiKey_Escape} },
+		{ "esc", {pika::Button::Escape, ImGuiKey_Escape} },
 		{ "up", {pika::Button::Up, ImGuiKey_UpArrow} },
 		{ "down", {pika::Button::Down , ImGuiKey_DownArrow}},
 		{ "left", {pika::Button::Left , ImGuiKey_LeftArrow}},

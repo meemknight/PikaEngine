@@ -24,6 +24,7 @@ namespace pika
 		constIterator end() const { return &((T *)beg_)[size_]; }
 
 		static constexpr unsigned int MAX_SIZE = N;
+		static constexpr unsigned int capacity = N;
 
 		StaticVector() {};
 

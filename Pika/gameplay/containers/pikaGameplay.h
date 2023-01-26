@@ -47,16 +47,17 @@ struct Gameplay : public Container
 	}
 
 
-	void create(RequestedContainerInfo &requestedInfo)
+	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 		renderer.create();
 		//pika::initShortcutApi();
 		r = new float;
 
 		//void *test = new char[pika::MB(10)]; //todo let the allocator tell the engine somehow that it is out of memory
+		return true;
 	}
 
-	void update(pika::Input input, pika::WindowState windowState,
+	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
 		//todo keep window on top stuff
@@ -68,6 +69,12 @@ struct Gameplay : public Container
 		{
 			requestedInfo.consoleWrite("save\n");
 		}
+
+		//if (input.buttons[pika::Button::G].released())
+		//{
+		//	return 0;
+		//}
+
 
 		requestedInfo.consoleWrite(input.typedInput);
 
@@ -136,6 +143,7 @@ struct Gameplay : public Container
 		
 		//ImGui::ShowDemoWindow();
 
+		return true;
 	}
 
 };
