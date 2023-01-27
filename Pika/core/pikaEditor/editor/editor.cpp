@@ -12,7 +12,7 @@
 #include "IconsForkAwesome.h"
 #include "shortcutApi/shortcutApi.h"
 #include <editShortcuts/editShortcuts.h>
-#include <safeSave.h>
+#include <safeSave/safeSave.h>
 
 
 

@@ -27,6 +27,7 @@ struct ImmageViewer: public Container
 
 		info.requestImguiIds = 1;
 
+
 		return info;
 	}
 
@@ -42,7 +43,6 @@ struct ImmageViewer: public Container
 		//	texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
 		//}
 		//pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
-
 
 		size_t size = 0;
 		if (!requestedInfo.getFileSizeBinary(file.c_str(), size))
@@ -71,7 +71,6 @@ struct ImmageViewer: public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) override
 	{
-
 		//todo deffer
 		ImGui::PushID(requestedInfo.requestedImguiIds);
 
@@ -109,8 +108,9 @@ struct ImmageViewer: public Container
 		float wheel = ImGui::GetIO().MouseWheel;
 
 		//todo standard out
+		//todo small libraries for functionality like this
 
-		if (ImGui::GetIO().KeysData[ImGuiKey_LeftCtrl].Down || ImGui::GetIO().KeysData[ImGuiKey_RightCtrl].Down)
+		if ((ImGui::GetIO().KeysData[ImGuiKey_LeftCtrl].Down || ImGui::GetIO().KeysData[ImGuiKey_RightCtrl].Down) && input.hasFocus)
 		{
 			zoom += wheel * 0.2;
 		}

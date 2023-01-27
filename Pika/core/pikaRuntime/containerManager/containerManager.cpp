@@ -228,7 +228,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.consoleWindow = consoleWindow;
 #pragma endregion
 
-	pika::StaticString<256> cmdArgs;
+	pika::StaticString<256> cmdArgs = {};
 	
 	if (cmd.size() > cmdArgs.MAX_SIZE)
 	{

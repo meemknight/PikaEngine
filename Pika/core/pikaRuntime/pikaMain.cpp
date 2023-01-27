@@ -184,8 +184,6 @@ int main()
 	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, nullptr, std::string());
 #endif
 
-	
-
 	while (!shouldClose)
 	{
 		if (window.shouldClose())

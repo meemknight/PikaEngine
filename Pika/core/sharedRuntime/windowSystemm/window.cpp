@@ -10,7 +10,7 @@
 
 #include <pikaSizes.h>
 
-#include <safeSave.h>
+#include <safeSave/safeSave.h>
 
 struct WindowRect
 {

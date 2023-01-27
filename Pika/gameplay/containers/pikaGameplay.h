@@ -64,17 +64,20 @@ struct Gameplay : public Container
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//if (pika::shortcut(input, "Ctrl + S"))
-		if (input.buttons[pika::Button::S].released())
+		if (pika::shortcut(input, "Ctrl + S"))
 		{
 			requestedInfo.consoleWrite("save\n");
 		}
+		
+		//if (input.buttons[pika::Button::S].released())
+		//{
+		//	requestedInfo.consoleWrite("save\n");
+		//}
 
 		//if (input.buttons[pika::Button::G].released())
 		//{
 		//	return 0;
 		//}
-
 
 		requestedInfo.consoleWrite(input.typedInput);
 
