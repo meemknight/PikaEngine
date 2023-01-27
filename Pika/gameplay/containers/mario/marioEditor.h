@@ -22,13 +22,7 @@ struct MarioEditor: public Container
 
 	int currentBlock = 0;
 	bool flip = 0;
-
-	struct Block
-	{
-		unsigned char type : 7;
-		unsigned char flipped : 1;
-	};
-
+	
 	Block *map;
 
 	Block &getMapBlockUnsafe(int x, int y)
@@ -338,44 +332,10 @@ struct MarioEditor: public Container
 
 		}
 
-		//requestedInfo.consoleWrite((std::string("Mouse: ") + std::to_string(input.mouseX) + " " +
-		//	std::to_string(input.mouseY) + "\n").c_str());
-
-
-		//if (input.lMouse.pressed())
-		//{
-		//	std::cout << "pressed\n";
-		//}
-		//if (input.lMouse.released())
-		//{
-		//	std::cout << "released\n";
-		//}
-
-		//if (input.lMouse.typed())
-		//{
-		//	std::cout << "typed\n";
-		//}
-
-		//if (input.buttons[pika::Button::E].typed())
-		//{
-		//	std::cout << "e";
-		//}
-
-		//std::cout << state.deltaTime << "\n";
 
 		renderer.flush();
 
-		//ImGui::SetAllocatorFunctions(userMalloc, userFree);
-
-		//ImGui::Begin("window from gameplay");
-		//ImGui::Spinner("spinner", 10, 2);
-		//ImGui::ProgressBar(0.4);
-		//ImGui::BufferingBar("buffering bar", 0.4, {100, 5});
-		//ImGui::LoadingIndicatorCircle("circle", 20, 8, 8);
-		//ImGui::End();
-
-		//ImGui::ShowDemoWindow();
-
+	
 		return true;
 	}
 

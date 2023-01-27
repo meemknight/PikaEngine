@@ -28,8 +28,8 @@ struct ThreeDEditor: public Container
 	}
 
 	gl3d::Renderer3D renderer;
-	gl3d::Model helmetModel;
-	gl3d::Entity helmetEntity;
+	gl3d::Model model;
+	gl3d::Entity entity;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
@@ -59,13 +59,13 @@ struct ThreeDEditor: public Container
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 		
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
-		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf");
+		model = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf");
 		
 		gl3d::Transform t;
-		t.position = {0, 0, -4};
+		t.position = {0, -1, -4};
 		//t.rotation = {1.5, 0 , 0};
 		
-		helmetEntity = renderer.createEntity(helmetModel, t);
+		entity = renderer.createEntity(model, t);
 
 		return true;
 	}
@@ -109,6 +109,10 @@ struct ThreeDEditor: public Container
 			}
 		}
 		
+
+
+		renderer.setEntityAnimate(entity, true);
+
 		
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
