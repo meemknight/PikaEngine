@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2023-01-23
+//built on 2023-02-13
 ////////////////////////////////////////////////
 
 #include "gl3d.h"
@@ -31897,10 +31897,9 @@ namespace gl3d
       std::pair<std::string, const char*>{"ssao.frag", "﻿#version 330 core\n"
 "out float fragColor;\n"
 "noperspective in highp vec2 v_texCoords;\n"
-"uniform sampler2D u_gPosition;\n"
+"uniform sampler2D u_gPosition; \n"
 "uniform isampler2D u_gNormal;\n"
 "uniform sampler2D u_texNoise;\n"
-"uniform sampler2D u_depthBuffer;\n"
 "uniform vec3 samples[64];\n"
 "uniform mat4 u_projection; \n"
 "uniform mat4 u_view; \n"
@@ -31919,27 +31918,12 @@ namespace gl3d
 "ret -= 1.f;\n"
 "return normalize(ret);\n"
 "}\n"
-"uniform float u_farPlane;\n"
-"uniform float u_closePlane;\n"
-"vec3 viewSpace(vec2 vTexCoord)\n"
-"{\n"
-"float z = texture2D(u_depthBuffer, vTexCoord).x;  \n"
-"float z_n = 2.0 * z - 1.0;\n"
-"float z_e = 2.0 * u_closePlane * u_farPlane / (u_farPlane + u_closePlane - z_n * (u_farPlane - u_closePlane));\n"
-"vec3 retVector = vec3(1,1,1);\n"
-"return retVector * z_e;\n"
-"float x = vTexCoord.x * 2 - 1;\n"
-"float y = (1 - vTexCoord.y) * 2 - 1;\n"
-"vec4 vProjectedPos = vec4(x, y, z, 1.0f);\n"
-"vec4 vPositionVS = inverse(u_projection) * vProjectedPos;  \n"
-"return vPositionVS.xyz / vPositionVS.w;  \n"
-"}\n"
 "void main()\n"
 "{\n"
 "vec2 screenSize = textureSize(u_gPosition, 0).xy/2.f; \n"
 "vec2 noiseScale = vec2(screenSize.x/4.0, screenSize.y/4.0);\n"
 "vec2 noisePos = v_texCoords * noiseScale;\n"
-"vec3 fragPos   = texture(u_gPosition, v_texCoords).xyz;\n"
+"vec3 fragPos = texture(u_gPosition, v_texCoords).xyz;\n"
 "vec3 normal    = normalize( vec3(transpose(inverse(mat3(u_view))) * \n"
 "fromuShortToFloat(texture(u_gNormal, v_texCoords).xyz)) );\n"
 "vec3 randomVec = texture2D(u_texNoise, noisePos).xyz; \n"
@@ -32958,14 +32942,19 @@ namespace gl3d
 "uniform isampler2D u_normals;\n"
 "uniform samplerCube u_skyboxFiltered;\n"
 "uniform samplerCube u_skyboxIradiance;\n"
-"uniform sampler2D u_positions;\n"
 "uniform sampler2D u_brdfTexture;\n"
 "uniform sampler2DArrayShadow u_cascades;\n"
 "uniform sampler2DArrayShadow u_spotShadows;\n"
 "uniform samplerCubeArrayShadow u_pointShadows;\n"
 "uniform isampler2D u_materialIndex;\n"
 "uniform sampler2D u_textureUV;\n"
+"uniform sampler2D u_lastFrameTexture;\n"
+"uniform sampler2D u_positionViewSpace;\n"
 "uniform isampler2D u_textureDerivates;\n"
+"uniform int u_hasLastFrameTexture;\n"
+"uniform mat4 u_cameraProjection;\n"
+"uniform mat4 u_view;\n"
+"uniform mat4 u_inverseView;\n"
 "uniform vec3 u_eyePosition;\n"
 "uniform int u_transparentPass;\n"
 "struct MaterialStruct\n"
@@ -32988,6 +32977,11 @@ namespace gl3d
 "int lightSubScater;\n"
 "float exposure;\n"
 "int skyBoxPresent;\n"
+"float SSR_minRayStep;\n"
+"int SSR_maxSteps;\n"
+"int	SSR_numBinarySearchSteps;\n"
+"float SSR_maxRayStep;\n"
+"float SSR_maxRayDelta;\n"
 "}lightPassData;\n"
 "struct PointLight\n"
 "{\n"
@@ -33056,6 +33050,7 @@ namespace gl3d
 "0.37992,	0.61330,	0.49202,	0.69464,	0.14831,	0.51697,	0.34620,	0.55315,	0.41602,	0.49807,\n"
 "0.15133,	0.07372,	0.75259,	0.59642,	0.35652,	0.60051,	0.08879,	0.59271,	0.29388,	0.69505\n"
 ");\n"
+"const float INFINITY = 1.f/0.f;\n"
 "float attenuationFunctionNotClamped(float x, float r, float p)\n"
 "{\n"
 "float p4 = p*p*p*p;\n"
@@ -33416,17 +33411,182 @@ namespace gl3d
 "ret -= 1.f;\n"
 "return normalize(ret);\n"
 "}\n"
+"vec2 BinarySearch(inout vec3 dir, inout vec3 hitCoord, \n"
+"inout float dDepth, vec2 oldValue)\n"
+"{\n"
+"float depth;\n"
+"vec4 projectedCoord;\n"
+"vec2 foundProjectedCoord = oldValue;\n"
+"for(int i = 0; i < lightPassData.SSR_numBinarySearchSteps; i++)\n"
+"{\n"
+"projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);\n"
+"projectedCoord.xy /= projectedCoord.w;\n"
+"projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;\n"
+"depth = texture(u_positionViewSpace, projectedCoord.xy).z;\n"
+"if(depth < -1000) \n"
+"continue;\n"
+"foundProjectedCoord = projectedCoord.xy;\n"
+"dDepth = hitCoord.z - depth;\n"
+"dir *= 0.5;\n"
+"if(dDepth > 0.0)\n"
+"hitCoord += dir;\n"
+"else\n"
+"hitCoord -= dir;    \n"
+"}\n"
+"projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);\n"
+"projectedCoord.xy /= projectedCoord.w;\n"
+"projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;\n"
+"depth = texture(u_positionViewSpace, projectedCoord.xy).z;\n"
+"if(!(depth < -1000))\n"
+"{\n"
+"foundProjectedCoord = projectedCoord.xy;\n"
+"}\n"
+"return foundProjectedCoord.xy;\n"
+"}\n"
+"vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal, vec3 viewDir)\n"
+"{\n"
+"dir *= mix(lightPassData.SSR_minRayStep, lightPassData.SSR_maxRayStep, abs(dot(worldNormal, viewDir)));\n"
+"float depth;\n"
+"vec4 projectedCoord;\n"
+"for(int i = 0; i < lightPassData.SSR_maxSteps; i++)\n"
+"{\n"
+"hitCoord += dir;\n"
+"projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);\n"
+"projectedCoord.xy /= projectedCoord.w;\n"
+"projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;\n"
+"if(projectedCoord.x > 1.f || projectedCoord.y > 1.f\n"
+"||projectedCoord.x < -1.f || projectedCoord.y < -1.f\n"
+")\n"
+"{\n"
+"break;\n"
+"}\n"
+"depth = texture(u_positionViewSpace, projectedCoord.xy).z;\n"
+"if(depth > 1000.0)\n"
+"continue;\n"
+"if(depth < -1000) \n"
+"continue;\n"
+"dDepth = hitCoord.z - depth;\n"
+"if((dir.z - dDepth) < lightPassData.SSR_maxRayStep && dDepth <= 0.0)\n"
+"{\n"
+"vec2 Result;\n"
+"Result = BinarySearch(dir, hitCoord, dDepth, projectedCoord.xy);\n"
+"if(dDepth < -lightPassData.SSR_maxRayDelta)\n"
+"{\n"
+"break; \n"
+"}\n"
+"depth = texture(u_positionViewSpace, Result.xy).z;\n"
+"if(depth < -10000)\n"
+"{break;}\n"
+"return Result;\n"
+"}\n"
+"}\n"
+"dDepth = -INFINITY;\n"
+"return vec2(0,0);\n"
+"}\n"
+"uvec3 murmurHash33(uvec3 src) {\n"
+"const uint M = 0x5bd1e995u;\n"
+"uvec3 h = uvec3(1190494759u, 2147483647u, 3559788179u);\n"
+"src *= M; src ^= src>>24u; src *= M;\n"
+"h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;\n"
+"h ^= h>>13u; h *= M; h ^= h>>15u;\n"
+"return h;\n"
+"}\n"
+"vec3 hash33(vec3 src) {\n"
+"uvec3 h = murmurHash33(floatBitsToUint(src));\n"
+"return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;\n"
+"}\n"
+"vec3 computeJitt(vec3 wp, vec2 Resolution, vec3 viewNormal, float Roughness)\n"
+"{\n"
+"vec2 NoiseScale = Resolution / 4.0;\n"
+"vec3 random = hash33(wp);\n"
+"random = dot(random, viewNormal) > 0.0 ? random : -random;\n"
+"float factor = Roughness*0.20;\n"
+"vec3 hs = random * 2.0 - 1.0;\n"
+"vec3 jitt = hs * factor;\n"
+"return vec3(jitt);\n"
+"}\n"
+"vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F, \n"
+"out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution)\n"
+"{\n"
+"mixFactor = 0;\n"
+"vec3 reflected = normalize(reflect(normalize(viewPos), viewSpaceNormal));\n"
+"if(reflected.z > 0){return vec3(0,0,0);}\n"
+"vec3 hitPos = viewPos;\n"
+"float dDepth;\n"
+"vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); \n"
+"vec2 coords = RayMarch( normalize((vec3(jitt) + reflected) *\n"
+"max(lightPassData.SSR_minRayStep, -viewPos.z)), hitPos, dDepth,\n"
+"N, viewDir);\n"
+"if(dDepth < -1000){return vec3(0);}\n"
+"vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));\n"
+"float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);\n"
+"float ReflectionMultiplier = \n"
+"screenEdgefactor * \n"
+"-reflected.z;\n"
+"if(ReflectionMultiplier <= 0.001)\n"
+"{\n"
+"return vec3(0.f);\n"
+"}\n"
+"vec3 lastFrameColor = textureLod(u_lastFrameTexture, coords.xy, 0).rgb;\n"
+"vec3 SSR = lastFrameColor;\n"
+"mixFactor = clamp(ReflectionMultiplier, 0.0, 1.f);  \n"
+"return SSR;\n"
+"}\n"
+"vec3 computeAmbientTerm(vec3 N, vec3 V, vec3 F0, float roughness, vec3 R, \n"
+"float metallic, vec3 albedo, vec3 wp, vec3 viewPos, vec3 viewSpaceNormal, vec2 rezolution)\n"
+"{\n"
+"vec3 gammaAmbient = pow(lightPassData.ambientColor.rgb, vec3(2.2)); \n"
+"vec3 ambient = vec3(0);\n"
+"float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);\n"
+"vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);\n"
+"vec3 kS = F;\n"
+"vec3 irradiance = vec3(0,0,0); \n"
+"vec3 radiance = vec3(0,0,0); \n"
+"vec2 brdf = vec2(0,0);\n"
+"vec2 brdfVec = vec2(dotNVClamped, roughness);\n"
+"float mixFactor = 0;\n"
+"if(u_hasLastFrameTexture != 0) \n"
+"{\n"
+"radiance = SSR(viewPos, N, metallic, F, mixFactor, roughness, wp, V, viewSpaceNormal, rezolution);\n"
+"}\n"
+"if(lightPassData.skyBoxPresent != 0)\n"
+"{\n"
+"irradiance = texture(u_skyboxIradiance, N).rgb * gammaAmbient; \n"
+"const float MAX_REFLECTION_LOD = 4.0;\n"
+"if(mixFactor < 0.999)\n"
+"{\n"
+"radiance = mix(textureLod(u_skyboxFiltered, R, roughness * MAX_REFLECTION_LOD).rgb * gammaAmbient, radiance, mixFactor);\n"
+"}\n"
+"brdf  = texture(u_brdfTexture, brdfVec).rg;\n"
+"}else\n"
+"{\n"
+"radiance = mix(gammaAmbient, radiance, mixFactor);\n"
+"irradiance = gammaAmbient ; \n"
+"brdf = texture(u_brdfTexture, brdfVec).rg;\n"
+"}\n"
+"if(lightPassData.lightSubScater == 0)\n"
+"{\n"
+"vec3 kD = 1.0 - kS;\n"
+"kD *= 1.0 - metallic;\n"
+"vec3 diffuse = irradiance * albedo;\n"
+"vec3 specular = radiance * (F * brdf.x + brdf.y);\n"
+"ambient = (kD * diffuse + specular);\n"
+"}else\n"
+"{\n"
+"vec3 FssEss = kS * brdf.x + brdf.y;\n"
+"float Ess = brdf.x + brdf.y;\n"
+"float Ems = 1-Ess;\n"
+"vec3 Favg = F0 + (1-F0)/21;\n"
+"vec3 Fms = FssEss*Favg/(1-(1-Ess)*Favg);\n"
+"vec3 Edss = 1 - (FssEss + Fms * Ems);\n"
+"vec3 kD = albedo * Edss;\n"
+"ambient = FssEss * radiance + (Fms*Ems+kD) * irradiance;\n"
+"}\n"
+"return ambient;\n"
+"}\n"
 "void main()\n"
 "{\n"
-"vec3 pos = texture(u_positions, v_texCoords).xyz;\n"
-"vec3 normal = fromuShortToFloat(texture(u_normals, v_texCoords).xyz);\n"
 "int materialIndex = texture(u_materialIndex, v_texCoords).r;\n"
-"vec2 sampledUV = texture(u_textureUV, v_texCoords).xy;\n"
-"ivec4 sampledDerivatesInt = texture(u_textureDerivates, v_texCoords).xyzw;\n"
-"vec4 sampledDerivates = fromuShortToFloat2(sampledDerivatesInt);\n"
-"vec4 albedoAlpha = vec4(0,0,0,0);\n"
-"vec3 emissive = vec3(0,0,0);\n"
-"vec3 material;\n"
 "if(materialIndex == 0)\n"
 "{\n"
 "if(u_transparentPass != 0)\n"
@@ -33439,6 +33599,18 @@ namespace gl3d
 "return;\n"
 "}\n"
 "}\n"
+"vec3 posViewSpace = texture(u_positionViewSpace, v_texCoords).xyz;\n"
+"vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));\n"
+"if(posViewSpace.z == -INFINITY){discard;}\n"
+"vec3 normal = fromuShortToFloat(texture(u_normals, v_texCoords).xyz);\n"
+"vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * normal));\n"
+"vec2 sampledUV = texture(u_textureUV, v_texCoords).xy;\n"
+"ivec4 sampledDerivatesInt = texture(u_textureDerivates, v_texCoords).xyzw;\n"
+"vec4 sampledDerivates = fromuShortToFloat2(sampledDerivatesInt);\n"
+"vec2 rezolution = textureSize(u_lastFrameTexture, 0);\n"
+"vec4 albedoAlpha = vec4(0,0,0,0);\n"
+"vec3 emissive = vec3(0,0,0);\n"
+"vec3 material = vec3(0,0,0);\n"
 "{\n"
 "uvec2 albedoSampler = mat[materialIndex-1].firstBIndlessSamplers.xy;\n"
 "if(albedoSampler.x == 0 && albedoSampler.y == 0)\n"
@@ -33506,7 +33678,7 @@ namespace gl3d
 "float roughness = clamp(material.r, 0.09, 0.99);\n"
 "float metallic = clamp(material.g, 0.0, 0.98);\n"
 "float ambientOcclution = material.b;\n"
-"vec3 viewDir = normalize(u_eyePosition - pos);\n"
+"vec3 viewDir = normalize(u_eyePosition - pos); \n"
 "vec3 R = reflect(-viewDir, normal);	\n"
 "vec3 Lo = vec3(0,0,0); \n"
 "vec3 F0 = vec3(0.04); \n"
@@ -33579,73 +33751,9 @@ namespace gl3d
 "pos, viewDir, albedo, normal, F0) * smoothing * attenuation * shadow;\n"
 "}\n"
 "}\n"
-"vec3 ambient;\n"
-"vec3 gammaAmbient = pow(lightPassData.ambientColor.rgb, vec3(2.2));\n"
-"if(lightPassData.skyBoxPresent != 0)\n"
-"{\n"
-"vec3 N = normal;\n"
-"vec3 V = viewDir;\n"
-"float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);\n"
-"vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);\n"
-"vec3 kS = F;\n"
-"vec3 irradiance = texture(u_skyboxIradiance, N).rgb; \n"
-"const float MAX_REFLECTION_LOD = 4.0;\n"
-"vec3 radiance = textureLod(u_skyboxFiltered, R, roughness * MAX_REFLECTION_LOD).rgb;\n"
-"vec2 brdfVec = vec2(dotNVClamped, roughness);\n"
-"vec2 brdf  = texture(u_brdfTexture, brdfVec).rg;\n"
-"if(lightPassData.lightSubScater == 0)\n"
-"{\n"
-"vec3 kD = 1.0 - kS;\n"
-"kD *= 1.0 - metallic;\n"
-"vec3 diffuse = irradiance * albedo;\n"
-"vec3 specular = radiance * (F * brdf.x + brdf.y);\n"
-"ambient = (kD * diffuse + specular);\n"
-"}else\n"
-"{\n"
-"vec3 FssEss = kS * brdf.x + brdf.y;\n"
-"float Ess = brdf.x + brdf.y;\n"
-"float Ems = 1-Ess;\n"
-"vec3 Favg = F0 + (1-F0)/21;\n"
-"vec3 Fms = FssEss*Favg/(1-(1-Ess)*Favg);\n"
-"vec3 Edss = 1 - (FssEss + Fms * Ems);\n"
-"vec3 kD = albedo * Edss;\n"
-"ambient = FssEss * radiance + (Fms*Ems+kD) * irradiance;\n"
-"}\n"
-"vec3 occlusionData = ambientOcclution * gammaAmbient;\n"
-"ambient *= occlusionData;\n"
-"}else\n"
-"{\n"
-"vec3 N = normal;\n"
-"vec3 V = viewDir;\n"
-"float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);\n"
-"vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);\n"
-"vec3 kS = F;\n"
-"vec3 irradiance = gammaAmbient ; \n"
-"vec3 radiance = gammaAmbient ;\n"
-"vec2 brdfVec = vec2(dotNVClamped, roughness);\n"
-"vec2 brdf  = texture(u_brdfTexture, brdfVec).rg;\n"
-"if(lightPassData.lightSubScater == 0)\n"
-"{\n"
-"vec3 kD = 1.0 - kS;\n"
-"kD *= 1.0 - metallic;\n"
-"vec3 diffuse = irradiance * albedo;\n"
-"vec3 specular = radiance * (F * brdf.x + brdf.y);\n"
-"ambient = (kD * diffuse + specular);\n"
-"}else\n"
-"{\n"
-"vec3 FssEss = kS * brdf.x + brdf.y;\n"
-"float Ess = brdf.x + brdf.y;\n"
-"float Ems = 1-Ess;\n"
-"vec3 Favg = F0 + (1-F0)/21;\n"
-"vec3 Fms = FssEss*Favg/(1-(1-Ess)*Favg);\n"
-"vec3 Edss = 1 - (FssEss + Fms * Ems);\n"
-"vec3 kD = albedo * Edss;\n"
-"ambient = FssEss * radiance + (Fms*Ems+kD) * irradiance;\n"
-"}\n"
-"vec3 occlusionData = vec3(ambientOcclution);\n"
-"ambient *= occlusionData;\n"
-"}\n"
-"vec3 color = Lo + ambient; \n"
+"vec3 color = Lo + computeAmbientTerm(normal, viewDir, F0, roughness, R, metallic, \n"
+"albedo, pos, posViewSpace, viewSpaceNormal, rezolution)\n"
+"* ambientOcclution; \n"
 "if(u_transparentPass != 0)\n"
 "{\n"
 "a_outColor = vec4(color.rgb + emissive.rgb, albedoAlpha.a);\n"
@@ -33654,6 +33762,9 @@ namespace gl3d
 "{\n"
 "a_outColor = vec4(color.rgb + emissive.rgb, 1);\n"
 "a_outBloom = vec4(emissive.rgb, 1);\n"
+"}\n"
+"if(u_hasLastFrameTexture!=0)\n"
+"{\n"
 "}\n"
 "}\n"},
 
@@ -33667,7 +33778,6 @@ namespace gl3d
 "uniform mat4 u_modelTransform; \n"
 "uniform mat4 u_motelViewTransform; \n"
 "out vec3 v_normals;\n"
-"out vec3 v_position;\n"
 "out vec2 v_texCoord;\n"
 "out vec3 v_positionViewSpace;\n"
 "readonly restrict layout(std140) buffer u_jointTransforms\n"
@@ -33698,7 +33808,6 @@ namespace gl3d
 "}\n"
 "v_positionViewSpace = vec3(u_motelViewTransform * totalLocalPos);\n"
 "gl_Position = u_transform * totalLocalPos;\n"
-"v_position = (u_modelTransform * totalLocalPos).xyz;\n"
 "v_normals = mat3(transpose(inverse(mat3(u_modelTransform)))) * totalNorm.xyz;  \n"
 "v_normals = normalize(v_normals);\n"
 "v_texCoord = a_texCoord;\n"
@@ -33706,14 +33815,12 @@ namespace gl3d
 
       std::pair<std::string, const char*>{"geometryPass.frag", "#version 430\n"
 "#extension GL_ARB_bindless_texture: require\n"
-"layout(location = 0) out vec3 a_pos;\n"
-"layout(location = 1) out ivec3 a_normal;\n"
-"layout(location = 3) out vec3 a_posViewSpace;\n"
-"layout(location = 4) out int a_materialIndex;\n"
-"layout(location = 5) out vec4 a_textureUV;\n"
-"layout(location = 2) out ivec4 a_textureDerivates;\n"
+"layout(location = 0) out ivec3 a_normal;\n"
+"layout(location = 1) out ivec4 a_textureDerivates;\n"
+"layout(location = 2) out vec3 a_posViewSpace;\n"
+"layout(location = 3) out int a_materialIndex;\n"
+"layout(location = 4) out vec4 a_textureUV;\n"
 "in vec3 v_normals;\n"
-"in vec3 v_position;	\n"
 "in vec2 v_texCoord;\n"
 "in vec3 v_positionViewSpace;\n"
 "uniform sampler2D u_normalSampler;\n"
@@ -33785,7 +33892,6 @@ namespace gl3d
 "vec3 normal = getNormalMapFunc(noMappedNorals);\n"
 "normal = normalize(normal);\n"
 "a_normal = fromFloatTouShort(normal);\n"
-"a_pos = v_position;\n"
 "a_posViewSpace = v_positionViewSpace;\n"
 "a_materialIndex = u_materialIndex+1;\n"
 "a_textureUV.xy = v_texCoord.xy;\n"
@@ -34267,22 +34373,6 @@ namespace gl3d
 "gl_Position = vec4(a_Pos, 1.0);\n"
 "}\n"},
 
-      std::pair<std::string, const char*>{"drawDepth.frag", "#version 150\n"
-"out vec4 outColor;\n"
-"noperspective in vec2 v_texCoords;\n"
-"uniform sampler2D u_depth;\n"
-"void main ()\n"
-"{\n"
-"float tmpvar_1;\n"
-"tmpvar_1 = texture (u_depth, v_texCoords).x;\n"
-"vec4 tmpvar_2;\n"
-"tmpvar_2.w = 1.0;\n"
-"tmpvar_2.x = tmpvar_1;\n"
-"tmpvar_2.y = tmpvar_1;\n"
-"tmpvar_2.z = tmpvar_1;\n"
-"outColor = tmpvar_2;\n"
-"}\n"},
-
       std::pair<std::string, const char*>{"color.vert", "#version 330\n"
 "in layout(location = 0) vec3 positions;\n"
 "in layout(location = 1) vec3 colors;\n"
@@ -34528,8 +34618,10 @@ namespace gl3d
 	{
 		std::string error = "";
 
+		//todo proper quality choises
+
 	#pragma region brdf texture
-		error += brdfTexture.loadTextureFromFile(BRDFIntegrationMapFileLocation, fileOpener, TextureLoadQuality::leastPossible, 3);
+		error += brdfTexture.loadTextureFromFile(BRDFIntegrationMapFileLocation, fileOpener, TextureLoadQuality::linearMipmap, 3);
 		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -34595,7 +34687,6 @@ namespace gl3d
 
 		light_u_normals = getUniform(lightingPassShader.id, "u_normals", errorReporter);
 		light_u_skyboxFiltered = getUniform(lightingPassShader.id, "u_skyboxFiltered", errorReporter);
-		light_u_positions = getUniform(lightingPassShader.id, "u_positions", errorReporter);
 		light_u_eyePosition = getUniform(lightingPassShader.id, "u_eyePosition", errorReporter);
 		light_u_pointLightCount = getUniform(lightingPassShader.id, "u_pointLightCount", errorReporter);
 		light_u_directionalLightCount = getUniform(lightingPassShader.id, "u_directionalLightCount", errorReporter);
@@ -34609,6 +34700,12 @@ namespace gl3d
 		light_u_textureUV = getUniform(lightingPassShader.id, "u_textureUV", errorReporter);
 		light_u_textureDerivates = getUniform(lightingPassShader.id, "u_textureDerivates", errorReporter);
 		light_u_transparentPass = getUniform(lightingPassShader.id, "u_transparentPass", errorReporter);
+		light_u_lastTexture = getUniform(lightingPassShader.id, "u_lastFrameTexture", errorReporter);
+		light_u_hasLastFrameTexture = getUniform(lightingPassShader.id, "u_hasLastFrameTexture", errorReporter);
+		light_u_cameraProjection = getUniform(lightingPassShader.id, "u_cameraProjection", errorReporter);
+		light_u_positionViewSpace = getUniform(lightingPassShader.id, "u_positionViewSpace", errorReporter);
+		light_u_view = getUniform(lightingPassShader.id, "u_view", errorReporter);
+		light_u_inverseView = getUniform(lightingPassShader.id, "u_inverseView", errorReporter);
 
 		light_materialBlockLocation = getStorageBlockIndex(lightingPassShader.id, "u_material", errorReporter);
 		glShaderStorageBlockBinding(lightingPassShader.id, light_materialBlockLocation, internal::MaterialBlockBinding);
@@ -34694,6 +34791,28 @@ namespace gl3d
 			"getNormalMapFunc", errorReporter);
 		
 	}
+
+	void LightShader::clear()
+	{
+		brdfTexture.clear();
+		prePass.shader.clear();
+		pointShadowShader.shader.clear();
+		geometryPassShader.clear();
+		glDeleteBuffers(1, &materialBlockBuffer);
+		lightingPassShader.clear();
+		glDeleteBuffers(1, &lightPassShaderData.lightPassDataBlockBuffer);
+		glDeleteBuffers(1, &pointLightsBlockBuffer);
+		glDeleteBuffers(1, &directionalLightsBlockBuffer);
+		glDeleteBuffers(1, &spotLightsBlockBuffer);
+		glDeleteVertexArrays(1, &quadDrawer.quadVAO);
+		glDeleteBuffers(1, &quadDrawer.quadBuffer);
+	
+	
+	}
+
+
+
+
 
 };
 
@@ -35047,8 +35166,31 @@ namespace gl3d
 					j.Position.Z *= scale;
 				}
 			}
+		}
 
-			
+		for (auto &i : loader.joints)
+		{
+			//i.scale *= scale;
+			//i.trans *= scale;
+		}
+
+		for (auto &i : loader.animations)
+		{
+			for (auto &k1 : i.keyFramesTrans)
+			{
+				for (auto &k2 : k1)
+				{
+					//k2.translation *= scale;
+				}
+			}
+
+			for (auto &k1 : i.keyFramesScale)
+			{
+				for (auto &k2 : k1)
+				{
+				//	k2.scale *= scale;
+				}
+			}
 		}
 
 		//errorReporter.currentErrorCallback(std::string("Loaded: ") + std::to_string(loader.LoadedMeshes.size()) + " meshes");
@@ -35188,6 +35330,16 @@ namespace gl3d
 
 	void ModelData::clear(Renderer3D& renderer)
 	{
+		for (auto &i : createdMaterials)
+		{
+			renderer.deleteMaterial(i);
+		}
+
+		internalClear();
+	}
+
+	void ModelData::internalClear()
+	{
 		for (auto &i : models)
 		{
 			i.clear();
@@ -35198,15 +35350,10 @@ namespace gl3d
 			delete[] i;
 		}
 		subModelsNames.clear();
-		
-		for (auto& i : createdMaterials)
-		{
-			renderer.deleteMaterial(i);
-		}
+
 		createdMaterials.clear();
 
 		models.clear();
-
 	}
 
 	
@@ -35401,6 +35548,7 @@ namespace gl3d
 
 	}
 
+	//	does not clear owned material
 	void GraphicModel::clear()
 	{
 		glDeleteBuffers(1, &vertexBuffer);
@@ -35458,7 +35606,7 @@ namespace gl3d
 		glBindVertexArray(0);
 
 		glGenFramebuffers(1, &captureFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO); //also allocate gpu resources
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
 	}
@@ -36037,12 +36185,45 @@ namespace gl3d
 		glBindVertexArray(0);
 	}
 
+	void SkyBoxLoaderAndDrawer::clear()
+	{
+		normalSkyBox.shader.clear();
+		hdrtoCubeMap.shader.clear();
+		convolute.shader.clear();
+		preFilterSpecular.shader.clear();
+		atmosphericScatteringShader.shader.clear();
+
+		glDeleteVertexArrays(1, &vertexArray);
+		glDeleteBuffers(1, &vertexBuffer);
+		glDeleteFramebuffers(1, &captureFBO);
+
+	}
+
+
 	void SkyBox::clearTextures()
 	{
 		glDeleteTextures(3, (GLuint*)this);
 		texture = 0;
 		convolutedTexture = 0;
 		preFilteredMap = 0;
+	}
+
+	//does not clear materials owned
+	void CpuEntity::clear()
+	{
+		deleteGpuData();
+
+		for (auto &n : subModelsNames)
+		{
+			delete[] n;
+		}
+
+		for (auto &m : models)
+		{
+			m.clear();
+		}
+
+		*this = CpuEntity();
 	}
 
 	void CpuEntity::allocateGpuData()
@@ -36094,7 +36275,6 @@ namespace gl3d
 		glDisable(GL_BLEND);
 
 		errorReporter.callErrorCallback(internal.lightShader.create(errorReporter, fileOpener, BRDFIntegrationMapFileLocation));
-		vao.createVAOs();
 		internal.skyBoxLoaderAndDrawer.createGpuData(errorReporter, fileOpener, frameBuffer);
 
 
@@ -36123,7 +36303,6 @@ namespace gl3d
 		directionalShadows.create(frameBuffer);
 		spotShadows.create(frameBuffer);
 		pointShadows.create(frameBuffer);
-		renderDepthMap.create(errorReporter, fileOpener, frameBuffer);
 		antiAlias.create(x, y, errorReporter, fileOpener);
 		adaptiveResolution.create(x, y);
 
@@ -36143,21 +36322,6 @@ namespace gl3d
 		return errorReporter.currentErrorCallback;
 	}
 
-	void Renderer3D::VAO::createVAOs()
-	{
-		glGenVertexArrays(1, &posNormalTexture);
-		glBindVertexArray(posNormalTexture);
-
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-
-		glBindVertexArray(0);
-
-	}
 	
 	Material Renderer3D::createMaterial(glm::vec4 kd,
 		float roughness, float metallic, float ao, std::string name,
@@ -36781,6 +36945,7 @@ namespace gl3d
 		}
 	}
 
+	//todo delete from gpu 
 	void Renderer3D::deleteTexture(Texture& t)
 	{
 		int index = internal.getTextureIndex(t);
@@ -38448,6 +38613,34 @@ namespace gl3d
 		return this->postProcess.highQualityUpSample;
 	}
 
+	LightShader::LightPassData::SSRdata &Renderer3D::getSSRdata()
+	{
+		return internal.lightShader.lightPassUniformBlockCpuData.SSR;
+	}
+
+	void Renderer3D::setSSRdata(LightShader::LightPassData::SSRdata data)
+	{
+		data.maxRayDelta = glm::clamp(data.maxRayDelta, 0.0001f, 2.f);
+		data.maxRayStep = glm::clamp(data.maxRayStep, 0.01f, 5.f);
+		data.maxSteps = glm::clamp(data.maxSteps, 5, 150);
+		data.minRayStep = glm::clamp(data.minRayStep, 0.001f, 1.f);
+		data.numBinarySearchSteps = glm::clamp(data.numBinarySearchSteps, 2, 20);
+
+
+		internal.lightShader.lightPassUniformBlockCpuData.SSR = data;
+
+
+	}
+
+	void Renderer3D::ebableSSR(bool enable)
+	{
+	}
+
+	bool Renderer3D::isSSRenabeled()
+	{
+		return false;
+	}
+
 	float stub = 0;
 	float &Renderer3D::getDirectionalShadowCascadesFrustumSplit(int cascadeIndex)
 	{
@@ -38462,7 +38655,7 @@ namespace gl3d
 		// TODO: insert return statement here
 	}
 
-	bool &Renderer3D::chromaticAberation()
+	bool &Renderer3D::chromaticAberationEnabeled()
 	{
 		return postProcess.chromaticAberationOn;
 	}
@@ -38530,7 +38723,7 @@ namespace gl3d
 		
 		//todo separate thing
 		j["adaptiveResolution"] = adaptiveResolution.useAdaptiveResolution; //todo setter getter
-		j["zprePass"] = zPrePass; //todo setter getter
+		//j["zprePass"] = zPrePass; //todo setter getter //todo add back if will be used
 		j["frustumCulling"] = frustumCulling; 
 
 
@@ -38548,7 +38741,7 @@ namespace gl3d
 
 		//chromatic aberation
 		{
-			j["chromaticAberation"] = chromaticAberation();
+			j["chromaticAberation"] = chromaticAberationEnabeled();
 			
 			Json chromaticAberationData;
 			chromaticAberationData["strength"] = getChromaticAberationStrength();
@@ -38556,6 +38749,22 @@ namespace gl3d
 
 			j["chromaticAberationData"] = chromaticAberationData;
 		}
+
+		{
+			j["SSR"] = isSSRenabeled();
+
+			Json SSR;
+
+			auto d = getSSRdata();
+			SSR["maxRayDelta"] = d.maxRayDelta;
+			SSR["maxRayStep"] = d.maxRayStep;
+			SSR["maxSteps"] = d.maxSteps;
+			SSR["minRayStep"] = d.minRayStep;
+			SSR["numBinarySearchSteps"] = d.numBinarySearchSteps;
+
+			j["SSRdata"] = SSR;
+		}
+
 
 		return j.dump();
 	}
@@ -38568,7 +38777,7 @@ namespace gl3d
 
 		{
 			auto exposure = rez["exposure"];
-			if (exposure.is_number_float())
+			if (exposure.is_number())
 			{
 				setExposure(exposure);
 			}
@@ -38576,16 +38785,137 @@ namespace gl3d
 			auto normalMapping = rez["normal mapping"];
 			if (normalMapping.is_boolean())
 			{
-				this->enableNormalMapping(normalMapping);
+				enableNormalMapping(normalMapping);
 			}
 
 			auto lightSubscatter = rez["light subscatter"];
-
 			if (lightSubscatter.is_boolean())
 			{
 				enableLightSubScattering(lightSubscatter);
 			}
+
+			auto adaptiveResolution = rez["adaptiveResolution"];
+			if (adaptiveResolution.is_boolean())
+			{
+				this->adaptiveResolution.useAdaptiveResolution = adaptiveResolution;
+			}
+
+			auto frustumCulling = rez["frustumCulling"];
+			if (frustumCulling.is_boolean())
+			{
+				this->frustumCulling = frustumCulling;
+			}
 		}
+
+		//SSAO
+		{
+			auto ssao = rez["ssao"];
+			if(ssao.is_boolean())
+			{
+				enableSSAO(ssao);
+			}
+
+			auto ssaoData = rez["ssaoData"];
+
+			if (ssaoData.is_object())
+			{
+				auto bias = ssaoData["bias"];
+				if (bias.is_number()) { setSSAOBias(bias); }
+				auto radius = ssaoData["radius"];
+				if (radius.is_number()) { setSSAORadius(radius); }
+				auto sampleCount = ssaoData["sampleCount"];
+				if (sampleCount.is_number()) { setSSAOSampleCount(sampleCount); }
+				auto exponent = ssaoData["exponent"];
+				if (exponent.is_number()) { setSSAOExponent(exponent); }
+			}
+		}
+
+		//FXAA
+		{
+			auto fxaaEnabeled = rez["fxaa"];
+			if (fxaaEnabeled.is_boolean()) { enableFXAA(fxaaEnabeled); }
+
+			auto fxaaData = rez["fxaaData"];
+	
+			if (fxaaData.is_object())
+			{
+				auto &data = getFxaaSettings();
+
+				auto edgeDarkTreshold = fxaaData["edgeDarkTreshold"];
+				auto edgeMinTreshold = fxaaData["edgeMinTreshold"];
+				auto qualityMultiplyer = fxaaData["qualityMultiplyer"];
+				auto iterations = fxaaData["iterations"];
+				auto subPixelQuality = fxaaData["subPixelQuality"];
+
+				if (edgeDarkTreshold.is_number())
+				{
+					data.edgeDarkTreshold = edgeDarkTreshold;
+				}
+
+				if (edgeMinTreshold.is_number())
+				{
+					data.edgeMinTreshold = edgeMinTreshold;
+				}
+
+				if (qualityMultiplyer.is_number())
+				{
+					data.quaityMultiplier = qualityMultiplyer;
+				}
+
+				if (iterations.is_number())
+				{
+					data.ITERATIONS = iterations;
+				}
+
+				if (subPixelQuality.is_number())
+				{
+					data.SUBPIXEL_QUALITY = subPixelQuality;
+				}
+
+			}
+		}
+
+		//Chromatic Aberation
+		{
+			auto chromaticAberationEnabeled = rez["chromaticAberation"];
+			if (chromaticAberationEnabeled.is_boolean()) { this->chromaticAberationEnabeled() = chromaticAberationEnabeled; }
+
+			auto chromaticAberationData = rez["chromaticAberationData"];
+			
+			if (chromaticAberationData.is_object())
+			{
+				auto strength = chromaticAberationData["strength"];
+				auto unfocusDistance = chromaticAberationData["unfocusDistance"];
+
+				if (strength.is_number()) { setChromaticAberationStrength(strength); }
+				if (unfocusDistance.is_number()) { setChromaticAberationUnfocusDistance(unfocusDistance); }
+
+			}
+		}
+
+		//SSR
+		{
+			auto ssrEnabeled = rez["SSR"];
+			if (ssrEnabeled.is_boolean()) { ebableSSR(ssrEnabeled); }
+			
+			auto ssrData = rez["SSRdata"];
+
+			if (ssrData.is_object())
+			{
+				auto &d = getSSRdata();
+
+				#define ADD_ENTRY(X) auto X = ssrData[#X]; if (X .is_number()) { d. X = X; }
+
+				ADD_ENTRY(maxRayDelta)
+				ADD_ENTRY(maxRayStep)
+				ADD_ENTRY(maxSteps)
+				ADD_ENTRY(minRayStep)
+				ADD_ENTRY(numBinarySearchSteps)
+
+				#undef ADD_ENTRY
+			}
+		}
+
 
 	}
 
@@ -40333,6 +40663,18 @@ namespace gl3d
 		}
 		#pragma endregion 
 
+	#pragma region send material data
+		//material buffer //todo lazyness or sthing, don't forget to also change it on clearing all data
+		if (internal.materials.size())
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, internal.lightShader.materialBlockBuffer);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialValues) *internal.materials.size()
+				, &internal.materials[0], GL_STREAM_DRAW);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, internal::MaterialBlockBinding,
+				internal.lightShader.materialBlockBuffer);
+		}
+		
+	#pragma endregion
 
 		auto gBufferRender = [&](bool transparentPhaze)
 		{
@@ -40340,16 +40682,6 @@ namespace gl3d
 			glBindVertexArray(0);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, internal.gBuffer.gBuffer);
-
-			//material buffer
-			if (internal.materials.size())
-			{
-				glBindBuffer(GL_SHADER_STORAGE_BUFFER, internal.lightShader.materialBlockBuffer);
-				glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialValues) * internal.materials.size()
-					, &internal.materials[0], GL_STREAM_DRAW);
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, internal::MaterialBlockBinding,
-					internal.lightShader.materialBlockBuffer);
-			}
 
 			GLsizei n;
 			glGetProgramStageiv(internal.lightShader.geometryPassShader.id,
@@ -40547,51 +40879,62 @@ namespace gl3d
 
 			glUniform1i(internal.lightShader.light_u_transparentPass, transparentPhaze);
 
-			glUniform1i(internal.lightShader.light_u_positions, 0);
+			glUniform1i(internal.lightShader.light_u_normals, 0);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.position]);
-
-			glUniform1i(internal.lightShader.light_u_normals, 1);
-			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.normal]);
 
-			glUniform1i(internal.lightShader.light_u_skyboxFiltered, 2);
-			glActiveTexture(GL_TEXTURE2);
+			glUniform1i(internal.lightShader.light_u_skyboxFiltered, 1);
+			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.preFilteredMap);
 
-			glUniform1i(internal.lightShader.light_u_skyboxIradiance, 3);
-			glActiveTexture(GL_TEXTURE3);
+			glUniform1i(internal.lightShader.light_u_skyboxIradiance, 2);
+			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.convolutedTexture);
 
-			glUniform1i(internal.lightShader.light_u_brdfTexture, 4);
-			glActiveTexture(GL_TEXTURE4);
+			glUniform1i(internal.lightShader.light_u_brdfTexture, 3);
+			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, internal.lightShader.brdfTexture.id);
 
-			glUniform1i(internal.lightShader.light_u_cascades, 5);
-			glActiveTexture(GL_TEXTURE5);
+			glUniform1i(internal.lightShader.light_u_cascades, 4);
+			glActiveTexture(GL_TEXTURE4);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, directionalShadows.cascadesTexture);
 
-			glUniform1i(internal.lightShader.light_u_spotShadows, 6);
-			glActiveTexture(GL_TEXTURE6);
+			glUniform1i(internal.lightShader.light_u_spotShadows, 5);
+			glActiveTexture(GL_TEXTURE5);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, spotShadows.shadowTextures);
 
-			glUniform1i(internal.lightShader.light_u_pointShadows, 7);
-			glActiveTexture(GL_TEXTURE7);
+			glUniform1i(internal.lightShader.light_u_pointShadows, 6);
+			glActiveTexture(GL_TEXTURE6);
 			glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadows.shadowTextures);
 
-			glUniform1i(internal.lightShader.light_u_materialIndex, 8);
-			glActiveTexture(GL_TEXTURE8);
+			glUniform1i(internal.lightShader.light_u_materialIndex, 7);
+			glActiveTexture(GL_TEXTURE7);
 			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.materialIndex]);
 
-			glUniform1i(internal.lightShader.light_u_textureUV, 9);
-			glActiveTexture(GL_TEXTURE9);
+			glUniform1i(internal.lightShader.light_u_textureUV, 8);
+			glActiveTexture(GL_TEXTURE8);
 			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.textureUV]);
 
-			glUniform1i(internal.lightShader.light_u_textureDerivates, 10);
-			glActiveTexture(GL_TEXTURE10);
+			glUniform1i(internal.lightShader.light_u_textureDerivates, 9);
+			glActiveTexture(GL_TEXTURE9);
 			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.textureDerivates]);
 
+			glUniform1i(internal.lightShader.light_u_lastTexture, 10);
+			glActiveTexture(GL_TEXTURE10);
+			glBindTexture(GL_TEXTURE_2D, postProcess.colorBuffers[2]);
+
+			glUniform1i(internal.lightShader.light_u_positionViewSpace, 11);
+			glActiveTexture(GL_TEXTURE11);
+			glBindTexture(GL_TEXTURE_2D, internal.gBuffer.buffers[internal.gBuffer.positionViewSpace]);
+
+			glUniform1i(internal.lightShader.light_u_hasLastFrameTexture, internal.hasLastFrameTexture);
+			
 			glUniform3f(internal.lightShader.light_u_eyePosition, camera.position.x, camera.position.y, camera.position.z);
+
+			glUniformMatrix4fv(internal.lightShader.light_u_cameraProjection, 1, GL_FALSE, &camera.getProjectionMatrix()[0][0]);
+			glUniformMatrix4fv(internal.lightShader.light_u_view, 1, GL_FALSE, &camera.getWorldToViewMatrix()[0][0]);
+			glUniformMatrix4fv(internal.lightShader.light_u_inverseView, 1, GL_FALSE, &glm::inverse(camera.getWorldToViewMatrix())[0][0]);
+			
 
 			if (internal.pointLights.size())
 			{//todo laziness if lights don't change and stuff
@@ -40674,8 +41017,19 @@ namespace gl3d
 		//blend geometry
 		lightingPass(true);
 
+
+		//copy current texture to last texture
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+		glCopyTextureSubImage2D(postProcess.colorBuffers[2], 0, 0, 0, 0, 0,
+			postProcess.currentDimensions.x, postProcess.currentDimensions.y);
+		//internal.hasLastFrameTexture = true;
+
+
+
 		//we draw a rect several times so we keep this vao binded
 		glBindVertexArray(internal.lightShader.quadDrawer.quadVAO);
+
+
 
 		#pragma region ssao
 
@@ -40701,15 +41055,7 @@ namespace gl3d
 				glUniformMatrix4fv(internal.ssao.u_view, 1, GL_FALSE,
 					&(camera.getWorldToViewMatrix())[0][0]);
 
-				glUniform3fv(internal.ssao.u_samples, 64, &(internal.ssao.ssaoKernel[0][0]));
-
-
-				glUniform1f(internal.ssao.u_aspectRatio, camera.aspectRatio);
-				glUniform1f(internal.ssao.u_tanHalfFOV, std::tan(camera.fovRadians/2.f));
-				
-				glUniform1f(internal.ssao.u_farPlane, camera.farPlane);
-				glUniform1f(internal.ssao.u_closePlane, camera.closePlane);
-				
+				glUniform3fv(internal.ssao.u_samples, 64, &(internal.ssao.ssaoKernel[0][0])); //todo send to the gpu only once wtf
 
 				glBindFramebuffer(GL_FRAMEBUFFER, internal.ssao.ssaoFBO);
 				glClear(GL_COLOR_BUFFER_BIT);
@@ -40726,9 +41072,6 @@ namespace gl3d
 				glBindTexture(GL_TEXTURE_2D, internal.ssao.noiseTexture);
 				glUniform1i(internal.ssao.u_texNoise, 2);
 
-				glActiveTexture(GL_TEXTURE3);
-				glBindTexture(GL_TEXTURE_2D, internal.gBuffer.depthBuffer);
-				glUniform1i(internal.ssao.u_depthBuffer, 3);
 
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -41018,6 +41361,9 @@ namespace gl3d
 
 		#pragma endregion
 
+		
+	
+
 		#pragma region do the post process stuff and draw to the screen
 
 		if (antiAlias.usingFXAA || adaptiveResolution.useAdaptiveResolution || postProcess.chromaticAberationOn)
@@ -41094,6 +41440,7 @@ namespace gl3d
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+
 		//glDisable(GL_BLEND);
 
 
@@ -41128,6 +41475,7 @@ namespace gl3d
 			currentTexture = adaptiveResolution.texture2;
 		}
 
+
 		glViewport(0, 0, internal.w, internal.h);
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 		
@@ -41137,7 +41485,7 @@ namespace gl3d
 
 			if (antiAlias.usingFXAA)
 			{
-				//if adaptive rez is on mabe resample first and then fxaa
+				//todo if adaptive rez is on mabe resample first and then fxaa?
 				
 				antiAlias.shader.bind();
 				glUniform1i(antiAlias.u_texture, 0);
@@ -41217,35 +41565,97 @@ namespace gl3d
 
 	}
 
-	//todo remove
-	void Renderer3D::renderADepthMap(GLuint texture, GLuint frameBuffer)
+	void Renderer3D::clearAllLoadedResource()
 	{
-		glDisable(GL_DEPTH_TEST);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, renderDepthMap.fbo);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	#pragma region skyboxes
+		skyBox.clearTextures();
+	#pragma endregion
 
+	#pragma region materials
 
-		renderDepthMap.shader.bind();
-		glClear(GL_COLOR_BUFFER_BIT);
-		glViewport(0, 0, 1024, 1024);
+		internal.materialIndexes.clear();
+		internal.materials.clear();
+		internal.materialNames.clear();
+		internal.materialTexturesData.clear();
 
-		glBindVertexArray(internal.lightShader.quadDrawer.quadVAO);
-		
+	#pragma endregion
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glUniform1i(renderDepthMap.u_depth, 0);
+	#pragma region textures
 
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		for (auto &t : internal.loadedTextures)
+		{
+			glDeleteTextures(1, &t.texture.id);
+		}
 
-		glViewport(0, 0, internal.adaptiveW, internal.adaptiveH);
+		internal.loadedTexturesIndexes.clear();
+		internal.loadedTextures.clear();
+		internal.loadedTexturesBindlessHandle.clear();
+		internal.loadedTexturesNames.clear();
 
-		glBindVertexArray(0);
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-		
-		glEnable(GL_DEPTH_TEST);
+	#pragma endregion
 
+	#pragma region models
+
+		for (auto &m : internal.graphicModels)
+		{
+			m.internalClear();
+		}
+
+		internal.graphicModels.clear();
+		internal.graphicModelsIndexes.clear();
+
+	#pragma endregion
+
+	#pragma region cpuEntities
+
+		for (auto &e : internal.cpuEntities)
+		{
+			e.clear();
+		}
+
+		internal.cpuEntities.clear();
+		internal.entitiesIndexes.clear();;
+
+	#pragma endregion
+
+	#pragma region lights
+
+		internal.spotLights.clear();
+		internal.spotLightIndexes.clear();
+		internal.pointLights.clear();
+		internal.pointLightIndexes.clear();
+		internal.directionalLights.clear();
+		internal.directionalLightIndexes.clear();
+
+		spotShadows.clear();
+		pointShadows.clear();
+		directionalShadows.clear();
+
+	#pragma endregion
+
+	}
+
+	void Renderer3D::clearAllRendererResources()
+	{
+
+		clearAllLoadedResource();
+
+		internal.lightShader.clear();
+		internal.skyBoxLoaderAndDrawer.clear();
+
+		internal.showNormalsProgram.shader.clear();
+
+		internal.gBuffer.clear();
+		internal.ssao.clear();
+		internal.hbao.clear();
+		postProcess.clear();
+		directionalShadows.clear();
+		spotShadows.clear();
+		pointShadows.clear();
+		antiAlias.clear();
+		adaptiveResolution.clear();
+		internal.pBRtextureMaker.clear();
 	}
 
 	SkyBox Renderer3D::loadSkyBox(const char *names[6])
@@ -41332,7 +41742,6 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-
 		glGenFramebuffers(1, &ssaoFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 
@@ -41356,13 +41765,6 @@ namespace gl3d
 		u_gNormal = getUniform(shader.id, "u_gNormal", errorReporter);
 		u_texNoise = getUniform(shader.id, "u_texNoise", errorReporter);
 		u_samples = getUniform(shader.id, "samples[0]", errorReporter);
-		u_depthBuffer = getUniform(shader.id, "u_depthBuffer", errorReporter);
-		u_aspectRatio = getUniform(shader.id, "u_aspectRatio", errorReporter);
-		u_tanHalfFOV = getUniform(shader.id, "u_tanHalfFOV", errorReporter);
-		u_farPlane = getUniform(shader.id, "u_farPlane", errorReporter);
-		u_closePlane = getUniform(shader.id, "u_closePlane", errorReporter);
-
-
 
 		glGenBuffers(1, &ssaoUniformBlockBuffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, ssaoUniformBlockBuffer);
@@ -41409,14 +41811,31 @@ namespace gl3d
 	
 	}
 
+	void Renderer3D::InternalStruct::SSAO::clear()
+	{
+		ssaoKernel.clear();
+		glDeleteTextures(1, &noiseTexture);
+		glDeleteFramebuffers(1, &ssaoFBO);
+		glDeleteTextures(1, &ssaoColorBuffer);
+
+		shader.clear();
+
+		glDeleteBuffers(1, &ssaoUniformBlockBuffer);
+
+		blurShader.clear();
+
+		glDeleteFramebuffers(1, &blurBuffer);
+		glDeleteTextures(1, &blurColorBuffer);
+	}
+
 	void Renderer3D::PostProcess::create(int w, int h, ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer)
 	{
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 		//one for colors the other for things to be bloomed
-		glGenTextures(2, colorBuffers);
-		for (int i = 0; i < 2; i++)
+		glGenTextures(3, colorBuffers);
+		for (int i = 0; i < 3; i++)
 		{
 			glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -41438,7 +41857,6 @@ namespace gl3d
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffers[1], 0);
 
 
-		
 		postProcessShader.loadShaderProgramFromFile("shaders/drawQuads.vert", "shaders/postProcess/postProcess.frag", 
 			errorReporter, fileOpener);
 		u_colorTexture = getUniform(postProcessShader.id, "u_colorTexture", errorReporter);
@@ -41560,7 +41978,7 @@ namespace gl3d
 		{
 			currentDimensions = glm::ivec2(w, h);
 
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 3; i++)
 			{
 				glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -41570,10 +41988,33 @@ namespace gl3d
 
 	}
 
+	void Renderer3D::PostProcess::clear()
+	{
+		glDeleteTextures(3, colorBuffers);
+		postProcessShader.clear();
+		glDeleteFramebuffers(1, &filterFbo);
+		glDeleteFramebuffers(1, &fbo);
+		gausianBLurShader.clear();
+		filterShader.shader.clear();
+		addMips.shader.clear();
+		addMipsBlur.shader.clear();
+		filterDown.shader.clear();
+		chromaticAberation.shader.clear();
+
+		glDeleteFramebuffers(2, blurFbo);
+		glDeleteTextures(2, bluredColorBuffer);
+	}
+
 	void Renderer3D::InternalStruct::PBRtextureMaker::init(ErrorReporter &errorReporter, FileOpener &fileOpener)
 	{
 		shader.loadShaderProgramFromFile("shaders/drawQuads.vert", "shaders/modelLoader/mergePBRmat.frag", errorReporter, fileOpener);
 		glGenFramebuffers(1, &fbo);
+	}
+
+	void Renderer3D::InternalStruct::PBRtextureMaker::clear()
+	{
+		shader.clear();
+		glDeleteFramebuffers(1, &fbo);
 	}
 
 	void Renderer3D::InternalStruct::renderSkyBox(Camera& c, SkyBox& s)
@@ -41703,6 +42144,15 @@ namespace gl3d
 		}
 	}
 
+	void Renderer3D::DirectionalShadows::clear()
+	{
+		glDeleteTextures(1, &cascadesTexture);
+		glDeleteTextures(1, &staticGeometryTexture);
+
+		glDeleteFramebuffers(1, &cascadesFbo);
+		glDeleteFramebuffers(1, &staticGeometryFbo);
+	}
+
 	void Renderer3D::DirectionalShadows::create(GLuint frameBuffer)
 	{
 		float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -41733,7 +42183,7 @@ namespace gl3d
 		for (int i = 0; i < 2; i++)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fbos[i]);
-			glDrawBuffer(GL_NONE);
+			glDrawBuffer(GL_NONE); //why am i doing this tho? dont remember
 			glReadBuffer(GL_NONE);
 		}
 
@@ -41782,7 +42232,6 @@ namespace gl3d
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture2, 0);
 
-
 	}
 
 	void Renderer3D::AdaptiveResolution::resize(int w, int h)
@@ -41799,6 +42248,14 @@ namespace gl3d
 
 			currentDimensions = glm::ivec2(w, h);
 		}
+	}
+
+	void Renderer3D::AdaptiveResolution::clear()
+	{
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteTextures(1, &texture);
+		glDeleteFramebuffers(1, &fbo2);
+		glDeleteTextures(1, &texture2);
 	}
 
 
@@ -41826,32 +42283,11 @@ namespace gl3d
 
 	}
 
-	void Renderer3D::RenderDepthMap::create(ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer)
+	void Renderer3D::AntiAlias::clear()
 	{
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		{
-			errorReporter.callErrorCallback("renderdepth map frame buffer failed");
-		}
-
-		shader.loadShaderProgramFromFile
-			("shaders/drawQuads.vert", "shaders/drawDepth.frag", errorReporter, fileOpener);
-		u_depth = getUniform(shader.id, "u_depth", errorReporter);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
+		shader.clear();
+		noAAshader.clear();
+		glDeleteBuffers(1, &fxaaDataBuffer);
 	}
 
 	void Renderer3D::PointShadows::create(GLuint frameBuffer)
@@ -41918,6 +42354,15 @@ namespace gl3d
 
 	}
 
+	void Renderer3D::PointShadows::clear()
+	{
+		glDeleteTextures(1, &shadowTextures);
+		glDeleteTextures(1, &staticGeometryTextures);
+
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteFramebuffers(1, &staticGeometryFbo);
+	}
+
 
 	void Renderer3D::SpotShadows::create(GLuint frameBuffer)
 	{
@@ -41943,7 +42388,6 @@ namespace gl3d
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 		}
 
-
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
@@ -41951,7 +42395,6 @@ namespace gl3d
 		glBindFramebuffer(GL_FRAMEBUFFER, staticGeometryfbo);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
-
 
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 	}
@@ -41978,11 +42421,16 @@ namespace gl3d
 			glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
-		
 		}
-		
+	}
 
+	void Renderer3D::SpotShadows::clear()
+	{
+		glDeleteTextures(1, &shadowTextures);
+		glDeleteTextures(1, &staticGeometryTextures);
+
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteFramebuffers(1, &staticGeometryfbo);
 	}
 
 	void Renderer3D::InternalStruct::GBuffer::create(int w, int h, ErrorReporter &errorReporter, GLuint frameBuffer)
@@ -41998,14 +42446,6 @@ namespace gl3d
 		//todo glGetInternalFormativ(GL_TEXTURE_2D, GL_RGBA8, GL_TEXTURE_IMAGE_FORMAT, 1, &preferred_format).
 		//https://www.khronos.org/opengl/wiki/Common_Mistakes#Extensions_and_OpenGL_Versions
 
-		glBindTexture(GL_TEXTURE_2D, buffers[position]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 1, 1, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers[position], 0);
-
 		glBindTexture(GL_TEXTURE_2D, buffers[normal]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16UI, 1, 1, 0, GL_RGB_INTEGER, GL_UNSIGNED_SHORT, NULL);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -42013,7 +42453,7 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, buffers[normal], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buffers[normal], 0);
 
 		glBindTexture(GL_TEXTURE_2D, buffers[textureDerivates]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16UI, 1, 1, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, NULL);
@@ -42022,7 +42462,7 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, buffers[textureDerivates], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, buffers[textureDerivates], 0);
 
 		glBindTexture(GL_TEXTURE_2D, buffers[positionViewSpace]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 1, 1, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -42030,7 +42470,7 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, buffers[positionViewSpace], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, buffers[positionViewSpace], 0);
 
 		glBindTexture(GL_TEXTURE_2D, buffers[materialIndex]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, 1, 1, 0, GL_RED_INTEGER, GL_SHORT, NULL);
@@ -42038,7 +42478,7 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, buffers[materialIndex], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, buffers[materialIndex], 0);
 
 		glBindTexture(GL_TEXTURE_2D, buffers[textureUV]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, NULL);
@@ -42046,12 +42486,10 @@ namespace gl3d
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, buffers[textureUV], 0);
-
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, buffers[textureUV], 0);
 
 		unsigned int attachments[bufferCount] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4,
-			GL_COLOR_ATTACHMENT5};
+			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
 		glDrawBuffers(bufferCount, attachments);
 
 		//glGenRenderbuffers(1, &depthBuffer);
@@ -42083,8 +42521,6 @@ namespace gl3d
 	{
 		if (currentDimensions.x != w || currentDimensions.y != h)
 		{
-			glBindTexture(GL_TEXTURE_2D, buffers[position]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGBA, GL_FLOAT, NULL);
 
 			glBindTexture(GL_TEXTURE_2D, buffers[normal]);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16UI, w, h, 0, GL_RGB_INTEGER, GL_UNSIGNED_SHORT, NULL);
@@ -42113,6 +42549,13 @@ namespace gl3d
 		}
 	}
 
+	void Renderer3D::InternalStruct::GBuffer::clear()
+	{
+		glDeleteFramebuffers(1, &gBuffer);
+		glDeleteTextures(bufferCount, buffers);
+		glDeleteTextures(1, &depthBuffer);
+	}
+
 	void Renderer3D::InternalStruct::HBAO::create(ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer)
 	{
 
@@ -42124,6 +42567,11 @@ namespace gl3d
 		u_gNormal = getUniform(shader.id, "u_gNormal", errorReporter);
 		u_texNoise = getUniform(shader.id, "u_texNoise", errorReporter);
 		
+	}
+
+	void Renderer3D::InternalStruct::HBAO::clear()
+	{
+		shader.clear();
 	}
 
 

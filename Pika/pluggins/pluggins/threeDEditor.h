@@ -14,7 +14,6 @@ struct ThreeDEditor: public Container
 {
 
 
-
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
@@ -22,7 +21,7 @@ struct ThreeDEditor: public Container
 		info.defaultHeapMemorySize = pika::MB(1000); //todo option to use global allocator
 
 		info.requestImguiFbo = true;
-		info.requestImguiIds = 1;
+		info.requestImguiIds = 100;
 
 		return info;
 	}
@@ -59,7 +58,7 @@ struct ThreeDEditor: public Container
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 		
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
-		model = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf");
+		model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", 0.5);
 		
 		gl3d::Transform t;
 		t.position = {0, -1, -4};
@@ -80,40 +79,114 @@ struct ThreeDEditor: public Container
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
-		
-		
+
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
-		
+
 		renderer.updateWindowMetrics(windowState.w, windowState.h);
 		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
-		
+
+		if(ImGui::Begin("Settings"))
 		{
-			static glm::dvec2 lastMousePos = {};
-			if (input.rMouse.held())
+		
+			if (ImGui::CollapsingHeader("Basic settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};
-		
-				float speed = 0.8f;
-		
-				glm::vec2 delta = lastMousePos - currentMousePos;
-				delta *= speed * input.deltaTime;
-		
-				renderer.camera.rotateCamera(delta);
-		
-				lastMousePos = currentMousePos;
+				pika::gl3d::generalSettingsWindow(requestedInfo.requestedImguiIds, renderer);
 			}
-			else
+
+			if (ImGui::CollapsingHeader("fxaa settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				lastMousePos = {input.mouseX, input.mouseY};
+				pika::gl3d::fxaaSettingsWindow(requestedInfo.requestedImguiIds, renderer);
 			}
+
+			if (ImGui::CollapsingHeader("ssao settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				pika::gl3d::ssaoSettingsWindow(requestedInfo.requestedImguiIds, renderer);
+			}
+
+			if (ImGui::CollapsingHeader("ssr settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				pika::gl3d::ssrSettingsWindow(requestedInfo.requestedImguiIds, renderer);
+			}
+
+			if (ImGui::CollapsingHeader("bloom settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				pika::gl3d::bloomSettingsWindow(requestedInfo.requestedImguiIds, renderer);
+			}
+
+			if (ImGui::CollapsingHeader("chromatic aberation settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				pika::gl3d::chromaticAberationSettingsWindow(requestedInfo.requestedImguiIds, renderer);
+			}
+			
 		}
-		
+		ImGui::End();
 
 
-		renderer.setEntityAnimate(entity, true);
+	#pragma region input
 
-		
+	{
+		float speed = 4;
+		glm::vec3 dir = {};
+		if (GetAsyncKeyState('W'))
+		{
+			dir.z -= speed * input.deltaTime;
+		}
+		if (GetAsyncKeyState('S'))
+		{
+			dir.z += speed * input.deltaTime;
+		}
+
+		if (GetAsyncKeyState('A'))
+		{
+			dir.x -= speed * input.deltaTime;
+		}
+		if (GetAsyncKeyState('D'))
+		{
+			dir.x += speed * input.deltaTime;
+		}
+
+		if (GetAsyncKeyState('Q'))
+		{
+			dir.y -= speed * input.deltaTime;
+		}
+		if (GetAsyncKeyState('E'))
+		{
+			dir.y += speed * input.deltaTime;
+		}
+
+		renderer.camera.moveFPS(dir);
+	}
+
+	{
+		static glm::dvec2 lastMousePos = {};
+		if (input.rMouse.held())
+		{
+			glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};
+
+			float speed = 0.8f;
+
+			glm::vec2 delta = lastMousePos - currentMousePos;
+			delta *= speed * input.deltaTime;
+
+			renderer.camera.rotateCamera(delta);
+
+			lastMousePos = currentMousePos;
+		}
+		else
+		{
+			lastMousePos = {input.mouseX, input.mouseY};
+		}
+	}
+
+	#pragma endregion
+
+		if (input.buttons[pika::Button::P].pressed())
+		{
+			renderer.setEntityAnimate(entity, true);
+		}
+
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
 
