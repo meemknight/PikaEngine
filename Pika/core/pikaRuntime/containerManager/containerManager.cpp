@@ -395,6 +395,10 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			auto callUpdate = [&](pika::WindowState &windowState) -> bool
 			{
 
+				c.second.requestedContainerInfo.mainAllocator = &c.second.allocator; //reset this
+				c.second.requestedContainerInfo.bonusAllocators = &c.second.bonusAllocators;
+
+
 				auto t1 = std::chrono::high_resolution_clock::now();
 
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);

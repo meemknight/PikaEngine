@@ -7,8 +7,8 @@
 #include <shortcutApi/shortcutApi.h>
 #include <pikaSizes.h>
 #include <imgui_spinner.h>
+#include <imfilebrowser.h>
 #include <engineLibraresSupport/engineGL3DSupport.h>
-
 
 struct ThreeDEditor: public Container
 {
@@ -21,10 +21,12 @@ struct ThreeDEditor: public Container
 		info.defaultHeapMemorySize = pika::MB(1000); //todo option to use global allocator
 
 		info.requestImguiFbo = true;
-		info.requestImguiIds = 100;
+		info.requestImguiIds = 1;
 
 		return info;
 	}
+
+	ImGui::FileBrowser fileBrowserSkyBox;
 
 	gl3d::Renderer3D renderer;
 	gl3d::Model model;
@@ -73,13 +75,12 @@ struct ThreeDEditor: public Container
 		RequestedContainerInfo &requestedInfo)
 	{
 
-
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
-
+	
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
@@ -120,6 +121,51 @@ struct ThreeDEditor: public Container
 				pika::gl3d::chromaticAberationSettingsWindow(requestedInfo.requestedImguiIds, renderer);
 			}
 			
+			if (ImGui::CollapsingHeader("lights settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				pika::gl3d::lightEditorSettingsWindow(requestedInfo.requestedImguiIds, renderer);
+			}
+
+			if (ImGui::CollapsingHeader("Sky box", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+
+				if (ImGui::Button("delete skybox"))
+				{
+					renderer.skyBox.clearTextures();
+				}
+
+				if (ImGui::Button("select new skybox"))
+				{
+					fileBrowserSkyBox.SetTitle("Sellect map");
+					fileBrowserSkyBox.SetPwd(PIKA_RESOURCES_PATH);
+					fileBrowserSkyBox.SetTypeFilters({".hdr", ".png"});
+					fileBrowserSkyBox.Open();
+				}
+
+				ImGui::ColorEdit3("Global Ambient color", &renderer.skyBox.color[0]);
+
+			}
+			
+			fileBrowserSkyBox.Display();
+
+			if (fileBrowserSkyBox.HasSelected())
+			{
+				if (fileBrowserSkyBox.GetSelected().extension() == ".hdr")
+				{
+					//todo api to log errors
+					renderer.skyBox.clearTextures();
+					renderer.skyBox = renderer.loadHDRSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
+				}
+				else if (fileBrowserSkyBox.GetSelected().extension() == ".png")
+				{
+					renderer.skyBox.clearTextures();
+					renderer.skyBox = renderer.loadSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
+				}
+
+				fileBrowserSkyBox.ClearSelected();
+				fileBrowserSkyBox.Close();
+			}
+
 		}
 		ImGui::End();
 

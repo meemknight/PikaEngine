@@ -33,6 +33,9 @@ namespace pika
 
 		void chromaticAberationSettingsWindow(int imguiId, ::gl3d::Renderer3D &renderer);
 
+		void lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &renderer);
+
+
 	};
 };
 

@@ -162,3 +162,251 @@ void pika::gl3d::chromaticAberationSettingsWindow(int imguiId, ::gl3d::Renderer3
 
 	ImGui::PopID();
 }
+
+void pika::gl3d::lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &renderer)
+{
+	ImGui::PushID(imguiId);
+
+	auto &pointLights = renderer.internal.pointLightIndexes;
+
+	static int pointLightSelector = -1;
+	ImGui::Text("Point lightd Count %d", pointLights.size());
+	ImGui::InputInt("Current Point light:", &pointLightSelector);
+	int n = ImGui::Button("New Light"); ImGui::SameLine();
+	int remove = ImGui::Button("Remove Light");
+
+	int lightSize = renderer.getPointLightShadowSize();
+	ImGui::DragInt("Point light shadow texture size", &lightSize);
+	renderer.setPointLightShadowSize(lightSize);
+
+	if (pointLightSelector < -1)
+	{
+		pointLightSelector = -1;
+	}
+
+	if (n || (pointLightSelector >= (int)pointLights.size()))
+	{
+		//pointLights.push_back(
+		renderer.createPointLight({0,0,0});
+	}
+
+	pointLightSelector = std::min(pointLightSelector, (int)pointLights.size() - 1);
+
+	if (remove)
+	{
+		if (pointLightSelector >= 0)
+		{
+			::gl3d::PointLight light;
+			light.id_ = pointLights[pointLightSelector];
+			renderer.detletePointLight(light);
+			pointLightSelector = std::min(pointLightSelector, (int)pointLights.size() - 1);
+		}
+
+	}
+
+	ImGui::NewLine();
+
+	if (pointLightSelector >= 0)
+	{
+		ImGui::PushID(12);
+
+		::gl3d::PointLight light;
+		light.id_ = pointLights[pointLightSelector];
+
+		glm::vec3 color = renderer.getPointLightColor(light);
+		ImGui::ColorEdit3("Color", &color[0]);
+		renderer.setPointLightColor(light, color);
+
+		glm::vec3 position = renderer.getPointLightPosition(light);
+		ImGui::DragFloat3("Position", &position[0], 0.1);
+		renderer.setPointLightPosition(light, position);
+
+		float distance = renderer.getPointLightDistance(light);
+		ImGui::DragFloat("Distance##point", &distance, 0.05, 0);
+		renderer.setPointLightDistance(light, distance);
+
+		float attenuation = renderer.getPointLightAttenuation(light);
+		ImGui::DragFloat("Attenuation##point", &attenuation, 0.05, 0);
+		renderer.setPointLightAttenuation(light, attenuation);
+
+		float hardness = renderer.getPointLightHardness(light);
+		ImGui::DragFloat("Hardness##point", &hardness, 0.05, 0.001);
+		renderer.setPointLightHardness(light, hardness);
+
+		bool shadows = renderer.getPointLightShadows(light);
+		ImGui::Checkbox("Cast shadows##point", &shadows);
+		renderer.setPointLightShadows(light, shadows);
+
+		ImGui::PopID();
+	}
+
+	{
+		ImGui::NewLine();
+
+		auto &directionalLights = renderer.internal.directionalLightIndexes;
+
+		static int directionalLightSelector = -1;
+		ImGui::Text("Directional lightd Count %d", directionalLights.size());
+		ImGui::InputInt("Current directional light:", &directionalLightSelector);
+		int n = ImGui::Button("New Directional Light"); ImGui::SameLine();
+		int remove = ImGui::Button("Remove Directional Light");
+
+		int lightSize = renderer.getDirectionalLightShadowSize();
+		ImGui::DragInt("Directional light shadow texture size", &lightSize);
+		renderer.setDirectionalLightShadowSize(lightSize);
+
+		if (directionalLightSelector < -1)
+		{
+			directionalLightSelector = -1;
+		}
+
+		if (n || directionalLightSelector >= (int)directionalLights.size())
+		{
+			renderer.createDirectionalLight(glm::vec3(0.f));
+		}
+
+		directionalLightSelector
+			= std::min(directionalLightSelector, (int)directionalLights.size() - 1);
+
+		if (remove)
+		{
+			if (directionalLightSelector >= 0)
+			{
+				::gl3d::DirectionalLight light;
+				light.id_ = directionalLights[directionalLightSelector];
+
+				renderer.deleteDirectionalLight(light);
+				directionalLightSelector = std::min(directionalLightSelector, (int)directionalLights.size() - 1);
+			}
+
+		}
+
+		ImGui::NewLine();
+
+		if (directionalLightSelector >= 0)
+		{
+			::gl3d::DirectionalLight light;
+			light.id_ = directionalLights[directionalLightSelector];
+
+			ImGui::PushID(13);
+
+			glm::vec3 color = renderer.getDirectionalLightColor(light);
+			ImGui::ColorEdit3("Color##dir", &color[0]);
+			renderer.setDirectionalLightColor(light, color);
+
+			glm::vec3 direction = renderer.getDirectionalLightDirection(light);
+			ImGui::DragFloat3("Direction##dir", &direction[0], 0.01);
+			renderer.setDirectionalLightDirection(light, direction);
+
+			float hardness = renderer.getDirectionalLightHardness(light);
+			ImGui::SliderFloat("Hardness##dir", &hardness, 0.1, 10);
+			renderer.setDirectionalLightHardness(light, hardness);
+
+			bool castShadows = renderer.getDirectionalLightShadows(light);
+			ImGui::Checkbox("Cast shadows##dir", &castShadows);
+			renderer.setDirectionalLightShadows(light, castShadows);
+
+
+			//ImGui::SliderFloat3("frustumSplit",
+			//	&renderer.directionalShadows.frustumSplits[0], 0, 1);
+
+			ImGui::PopID();
+		}
+	}
+
+	{
+		auto &spotLights = renderer.internal.spotLightIndexes;
+
+		ImGui::NewLine();
+
+		static int spotLightSelector = -1;
+		ImGui::Text("Spot lightd Count %d", spotLights.size());
+		ImGui::InputInt("Current spot light:", &spotLightSelector);
+		int n = ImGui::Button("New Spot Light"); ImGui::SameLine();
+		int remove = ImGui::Button("Remove Spot Light");
+
+		int lightSize = renderer.getSpotLightShadowSize();
+		ImGui::DragInt("Spot light shadow texture size", &lightSize);
+		renderer.setSpotLightShadowSize(lightSize);
+
+		if (spotLightSelector < -1)
+		{
+			spotLightSelector = -1;
+		}
+
+		if (n || spotLightSelector >= (int)spotLights.size())
+		{
+
+			renderer.createSpotLight({0,0,0}, glm::radians(90.f),
+				{0,-1,0});
+		}
+
+		spotLightSelector
+			= std::min(spotLightSelector, (int)spotLights.size() - 1);
+
+		if (remove)
+		{
+			if (spotLightSelector >= 0)
+			{
+				::gl3d::SpotLight light;
+				light.id_ = spotLights[spotLightSelector];
+
+				renderer.deleteSpotLight(light);
+
+				spotLightSelector = std::min(spotLightSelector,
+					(int)renderer.internal.spotLights.size() - 1);
+			}
+
+		}
+
+		ImGui::NewLine();
+
+		if (spotLightSelector >= 0)
+		{
+			ImGui::PushID(14);
+
+			::gl3d::SpotLight light;
+			light.id_ = spotLights[spotLightSelector];
+
+			glm::vec3 color = renderer.getSpotLightColor(light);
+			ImGui::ColorEdit3("Color##spot", &color[0]);
+			renderer.setSpotLightColor(light, color);
+
+			glm::vec3 position = renderer.getSpotLightPosition(light);
+			ImGui::DragFloat3("Position##spot", &position[0], 0.1);
+			renderer.setSpotLightPosition(light, position);
+
+			glm::vec3 direction = renderer.getSpotLightDirection(light);
+			ImGui::DragFloat3("Direction##spot", &direction[0], 0.05);
+			renderer.setSpotLightDirection(light, direction);
+
+			float distance = renderer.getSpotLightDistance(light);
+			ImGui::DragFloat("Distance##spot", &distance, 0.05, 0);
+			renderer.setSpotLightDistance(light, distance);
+
+			float attenuation = renderer.getSpotLightAttenuation(light);
+			ImGui::DragFloat("Attenuation##spot", &attenuation, 0.05, 0);
+			renderer.setSpotLightAttenuation(light, attenuation);
+
+			float hardness = renderer.getSpotLightHardness(light);
+			ImGui::DragFloat("Hardness##spot", &hardness, 0.05, 0, 20);
+			renderer.setSpotLightHardness(light, hardness);
+
+
+			float angle = renderer.getSpotLightFov(light);
+			ImGui::SliderAngle("fov", &angle, 0, 180);
+			renderer.setSpotLightFov(light, angle);
+
+			bool castShadows = renderer.getSpotLightShadows(light);
+			ImGui::Checkbox("Cast shadows##spot", &castShadows);
+			renderer.setSpotLightShadows(light, castShadows);
+
+
+			ImGui::PopID();
+		}
+	}
+
+
+
+	ImGui::PopID();
+}
