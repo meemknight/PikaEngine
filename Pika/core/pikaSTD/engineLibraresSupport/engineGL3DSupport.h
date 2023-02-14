@@ -16,6 +16,10 @@ bool defaultFileExistsCustom(const char *fileName, void *userData);
 #endif
 
 #include <pikaImgui/pikaImgui.h>
+#include <imfilebrowser.h>
+#include <windowSystemm/input.h>
+#include <baseContainer.h>
+
 
 namespace pika
 {
@@ -35,7 +39,23 @@ namespace pika
 
 		void lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &renderer);
 
+		void fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float moveSpeed, glm::dvec2 &lastMousePos);
 
+		struct General3DEditor
+		{
+			void loadFromFile(::gl3d::Renderer3D &renderer, std::string file, RequestedContainerInfo &info);
+
+			void update(int imguiId, ::gl3d::Renderer3D &renderer, pika::Input &input, float moveSpeed
+				,RequestedContainerInfo &info);
+			ImGui::FileBrowser fileBrowserSkyBox;
+			glm::dvec2 lastMousePos = {};
+			::gl3d::AtmosfericScatteringSettings atmosphericScattering;
+			
+			std::string currentSkyBox;
+			char currentFile[257] = {};
+
+			void saveToFile(::gl3d::Renderer3D &renderer, RequestedContainerInfo &info);
+		};
 	};
 };
 

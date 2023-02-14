@@ -1,6 +1,8 @@
 #include "engineGL3DSupport.h"
+#include <stringManipulation/stringManipulation.h>
 
-
+#undef min
+#undef max
 
 void errorCallbackCustom(std::string err, void *userData)
 {
@@ -410,3 +412,207 @@ void pika::gl3d::lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &rend
 
 	ImGui::PopID();
 }
+
+
+void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float speed, glm::dvec2 &lastMousePos)
+{
+	glm::vec3 dir = {};
+	if (input.buttons[pika::Button::W].held())
+	{
+		dir.z -= speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::S].held())
+	{
+		dir.z += speed * input.deltaTime;
+	}
+
+	if (input.buttons[pika::Button::A].held())
+	{
+		dir.x -= speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::D].held())
+	{
+		dir.x += speed * input.deltaTime;
+	}
+
+	if (input.buttons[pika::Button::Q].held())
+	{
+		dir.y -= speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::E].held())
+	{
+		dir.y += speed * input.deltaTime;
+	}
+
+	renderer.camera.moveFPS(dir);
+
+	{
+		if (input.rMouse.held())
+		{
+			glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};
+
+			float speed = 0.8f;
+
+			glm::vec2 delta = lastMousePos - currentMousePos;
+			delta *= speed * input.deltaTime;
+
+			renderer.camera.rotateCamera(delta);
+
+			lastMousePos = currentMousePos;
+		}
+		else
+		{
+			lastMousePos = {input.mouseX, input.mouseY};
+		}
+
+	}
+}
+
+
+void pika::gl3d::General3DEditor::loadFromFile(::gl3d::Renderer3D &renderer, std::string file, RequestedContainerInfo &info)
+{
+	std::string data;
+
+	if (info.readEntireFile(file.c_str(), data))
+	{
+		if (data.size() > 0)
+		{
+			renderer.loadSettingsFromJson(data.c_str(), 1, 0, 0);
+		}
+		pika::strlcpy(currentFile, file, sizeof(currentFile));
+	}
+}
+
+void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &renderer,
+	pika::Input &input, float moveSpeed, RequestedContainerInfo &info)
+{
+
+	if (ImGui::Begin("Settings"))
+	{
+
+		if (ImGui::CollapsingHeader("Basic settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::generalSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("fxaa settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::fxaaSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("ssao settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::ssaoSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("ssr settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::ssrSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("bloom settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::bloomSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("chromatic aberation settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::chromaticAberationSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("lights settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::lightEditorSettingsWindow(imguiId, renderer);
+		}
+
+		if (ImGui::CollapsingHeader("Sky box", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+
+			if (ImGui::Button("delete skybox"))
+			{
+				renderer.skyBox.clearTextures();
+			}
+
+			if (ImGui::Button("select new skybox"))
+			{
+				fileBrowserSkyBox.SetTitle("Sellect map");
+				fileBrowserSkyBox.SetPwd(PIKA_RESOURCES_PATH);
+				fileBrowserSkyBox.SetTypeFilters({".hdr", ".png"});
+				fileBrowserSkyBox.Open();
+			}
+
+			ImGui::ColorEdit3("Global Ambient color", &renderer.skyBox.color[0]);
+
+			ImGui::Separator();
+
+			if (ImGui::Button("atmospheric scattering"))
+			{
+				renderer.skyBox.clearTextures();
+				renderer.skyBox = renderer.atmosfericScattering(atmosphericScattering);
+			}
+
+			ImGui::DragFloat3("sun pos", &atmosphericScattering.sun[0], 0.1, -1, 1);
+			ImGui::ColorEdit3("sky color", &atmosphericScattering.color1[0]);
+			ImGui::ColorEdit3("sun color", &atmosphericScattering.color2[0]);
+			ImGui::ColorEdit3("ground", &atmosphericScattering.ground[0]);
+			ImGui::Checkbox("use ground", &atmosphericScattering.useGroundColor);
+			ImGui::DragFloat("g", &atmosphericScattering.g, 0.1, 0, 50);
+
+			float s = glm::length(atmosphericScattering.sun);
+			if (s == 0)
+			{
+				atmosphericScattering.sun = {0,1,0};
+			}
+			else
+			{
+				atmosphericScattering.sun /= s;
+			}
+
+		}
+
+		fileBrowserSkyBox.Display();
+
+		if (fileBrowserSkyBox.HasSelected())
+		{
+			if (fileBrowserSkyBox.GetSelected().extension() == ".hdr")
+			{
+				//todo api to log errors
+				renderer.skyBox.clearTextures();
+				renderer.skyBox = renderer.loadHDRSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
+			}
+			else if (fileBrowserSkyBox.GetSelected().extension() == ".png")
+			{
+				renderer.skyBox.clearTextures();
+				renderer.skyBox = renderer.loadSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
+			}
+
+			fileBrowserSkyBox.ClearSelected();
+			fileBrowserSkyBox.Close();
+		}
+
+		ImGui::InputText("current file", currentFile, sizeof(currentFile));
+		if (ImGui::Button("save"))
+		{
+			saveToFile(renderer, info);
+		}
+		if (ImGui::Button("load"))
+		{
+			loadFromFile(renderer, currentFile, info);
+		}
+
+
+	}
+	ImGui::End();
+
+
+	pika::gl3d::fpsInput(renderer, input, 4, lastMousePos);
+
+
+}
+
+void pika::gl3d::General3DEditor::saveToFile(::gl3d::Renderer3D &renderer, RequestedContainerInfo &info)
+{
+	auto rez = renderer.saveSettingsToJson(true);
+
+	info.writeEntireFile(currentFile, rez);
+};

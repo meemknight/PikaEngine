@@ -178,7 +178,7 @@ namespace ImGui
         uint32_t drives_;
 #endif
     };
-} // namespace ImGui
+}; // namespace ImGui
 
 inline ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags flags)
     : width_(700), height_(450), posX_(0), posY_(0), flags_(flags),
@@ -946,10 +946,11 @@ inline std::string ImGui::FileBrowser::u8StrToStr(std::string s)
 #ifndef WIN32_LEAN_AND_MEAN
 
 #define IMGUI_FILEBROWSER_UNDEF_WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+//#define WIN32_LEAN_AND_MEAN
 
 #endif // #ifndef WIN32_LEAN_AND_MEAN
 
+#define NOMINMAX
 #include <windows.h>
 
 #ifdef IMGUI_FILEBROWSER_UNDEF_WIN32_LEAN_AND_MEAN

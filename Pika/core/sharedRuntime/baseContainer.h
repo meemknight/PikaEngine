@@ -10,6 +10,7 @@
 #include <globalAllocator/globalAllocator.h>
 #include <fstream>
 #include <staticString.h>
+#include <vector>
 
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
@@ -52,6 +53,42 @@ struct RequestedContainerInfo
 		if (!consoleWindow) { return false; }
 		consoleWindow->write(c);
 		return true;
+	}
+
+	bool writeEntireFile(const char *name, const std::string &content)
+	{
+		std::ofstream f(name);
+
+		if (!f.is_open()) { return 0; }
+
+		f.write(content.c_str(), content.size());
+		
+		f.close();
+		return 1;
+	}
+
+	bool readEntireFileBinary(const char *name, std::vector<char> &data)
+	{
+		size_t s = 0;
+		data.clear();
+
+		if (!getFileSizeBinary(name, s)) { return 0; }
+
+		data.reserve(s);
+
+		return readEntireFileBinary(name, data.data(), s);
+	}
+
+	bool readEntireFile(const char *name, std::string &data)
+	{
+		size_t s = 0;
+		data.clear();
+
+		if (!getFileSize(name, s)) { return 0; }
+
+		data.resize(s);
+
+		return readEntireFile(name, data.data(), s);
 	}
 
 	bool readEntireFileBinary(const char *name, void *buffer, size_t size)
@@ -147,7 +184,7 @@ struct RequestedContainerInfo
 		}
 		pika::memory::setGlobalAllocator(mainAllocator);
 
-		return size;
+		return success;
 	}
 };
 

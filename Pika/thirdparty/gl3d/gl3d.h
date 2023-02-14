@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2023-02-13
+//built on 2023-02-14
 ////////////////////////////////////////////////
 
 
@@ -34439,6 +34439,8 @@ namespace gl3d
 			GLuint u_g;
 			GLuint u_color1;
 			GLuint u_color2;
+			GLuint u_groundColor;
+			GLuint u_useGround;
 			GLuint modelViewUniformLocation;
 
 		}atmosphericScatteringShader;
@@ -34453,7 +34455,8 @@ namespace gl3d
 		void loadTexture(const char *names[6], SkyBox &skyBox, ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
 		void loadTexture(const char *name, SkyBox &skyBox, ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer, int format = 0);
 		void loadHDRtexture(const char *name, ErrorReporter &errorReporter, FileOpener &fileOpener, SkyBox &skyBox, GLuint frameBuffer);
-		void atmosphericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2, float g, SkyBox& skyBox,
+		void atmosphericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2,
+			glm::vec3 groundColor, bool useGroundColor, float g, SkyBox& skyBox,
 			GLuint frameBuffer);
 
 		//, GLuint frameBuffer is the default fbo
@@ -34545,7 +34548,17 @@ namespace gl3d
 
 	};
 
-	
+	struct AtmosfericScatteringSettings
+	{
+		glm::vec3 sun = {0,1,0};
+		//sky
+		glm::vec3 color1 = {0,0,0};
+		//sun
+		glm::vec3 color2 = {0,0,0};
+		glm::vec3 ground = {0,0,0};
+		float g = 0;
+		bool useGroundColor = 0;
+	};
 
 	struct Renderer3D
 
@@ -34620,7 +34633,9 @@ namespace gl3d
 		SkyBox loadHDRSkyBox(const char* name);
 		void deleteSkyBoxTextures(SkyBox& skyBox);
 
-		SkyBox atmosfericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2, float g);
+		SkyBox atmosfericScattering(glm::vec3 sun, glm::vec3 color1, glm::vec3 color2,
+			glm::vec3 groundColor, bool useGroundColor, float g);
+		SkyBox atmosfericScattering(AtmosfericScatteringSettings settings);
 
 	#pragma endregion
 
@@ -34817,7 +34832,7 @@ namespace gl3d
 		//SSR
 		LightShader::LightPassData::SSRdata &getSSRdata();
 		void setSSRdata(LightShader::LightPassData::SSRdata data);
-		void ebableSSR(bool enable = true);
+		void enableSSR(bool enable = true);
 		bool isSSRenabeled();
 
 		//
@@ -34853,10 +34868,11 @@ namespace gl3d
 		#pragma endregion
 		
 		//saves the current settings to a string;
-		std::string saveSettingsToJson();
+		std::string saveSettingsToJson(bool includeRenderingSettings, std::string skyBoxName = "", 
+			gl3d::AtmosfericScatteringSettings *atmosphericScattering = nullptr);
 
 		//this will terminate if data is not a valid json
-		void loadSettingsFromJson(const char *data);
+		void loadSettingsFromJson(const char *data, bool includeRenderingSettings, bool loadSkyBox, bool loadAtmosphericScattering);
 
 
 	#pragma endregion
@@ -35019,7 +35035,7 @@ namespace gl3d
 			{
 				//https://developer.download.nvidia.com/presentations/2008/SIGGRAPH/HBAO_SIG08b.pdf
 
-				void create(ErrorReporter &errorReporter, FileOpener &fileOpener, GLuint frameBuffer);
+				void create(ErrorReporter &errorReporter, FileOpener &fileOpener);
 				void clear();
 				Shader shader;
 
@@ -35197,6 +35213,15 @@ namespace gl3d
 			bool usingFXAA = true;
 		}antiAlias;
 
+		struct CopyDepth
+		{
+			gl3d::Shader shader;
+			GLint u_depth = -1;
+
+			void create(ErrorReporter &errorReporter, FileOpener &fileOpener);
+			void clear();
+		}copyDepth;
+
 		struct DirectionalShadows
 		{
 			void create(GLuint frameBuffer);
@@ -35255,6 +35280,7 @@ namespace gl3d
 		}pointShadows;
 
 		void render(float deltaTime);
+
 		void updateWindowMetrics(int x, int y);
 
 		void clearAllLoadedResource();
@@ -35264,6 +35290,7 @@ namespace gl3d
 
 		bool frustumCulling = 1;
 		bool zPrePass = 0;
+		bool copyDepthForLaterForwardRendering = 0;
 
 	};
 
