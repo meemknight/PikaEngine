@@ -74,6 +74,10 @@ namespace gl3d
 	struct PBRTexture
 	{
 		Texture texture = {};  //rough metalness ambient oclusion
+
+		// (roughnessLoaded) -> 0b100
+		// (metallicLoaded)  -> 0b010
+		// (ambientLoaded)   -> 0b001
 		int RMA_loadedTextures = {};
 	};
 
@@ -34642,6 +34646,11 @@ namespace gl3d
 	#pragma region model
 
 		//todo implement stuff here
+
+		//position 3, normal 3, optional texture 2
+		Model createModelFromData(Material material, std::string name, 
+			size_t vertexCount, const float *vertices, size_t indexesCount = 0,
+			const unsigned int *indexes = nullptr, bool noTexture = false);
 
 		Model loadModel(std::string path, float scale = 1);
 		bool isModel(Model& m);

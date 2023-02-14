@@ -1,0 +1,20 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl None
+Ns 198.039216
+Ka 0.000000 0.800000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+Pm 0.9
+illum 2
+map_Kd rusted_iron/albedo.png 
+map_Kn rusted_iron/normal.png
+map_Pr rusted_iron/roughness.png
+map_Ao rusted_iron/ao.png
+map_Pm rusted_iron/metallic.png
+
+
