@@ -486,10 +486,9 @@ void pika::gl3d::General3DEditor::loadFromFile(::gl3d::Renderer3D &renderer, std
 void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &renderer,
 	pika::Input &input, float moveSpeed, RequestedContainerInfo &info)
 {
-
-	if (ImGui::Begin("Settings"))
+	ImGui::PushID(imguiId);
+	if (ImGui::Begin("General3DEditor"))
 	{
-
 		if (ImGui::CollapsingHeader("Basic settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 		{
 			pika::gl3d::generalSettingsWindow(imguiId, renderer);
@@ -603,7 +602,7 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 
 	}
 	ImGui::End();
-
+	ImGui::PopID();
 
 	pika::gl3d::fpsInput(renderer, input, 4, lastMousePos);
 

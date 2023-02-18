@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl32 --Vlad Luta -- 
-//built on 2023-02-14
+//built on 2023-02-18
 ////////////////////////////////////////////////
 
 #include "gl3d.h"
@@ -36343,7 +36343,7 @@ namespace gl3d
 	}
 
 	
-	Material Renderer3D::createMaterial(glm::vec4 kd,
+	Material Renderer3D::createMaterial(int quality, glm::vec4 kd,
 		float roughness, float metallic, float ao, std::string name,
 		gl3d::Texture albedoTexture, gl3d::Texture normalTexture, gl3d::Texture roughnessTexture, gl3d::Texture metallicTexture,
 		gl3d::Texture occlusionTexture, gl3d::Texture emmisiveTexture)
@@ -36364,7 +36364,7 @@ namespace gl3d
 		textureData.emissiveTexture = emmisiveTexture;
 
 
-		textureData.pbrTexture = createPBRTexture(roughnessTexture, metallicTexture, occlusionTexture);
+		textureData.pbrTexture = createPBRTexture(roughnessTexture, metallicTexture, occlusionTexture, quality);
 
 
 		internal.materialIndexes.push_back(id);
@@ -36393,9 +36393,9 @@ namespace gl3d
 
 	//this is the function that loads a material from parsed data
 	gl3d::Material createMaterialFromLoadedData(gl3d::Renderer3D &renderer, 
-		objl::Material &mat, const std::string &path, GLuint frameBuffer)
+		objl::Material &mat, const std::string &path, GLuint frameBuffer, int quality)
 	{
-		auto m = renderer.createMaterial(mat.Kd, mat.roughness,
+		auto m = renderer.createMaterial(quality, mat.Kd, mat.roughness,
 			mat.metallic, mat.ao, mat.name);
 
 		stbi_set_flip_vertically_on_load(true);
@@ -36408,56 +36408,56 @@ namespace gl3d
 
 			if (!mat.loadedDiffuse.data.empty())
 			{
-				textureData.albedoTexture = renderer.loadTextureFromMemory(mat.loadedDiffuse); 
+				textureData.albedoTexture = renderer.loadTextureFromMemory(mat.loadedDiffuse, quality); 
 
 			}
 			else
 			if (!mat.map_Kd.empty())
 			{
-				textureData.albedoTexture = renderer.loadTexture(std::string(path + mat.map_Kd));
+				textureData.albedoTexture = renderer.loadTexture(std::string(path + mat.map_Kd), quality);
 			}
 
 			if (!mat.loadedNormal.data.empty())
 			{
-				textureData.normalMapTexture = renderer.loadTextureFromMemory(mat.loadedNormal);
+				textureData.normalMapTexture = renderer.loadTextureFromMemory(mat.loadedNormal, quality);
 
 			}
 			else
 			if (!mat.map_Kn.empty())
 			{
-				textureData.normalMapTexture = renderer.loadTexture(std::string(path + mat.map_Kn));
+				textureData.normalMapTexture = renderer.loadTexture(std::string(path + mat.map_Kn), quality);
 			}
 
 			if (!mat.loadedEmissive.data.empty())
 			{
-				textureData.emissiveTexture = renderer.loadTextureFromMemory(mat.loadedEmissive);
+				textureData.emissiveTexture = renderer.loadTextureFromMemory(mat.loadedEmissive, quality);
 				auto ind = renderer.internal.getMaterialIndex(m);
 				renderer.internal.materials[ind].emmisive = 1.f;
 			}
 			else
 			if (!mat.map_emissive.empty())
 			{
-				textureData.emissiveTexture = renderer.loadTexture(std::string(path + mat.map_emissive));
+				textureData.emissiveTexture = renderer.loadTexture(std::string(path + mat.map_emissive), quality);
 				auto ind = renderer.internal.getMaterialIndex(m);
 				renderer.internal.materials[ind].emmisive = 1.f;
 			}
 
 			textureData.pbrTexture.RMA_loadedTextures = 0;
 
-			auto rmaQuality = TextureLoadQuality::linearMipmap;
+			//auto rmaQuality = TextureLoadQuality::linearMipmap;
 
 			//todo not working in all gltf formats
 			if (!mat.map_RMA.empty())
 			{
 			
-				textureData.pbrTexture.texture = renderer.loadTexture(mat.map_RMA.c_str());
+				textureData.pbrTexture.texture = renderer.loadTexture((path + mat.map_RMA).c_str(), quality);
 				if (textureData.pbrTexture.texture.id_ != 0)
 				{
 					textureData.pbrTexture.RMA_loadedTextures = 0b111; //all textures loaded
 				}
 
-			}//else //todo just add else
-
+			}
+			else
 			if (!mat.loadedORM.data.empty())
 			{
 				auto &t = mat.loadedORM;
@@ -36476,7 +36476,7 @@ namespace gl3d
 					}
 
 				GpuTexture tex;
-				tex.loadTextureFromMemory(t.data.data(), t.w, t.h, 3, rmaQuality);
+				tex.loadTextureFromMemory(t.data.data(), t.w, t.h, 3, quality);
 				textureData.pbrTexture.texture = renderer.createIntenralTexture(tex, 0, 0);
 				textureData.pbrTexture.RMA_loadedTextures = 0b111; //all textures loaded
 
@@ -36512,7 +36512,7 @@ namespace gl3d
 								}
 
 							GpuTexture t;
-							t.loadTextureFromMemory(data, w, h, 3, rmaQuality);
+							t.loadTextureFromMemory(data, w, h, 3, quality);
 							textureData.pbrTexture.texture = renderer.createIntenralTexture(t, 0, 0);
 
 							textureData.pbrTexture.RMA_loadedTextures = 0b111; //all textures loaded
@@ -36526,7 +36526,7 @@ namespace gl3d
 			//RMA trexture
 			if (textureData.pbrTexture.RMA_loadedTextures == 0)
 			{
-				constexpr int MERGE_TEXTURES_ON_GPU = 1;
+				constexpr int MERGE_TEXTURES_ON_GPU = 1; //deprecated probably the old version
 
 				if constexpr (MERGE_TEXTURES_ON_GPU)
 				{
@@ -36564,7 +36564,7 @@ namespace gl3d
 
 					auto t = renderer.internal.pBRtextureMaker.createRMAtexture(
 						roughness, metallic, ambientOcclusion, renderer.internal.lightShader.quadDrawer.quadVAO,
-						textureData.pbrTexture.RMA_loadedTextures, frameBuffer);
+						textureData.pbrTexture.RMA_loadedTextures, frameBuffer, quality);
 
 					if (textureData.pbrTexture.RMA_loadedTextures != 0)
 					{
@@ -36696,7 +36696,7 @@ namespace gl3d
 						//	rmaQuality);
 
 						GpuTexture t;
-						t.loadTextureFromMemory(finalData, w, h, 4, rmaQuality);
+						t.loadTextureFromMemory(finalData, w, h, 4, quality);
 						textureData.pbrTexture.texture = renderer.createIntenralTexture(t, 0, 0);
 
 						stbi_image_free(data1);
@@ -36720,7 +36720,7 @@ namespace gl3d
 		return m;
 	}
 
-	std::vector<Material> Renderer3D::loadMaterial(std::string file)
+	std::vector<Material> Renderer3D::loadMaterial(std::string file, int quality)
 	{
 
 		objl::Loader loader;
@@ -36745,7 +36745,7 @@ namespace gl3d
 		for (auto &m : loader.LoadedMaterials)
 		{
 
-			auto material = createMaterialFromLoadedData(*this, m, path, frameBuffer);
+			auto material = createMaterialFromLoadedData(*this, m, path, frameBuffer, quality);
 			ret.push_back(material);
 
 		}
@@ -36893,7 +36893,7 @@ namespace gl3d
 	//}
 
 
-	Texture Renderer3D::loadTexture(std::string path)
+	Texture Renderer3D::loadTexture(std::string path, int quality)
 	{
 
 		if (path == "")
@@ -36916,13 +36916,13 @@ namespace gl3d
 		GpuTexture t;
 		int alphaExists;
 		int alphaData;
-		errorReporter.callErrorCallback(t.loadTextureFromFileAndCheckAlpha(path.c_str(), alphaExists, alphaData));
+		errorReporter.callErrorCallback(t.loadTextureFromFileAndCheckAlpha(path.c_str(), alphaExists, alphaData, quality));
 
 		return createIntenralTexture(t.id, alphaExists, alphaData, path);
 
 	}
 
-	Texture Renderer3D::loadTextureFromMemory(objl::LoadedTexture &t)
+	Texture Renderer3D::loadTextureFromMemory(objl::LoadedTexture &t, int quality)
 	{
 		if (t.data.empty())
 		{
@@ -36932,7 +36932,7 @@ namespace gl3d
 		GpuTexture tex;
 		int alphaExists = 0; 
 		int alphaWithData = 0;
-		tex.loadTextureFromMemoryAndCheckAlpha((void *)t.data.data(), t.w, t.h, alphaExists, t.components);
+		tex.loadTextureFromMemoryAndCheckAlpha((void *)t.data.data(), t.w, t.h, alphaExists, t.components, 4, quality);
 
 		return createIntenralTexture(tex, alphaExists, alphaWithData);
 
@@ -37035,7 +37035,7 @@ namespace gl3d
 	}
 
 	PBRTexture Renderer3D::createPBRTexture(Texture& roughness, Texture& metallic,
-		Texture& ambientOcclusion)
+		Texture& ambientOcclusion, int quality)
 	{
 
 		PBRTexture ret = {};
@@ -37044,7 +37044,7 @@ namespace gl3d
 			{getTextureOpenglId(roughness)},
 			{ getTextureOpenglId(metallic) },
 			{ getTextureOpenglId(ambientOcclusion) }, internal.lightShader.quadDrawer.quadVAO, ret.RMA_loadedTextures, 
-			frameBuffer);
+			frameBuffer, quality);
 
 		ret.texture = this->createIntenralTexture(t, 0, 0);
 
@@ -37105,7 +37105,7 @@ namespace gl3d
 	}
 
 
-	Model Renderer3D::loadModel(std::string path, float scale)
+	Model Renderer3D::loadModel(std::string path, int quality, float scale)
 	{
 
 		gl3d::LoadedModelData model(path.c_str(), errorReporter, fileOpener, scale);
@@ -37129,7 +37129,7 @@ namespace gl3d
 			{
 				auto &mat = model.loader.LoadedMaterials[i];
 				
-				auto m = createMaterialFromLoadedData(*this, mat, model.path, frameBuffer);
+				auto m = createMaterialFromLoadedData(*this, mat, model.path, frameBuffer, quality);
 
 				returnModel.createdMaterials.push_back(m);
 			}
@@ -37201,7 +37201,7 @@ namespace gl3d
 				}else
 				{
 					//if no material loaded for this object create a new default one
-					gm.material = createMaterial(glm::vec4{ 0.8f,0.8f,0.8f, 1.0f }, 0.5f, 0.f, 1.f, "default material");
+					gm.material = createMaterial(quality, glm::vec4{ 0.8f,0.8f,0.8f, 1.0f }, 0.5f, 0.f, 1.f, "default material");
 				}
 				
 				gm.ownMaterial = true;
@@ -38217,7 +38217,7 @@ namespace gl3d
 				}else
 				if (mat != data)
 				{
-					Material newMat = this->createMaterial(mat.kd, mat.roughness,
+					Material newMat = this->createMaterial(TextureLoadQuality::dontSet, mat.kd, mat.roughness,
 						mat.metallic, mat.ao, name);
 					int newMatIndex = internal.getMaterialIndex(newMat); //this should not fail
 
@@ -38287,7 +38287,7 @@ namespace gl3d
 				else
 				if (name != oldName) //copy to new material
 				{
-					Material newMat = this->createMaterial(data.kd, data.roughness,
+					Material newMat = this->createMaterial(TextureLoadQuality::dontSet, data.kd, data.roughness,
 						data.metallic, data.ao, name);
 					int newMatIndex = internal.getMaterialIndex(newMat); //this should not fail
 					internal.materialTexturesData[newMatIndex] = textures;
@@ -38382,7 +38382,7 @@ namespace gl3d
 				else
 				if (texture != oldTextures) //copy to new material
 				{
-					Material newMat = this->createMaterial(data.kd, data.roughness,
+					Material newMat = this->createMaterial(TextureLoadQuality::dontSet, data.kd, data.roughness,
 						data.metallic, data.ao, oldName);
 					int newMatIndex = internal.getMaterialIndex(newMat); //this should not fail
 					internal.materialTexturesData[newMatIndex] = texture; //new textures
@@ -42292,7 +42292,7 @@ namespace gl3d
 
 	//todo use the max w h to create it
 	GLuint Renderer3D::InternalStruct::PBRtextureMaker::createRMAtexture(GpuTexture roughness, 
-		GpuTexture metallic, GpuTexture ambientOcclusion, GLuint quadVAO, int &RMA_loadedTextures, GLuint frameBuffer)
+		GpuTexture metallic, GpuTexture ambientOcclusion, GLuint quadVAO, int &RMA_loadedTextures, GLuint frameBuffer, int quality)
 	{
 		bool roughnessLoaded = (roughness.id != 0);
 		bool metallicLoaded = (metallic.id != 0);
@@ -42338,10 +42338,12 @@ namespace gl3d
 		GLuint texture = 0;
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D, texture);
+		
+		GpuTexture{texture}.setTextureQuality(quality);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 		

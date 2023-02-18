@@ -63,7 +63,7 @@ struct ThreeDTest: public Container
 		renderer.skyBox = renderer.loadSkyBox(names);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 
-		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
+		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", gl3d::TextureLoadQuality::maxQuality, 1.f);
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf", 1.f);
 
 		gl3d::Transform t;

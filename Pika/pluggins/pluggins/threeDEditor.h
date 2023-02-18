@@ -61,7 +61,7 @@ struct ThreeDEditor: public Container
 			false, 10);
 
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
-		model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", 0.5);
+		model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", 0.5, gl3d::TextureLoadQuality::maxQuality);
 		
 		gl3d::Transform t;
 		t.position = {0, -1, -4};

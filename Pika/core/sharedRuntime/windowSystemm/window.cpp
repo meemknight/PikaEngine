@@ -59,9 +59,10 @@ void pika::PikaWindow::create()
 	glfwSetKeyCallback(context.wind, keyCallback);
 
 
+#if PIKA_SHOULD_REMOVE_IMGUI == 0
 	//todo macro
 	context.imguiAllocator.init(malloc(pika::MB(20)), pika::MB(20));
-
+#endif
 	//HWND hwnd = glfwGetWin32Window(context.wind);
 
 	//LONG exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
