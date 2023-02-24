@@ -14,4 +14,4 @@ illum 2
 map_Kd albedo.png 
 map_Kn normal.png
 map_RMA rma.png
-
+map_emissive emissive.png

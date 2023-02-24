@@ -27,6 +27,12 @@ enum BlockTypes
 	gravel,
 	grass,
 	rose,
+	iron_block,
+	glowStone,
+	redstone_ore,
+	crafting_table,
+	furnace_on,
+	furnace_off,
 	BlocksCount
 };
 

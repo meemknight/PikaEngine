@@ -29,6 +29,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	11, 12,//crafting table
+	13, 12,//furnace on
+	12, 13,//furnace off
 
 	//back
 	0, 0,
@@ -55,6 +61,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	11, 12,//crafting table
+	13, 13,//furnace on
+	13, 13,//furnace off
 
 	//top
 	0, 0,
@@ -81,6 +93,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	11, 13,//crafting table
+	14, 12,//furnace on
+	14, 12,//furnace off
 
 	//bottom
 	0, 0,
@@ -107,6 +125,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	4, 15,//crafting table
+	14, 12,//furnace on
+	14, 12,//furnace off
 
 	//left
 	0, 0,
@@ -133,6 +157,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	12, 12,//crafting table
+	13, 13,//furnace on
+	13, 13,//furnace off
 
 	//right
 	0, 0,
@@ -159,8 +189,12 @@ int atlasData[] =
 	3, 14, //gravel
 	7, 13,//herbs
 	12, 15,//rose
-
-
+	6, 14,//iron block
+	9, 9, //glowstone
+	3, 12,//redstone ore
+	12, 12,//crafting table
+	13, 13,//furnace on
+	13, 13,//furnace off
 
 };
 
