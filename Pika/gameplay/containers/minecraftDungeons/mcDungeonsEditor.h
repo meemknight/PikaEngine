@@ -445,6 +445,7 @@ struct McDungeonsEditor: public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+
 		renderer2d.updateWindowMetrics(windowState.w, windowState.h);
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
@@ -476,7 +477,7 @@ struct McDungeonsEditor: public Container
 			if (input.lMouse.released() && input.hasFocus) //todo and this by the engine
 			{
 				auto cameraRayPos = renderer.camera.position;
-				cameraRayPos.y += 1;
+				cameraRayPos.y += 1.5;
 				cameraRayPos.x += 0.5;
 				cameraRayPos.z += 0.5;
 				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, &block, nullptr))
@@ -488,7 +489,7 @@ struct McDungeonsEditor: public Container
 			if (input.rMouse.released() && input.hasFocus && currentBlock != 0)
 			{
 				auto cameraRayPos = renderer.camera.position;
-				cameraRayPos.y += 1;
+				cameraRayPos.y += 1.5;
 				cameraRayPos.x += 0.5;
 				cameraRayPos.z += 0.5;
 				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, nullptr, &block))

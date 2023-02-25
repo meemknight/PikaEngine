@@ -44,20 +44,36 @@ struct RequestedContainerInfo
 
 	//todo add logs here
 
+	//todo probably remove
 	void setMousePositionRelevantToWindow(int x, int y) 
 	{
 		if (internal.mainWindow)
 		{
-			glfwSetCursorPos(internal.window, x, y);
+			internal.setCursorPosFunc(internal.window, x, y);
 		}
 		else
 		{
 			int mainX = 0;
 			int mainY = 0;
-			glfwGetWindowPos(internal.window, &mainX, &mainY);
-			glfwSetCursorPos(internal.window, x + internal.windowPosX - mainX, y + internal.windowPosY - mainY);
+			internal.getWindowPosFunc(internal.window, &mainX, &mainY);
+			//internal.setCursorPosFunc(internal.window, x + internal.windowPosX - mainX, y + internal.windowPosY - mainY);
+			internal.setCursorPosFunc(internal.window, x + internal.windowPosX - mainX + 8, y + internal.windowPosY - mainY + 28);
 		}
 	};
+
+	void setFpsCursor()
+	{
+		PIKA_DEVELOPMENT_ONLY_ASSERT(internal.setInputModeFunc, "missing setInputModeFunc func");
+	
+		internal.setInputModeFunc(internal.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+
+	void setNormalCursor()
+	{
+		PIKA_DEVELOPMENT_ONLY_ASSERT(internal.setInputModeFunc, "missing setInputModeFunc func");
+
+		internal.setInputModeFunc(internal.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 
 	struct
 	{
@@ -65,6 +81,9 @@ struct RequestedContainerInfo
 		int windowPosY = 0;
 		GLFWwindow *window = 0;
 		bool mainWindow = 0;
+		decltype(glfwSetCursorPos) *setCursorPosFunc = nullptr;
+		decltype(glfwGetWindowPos) *getWindowPosFunc = nullptr;
+		decltype(glfwSetInputMode) *setInputModeFunc = nullptr;
 
 	}internal;
 

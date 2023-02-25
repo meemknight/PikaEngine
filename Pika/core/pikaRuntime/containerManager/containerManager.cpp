@@ -491,7 +491,9 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				c.second.requestedContainerInfo.internal.window = window.context.wind;
 				c.second.requestedContainerInfo.internal.windowPosX = windowPos.x;
 				c.second.requestedContainerInfo.internal.windowPosY = windowPos.y;
-
+				c.second.requestedContainerInfo.internal.setCursorPosFunc = glfwSetCursorPos;
+				c.second.requestedContainerInfo.internal.getWindowPosFunc = glfwGetWindowPos;
+				c.second.requestedContainerInfo.internal.setInputModeFunc = glfwSetInputMode;
 
 				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
 
@@ -510,8 +512,12 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			{
 				c.second.requestedContainerInfo.internal.mainWindow = 1;
 				c.second.requestedContainerInfo.internal.window = window.context.wind;
-				glfwGetWindowPos(window.context.wind, &c.second.requestedContainerInfo.internal.windowPosX,
-					&c.second.requestedContainerInfo.internal.windowPosX);
+				glfwGetWindowPos(window.context.wind, 
+					&c.second.requestedContainerInfo.internal.windowPosX,
+					&c.second.requestedContainerInfo.internal.windowPosY);
+				c.second.requestedContainerInfo.internal.setCursorPosFunc = glfwSetCursorPos;
+				c.second.requestedContainerInfo.internal.getWindowPosFunc = glfwGetWindowPos;
+				c.second.requestedContainerInfo.internal.setInputModeFunc = glfwSetInputMode;
 
 				rez = callUpdate(window.windowState);
 			}
