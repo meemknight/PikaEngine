@@ -438,9 +438,9 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					&isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 				
 				//mouse pos and focus
+				auto windowPos = ImGui::GetWindowPos();
 				if(c.second.flags.status != pika::RuntimeContainer::FLAGS::STATUS_BEING_PLAYBACK)
 				{
-					auto windowPos = ImGui::GetWindowPos();
 
 					ImVec2 globalMousePos = {};
 					{
@@ -485,10 +485,13 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				auto windowState = window.windowState;
 				windowState.w = s.x;
 				windowState.h = s.y;
-
-			
-
 				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
+
+				c.second.requestedContainerInfo.internal.mainWindow = 0;
+				c.second.requestedContainerInfo.internal.window = window.context.wind;
+				c.second.requestedContainerInfo.internal.windowPosX = windowPos.x;
+				c.second.requestedContainerInfo.internal.windowPosY = windowPos.y;
+
 
 				glBindFramebuffer(GL_FRAMEBUFFER, c.second.requestedContainerInfo.requestedFBO.fbo);
 
@@ -505,6 +508,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			}
 			else
 			{
+				c.second.requestedContainerInfo.internal.mainWindow = 1;
+				c.second.requestedContainerInfo.internal.window = window.context.wind;
+				glfwGetWindowPos(window.context.wind, &c.second.requestedContainerInfo.internal.windowPosX,
+					&c.second.requestedContainerInfo.internal.windowPosX);
+
 				rez = callUpdate(window.windowState);
 			}
 

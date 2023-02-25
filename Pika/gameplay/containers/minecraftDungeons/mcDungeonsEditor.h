@@ -10,7 +10,7 @@
 #include <imfilebrowser.h>
 #include <engineLibraresSupport/engineGL3DSupport.h>
 #include "blocks.h"
-
+#include <stringManipulation/stringManipulation.h>
 
 struct McDungeonsEditor: public Container
 {
@@ -22,7 +22,7 @@ struct McDungeonsEditor: public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(1000); //todo option to use global allocator
 
-		info.extensionsSuported = {".gl3d"};
+		info.extensionsSuported = {".mcDungeons"};
 
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
@@ -35,12 +35,14 @@ struct McDungeonsEditor: public Container
 	gl3d::Model model;
 	gl3d::Entity entity;
 	bool first = 1;
-
+	GLuint blocksTexture; //todo add genderer.getgputexture
+	int currentBlock = 0;
 
 	pika::gl3d::General3DEditor editor;
+	pika::pikaImgui::FileSelector loadedLevel;
 
-	glm::vec3 worldSize = {100,10,100};
-	unsigned char worldData[100][10][100] = {};
+	glm::vec3 worldSize = {300,20,300};
+	unsigned char worldData[300][20][300] = {};
 
 	unsigned char &getBlockUnsafe(int x, int y, int z)
 	{
@@ -365,6 +367,8 @@ struct McDungeonsEditor: public Container
 
 	gl3d::Material mat;
 
+	std::string currentFile = {};
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 
@@ -394,28 +398,47 @@ struct McDungeonsEditor: public Container
 
 
 		auto textures = renderer.getMaterialTextures(defaultMat[0]);
-
+		blocksTexture = renderer.getTextureOpenglId(textures.albedoTexture);
 
 
 		textures.pbrTexture.RMA_loadedTextures &= 0b110;
 		renderer.setMaterialTextures(defaultMat[0], textures);
 
-		populateWorld();
-		model = createWorld(renderer, defaultMat[0]);
-
 		
-		gl3d::Transform t;
-		t.position = {0, -1, -4};
-		//t.rotation = {1.5, 0 , 0};
-		
-		entity = renderer.createEntity(model, t);
+		loadedLevel.setInfo("Level", PIKA_RESOURCES_PATH, {".mcDungeons"});
 
+		bool created = 0;
 		if (commandLineArgument.size() > 0)
 		{
-			editor.loadFromFile(renderer, commandLineArgument.to_string(), requestedInfo);
+			//editor.loadFromFile(renderer, commandLineArgument.to_string(), requestedInfo);
+			size_t s = 0;
+			pika::strlcpy(loadedLevel.file, commandLineArgument.to_string(), sizeof(loadedLevel.file));
+
+			if (requestedInfo.getFileSizeBinary(commandLineArgument.to_string().c_str(), s))
+			{
+
+				if (s == worldSize.x * worldSize.y * worldSize.z)
+				{
+					created = 1;
+					requestedInfo.readEntireFileBinary(commandLineArgument.to_string().c_str(), worldData, sizeof(worldData));
+				}
+			}
+		}
+
+		if (!created)
+		{
+			populateWorld();
 		}
 
 
+
+		model = createWorld(renderer, defaultMat[0]);
+		gl3d::Transform t;
+		t.position = {0, -1, -4};
+		//t.rotation = {1.5, 0 , 0};
+		entity = renderer.createEntity(model, t);
+
+		
 		return true;
 	}
 
@@ -441,7 +464,7 @@ struct McDungeonsEditor: public Container
 		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
 
 
-		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo);
+		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.w,windowState.h});
 	
 		bool shouldRecreate = 0;
 
@@ -454,18 +477,29 @@ struct McDungeonsEditor: public Container
 			{
 				auto cameraRayPos = renderer.camera.position;
 				cameraRayPos.y += 1;
-				cameraRayPos.x += 1;
-				cameraRayPos.z += 1;
+				cameraRayPos.x += 0.5;
+				cameraRayPos.z += 0.5;
 				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, &block, nullptr))
 				{
 					getBlockSafe(block.x, block.y, block.z) = 0;
+					shouldRecreate = 1;
+				}
+			}else 
+			if (input.rMouse.released() && input.hasFocus && currentBlock != 0)
+			{
+				auto cameraRayPos = renderer.camera.position;
+				cameraRayPos.y += 1;
+				cameraRayPos.x += 0.5;
+				cameraRayPos.z += 0.5;
+				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, nullptr, &block))
+				{
+					getBlockSafe(block.x, block.y, block.z) = currentBlock;
 					shouldRecreate = 1;
 				}
 			}
 
 		}
 	#pragma endregion
-
 
 
 		ImGui::PushID(requestedInfo.requestedImguiIds);
@@ -478,6 +512,51 @@ struct McDungeonsEditor: public Container
 			}
 
 			ImGui::DragFloat3("camera pos", &renderer.camera.position[0]);
+
+			ImGui::NewLine();
+			{
+				unsigned short localCount = 0;
+				for(int mCount =0; mCount <BlockTypes::BlocksCount; mCount++)
+				{
+					auto uv1 = getAtlasFront(mCount);
+
+					glm::vec4 uv{
+						0.f / 16.f + uv1.x / 16.f,
+						1.f / 16.f + uv1.y / 16.f,
+						1.f / 16.f + uv1.x / 16.f,
+						0.f / 16.f + uv1.y / 16.f
+					};
+
+					ImGui::PushID(mCount);
+					if (ImGui::ImageButton((void *)(intptr_t)blocksTexture,
+						{35,35}, {uv.x, uv.y}, {uv.z, uv.w}))
+					{
+						currentBlock = mCount;
+					}
+
+					ImGui::PopID();
+
+					if (localCount % 5 != 0)
+					{
+						ImGui::SameLine();
+					}
+					localCount++;
+
+				}
+			}
+
+			ImGui::NewLine();
+
+			loadedLevel.run(requestedInfo.requestedImguiIds);
+
+			if (ImGui::Button("save map"))
+			{
+				if (!requestedInfo.writeEntireFileBinary(loadedLevel.file, worldData, sizeof(worldData)))
+				{
+					//toto log errors
+					//requestedInfo.con
+				}
+			}
 
 		}
 
@@ -502,6 +581,10 @@ struct McDungeonsEditor: public Container
 
 
 		renderer2d.flush();
+
+		//requestedInfo.consoleWrite(
+		//	(std::to_string(requestedInfo.internal.windowPosX) + " " + std::to_string(requestedInfo.internal.windowPosY) + "\n").c_str()
+		//);
 
 		return true;
 	}

@@ -39,20 +39,27 @@ namespace pika
 
 		void lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &renderer);
 
-		void fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float moveSpeed, glm::dvec2 &lastMousePos);
+		void fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float moveSpeed, glm::dvec2 &lastMousePos,
+			RequestedContainerInfo &requestedInfo, glm::ivec2 windowSize);
 
 		struct General3DEditor
 		{
+			General3DEditor() 
+			{
+				skyBoxFileSelector.setInfo("Sellect skyBox", PIKA_RESOURCES_PATH, {".hdr", ".png"});
+			};
+
 			void loadFromFile(::gl3d::Renderer3D &renderer, std::string file, RequestedContainerInfo &info);
 
 			void update(int imguiId, ::gl3d::Renderer3D &renderer, pika::Input &input, float moveSpeed
-				,RequestedContainerInfo &info);
-			ImGui::FileBrowser fileBrowserSkyBox;
+				,RequestedContainerInfo &info, glm::ivec2 windowSize);
 			glm::dvec2 lastMousePos = {};
 			::gl3d::AtmosfericScatteringSettings atmosphericScattering;
 			
 			std::string currentSkyBox;
 			char currentFile[257] = {};
+
+			pika::pikaImgui::FileSelector skyBoxFileSelector;
 
 			void saveToFile(::gl3d::Renderer3D &renderer, RequestedContainerInfo &info);
 		};

@@ -44,6 +44,30 @@ struct RequestedContainerInfo
 
 	//todo add logs here
 
+	void setMousePositionRelevantToWindow(int x, int y) 
+	{
+		if (internal.mainWindow)
+		{
+			glfwSetCursorPos(internal.window, x, y);
+		}
+		else
+		{
+			int mainX = 0;
+			int mainY = 0;
+			glfwGetWindowPos(internal.window, &mainX, &mainY);
+			glfwSetCursorPos(internal.window, x + internal.windowPosX - mainX, y + internal.windowPosY - mainY);
+		}
+	};
+
+	struct
+	{
+		int windowPosX = 0;
+		int windowPosY = 0;
+		GLFWwindow *window = 0;
+		bool mainWindow = 0;
+
+	}internal;
+
 	//returns true if succeded (can return false if console is disabeled)
 	bool consoleWrite(const char* c)
 	{
@@ -63,6 +87,18 @@ struct RequestedContainerInfo
 
 		f.write(content.c_str(), content.size());
 		
+		f.close();
+		return 1;
+	}
+
+	bool writeEntireFileBinary(const char *name, void *data, size_t s)
+	{
+		std::ofstream f(name, std::ios::binary | std::ios::out);
+
+		if (!f.is_open()) { return 0; }
+
+		f.write((char*)data, s);
+
 		f.close();
 		return 1;
 	}

@@ -414,7 +414,8 @@ void pika::gl3d::lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &rend
 }
 
 
-void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float speed, glm::dvec2 &lastMousePos)
+void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, float speed, glm::dvec2 &lastMousePos,
+	RequestedContainerInfo &requestedInfo, glm::ivec2 windowSize)
 {
 	glm::vec3 dir = {};
 	if (input.buttons[pika::Button::W].held())
@@ -447,7 +448,7 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 	renderer.camera.moveFPS(dir);
 
 	{
-		if (input.rMouse.held())
+		if (input.hasFocus && input.rMouse.held())
 		{
 			glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};
 
@@ -458,6 +459,8 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 
 			renderer.camera.rotateCamera(delta);
 
+			//glm::ivec2 windowMid = windowSize / 2;
+			//requestedInfo.setMousePositionRelevantToWindow(windowMid.x, windowMid.y);
 			lastMousePos = currentMousePos;
 		}
 		else
@@ -484,7 +487,7 @@ void pika::gl3d::General3DEditor::loadFromFile(::gl3d::Renderer3D &renderer, std
 }
 
 void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &renderer,
-	pika::Input &input, float moveSpeed, RequestedContainerInfo &info)
+	pika::Input &input, float moveSpeed, RequestedContainerInfo &info, glm::ivec2 windowSize)
 {
 	ImGui::PushID(imguiId);
 	if (ImGui::Begin("General3DEditor"))
@@ -532,13 +535,22 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 				renderer.skyBox.clearTextures();
 			}
 
-			if (ImGui::Button("select new skybox"))
+			if (skyBoxFileSelector.run(imguiId))
 			{
-				fileBrowserSkyBox.SetTitle("Sellect map");
-				fileBrowserSkyBox.SetPwd(PIKA_RESOURCES_PATH);
-				fileBrowserSkyBox.SetTypeFilters({".hdr", ".png"});
-				fileBrowserSkyBox.Open();
+				auto ext = std::filesystem::path(skyBoxFileSelector.file).extension();
+				if (ext == ".hdr") //todo pika to lower on strings
+				{
+					//todo api to log errors
+					renderer.skyBox.clearTextures();
+					renderer.skyBox = renderer.loadHDRSkyBox(skyBoxFileSelector.file);
+				}
+				else if (ext == ".png")
+				{
+					renderer.skyBox.clearTextures();
+					renderer.skyBox = renderer.loadSkyBox(skyBoxFileSelector.file);
+				}
 			}
+
 
 			ImGui::ColorEdit3("Global Ambient color", &renderer.skyBox.color[0]);
 
@@ -569,25 +581,8 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 
 		}
 
-		fileBrowserSkyBox.Display();
 
-		if (fileBrowserSkyBox.HasSelected())
-		{
-			if (fileBrowserSkyBox.GetSelected().extension() == ".hdr")
-			{
-				//todo api to log errors
-				renderer.skyBox.clearTextures();
-				renderer.skyBox = renderer.loadHDRSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
-			}
-			else if (fileBrowserSkyBox.GetSelected().extension() == ".png")
-			{
-				renderer.skyBox.clearTextures();
-				renderer.skyBox = renderer.loadSkyBox(fileBrowserSkyBox.GetSelected().string().c_str());
-			}
-
-			fileBrowserSkyBox.ClearSelected();
-			fileBrowserSkyBox.Close();
-		}
+		
 
 		ImGui::InputText("current file", currentFile, sizeof(currentFile));
 		if (ImGui::Button("save"))
@@ -604,7 +599,7 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 	ImGui::End();
 	ImGui::PopID();
 
-	pika::gl3d::fpsInput(renderer, input, 4, lastMousePos);
+	pika::gl3d::fpsInput(renderer, input, 4, lastMousePos, info, windowSize);
 
 
 }

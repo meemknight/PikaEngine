@@ -3,14 +3,19 @@
 
 
 #include "imgui.h"
+#include "imfilebrowser.h"
 
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "imguiThemes.h"
+
 #include <IconsForkAwesome.h>
 #include <pikaAllocator/freeListAllocator.h>
 
 #include <pikaContext.h>
+
+#include <vector>
+#include <string>
 
 #ifdef PIKA_WINDOWS
 #define IM_PRId64   "I64d"
@@ -73,6 +78,25 @@ namespace pika
 
 		//todo move to internal
 		void displayMemorySizeToggle();
+
+		struct FileSelector
+		{
+
+			FileSelector() {};
+
+			FileSelector(std::string title, std::string pwd, std::vector<std::string> typeFilters)
+			{
+				setInfo(std::move(title), std::move(pwd), std::move(typeFilters));
+			}
+
+			void setInfo(std::string title, std::string pwd, std::vector<std::string> typeFilters);
+			
+			char file[260] = {};
+			ImGui::FileBrowser fileBrowser;
+
+			//returns true on new file selected
+			bool run(int id);
+		};
 
 	};
 };

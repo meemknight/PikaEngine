@@ -53,6 +53,8 @@ namespace ImGui
         // set the window title text
         void SetTitle(std::string title);
 
+        std::string getTitle();
+
         // open the browsing window
         void Open();
 
@@ -279,6 +281,8 @@ inline void ImGui::FileBrowser::SetTitle(std::string title)
     openNewDirLabel_ = "new dir##new_dir_" +
                        std::to_string(reinterpret_cast<size_t>(this));
 }
+
+inline std::string ImGui::FileBrowser::getTitle() { return this->title_; }
 
 inline void ImGui::FileBrowser::Open()
 {

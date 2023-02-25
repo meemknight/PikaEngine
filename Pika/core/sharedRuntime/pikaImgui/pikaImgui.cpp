@@ -5,6 +5,9 @@
 #include <pikaAllocator/freeListAllocator.h>
 #include <logs/assert.h>
 #include <compilerIntrinsics.h>
+#include <stringManipulation/stringManipulation.h>
+
+//todo macro to remove imgui impl
 
 #if !(PIKA_SHOULD_REMOVE_IMGUI)
 
@@ -202,9 +205,50 @@ void pika::pikaImgui::displayMemorySizeValue(size_t value)
 
 }
 
+
 void pika::pikaImgui::displayMemorySizeToggle()
 {
 	ImGui::Combo("Sizes type##pika", &sizesType, "Bytes\0KB\0MB\0GB\0");
+}
+
+void pika::pikaImgui::FileSelector::setInfo(std::string title, std::string pwd, std::vector<std::string> typeFilters)
+{
+	fileBrowser.SetTitle(std::move(title));
+	fileBrowser.SetPwd(std::move(pwd));
+	
+	if (!typeFilters.empty())
+	{
+		fileBrowser.SetTypeFilters(std::move(typeFilters));
+	}
+}
+
+bool pika::pikaImgui::FileSelector::run(int id)
+{
+	ImGui::PushID(id);
+	
+	bool r = ImGui::InputText(fileBrowser.getTitle().c_str(), this->file, sizeof(file), ImGuiInputTextFlags_EnterReturnsTrue);
+	
+	ImGui::SameLine();
+	if (ImGui::Button("Select file"))
+	{
+		fileBrowser.Open();
+	}
+	
+	fileBrowser.Display();
+	
+	if (fileBrowser.HasSelected())
+	{
+		pika::strlcpy(file, fileBrowser.GetSelected().string(), sizeof(file));
+	
+		fileBrowser.ClearSelected();
+		fileBrowser.Close();
+
+		r = true;
+	}
+	
+	ImGui::PopID();
+	
+	return r;
 }
 
 
@@ -219,9 +263,8 @@ void pika::pikaImgui::imguiStartFrame(PikaContext pikaContext) {};
 void pika::pikaImgui::setImguiContext(PikaContext pikaContext) {};
 void pika::pikaImgui::initImgui(PikaContext &pikaContext) {};
 void pika::pikaImgui::setImguiAllocator(pika::memory::FreeListAllocator &allocator) {};
-
-
+bool pika::pikaImgui::FileSelector::run(int id) { return false; };
+void pika::pikaImgui::FileSelector::setInfo(std::string title, std::string pwd, std::vector<std::string> typeFilters) {};
 
 #endif
-
 
