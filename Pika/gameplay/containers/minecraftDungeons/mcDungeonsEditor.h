@@ -474,7 +474,7 @@ struct McDungeonsEditor: public Container
 			glm::vec3 block = {};
 			glm::vec3 prev = {};
 
-			if (input.lMouse.released() && input.hasFocus) //todo and this by the engine
+			if (input.lMouse.pressed() && input.hasFocus && input.lastFrameHasFocus) //todo and this by the engine
 			{
 				auto cameraRayPos = renderer.camera.position;
 				cameraRayPos.y += 1.5;
@@ -486,7 +486,7 @@ struct McDungeonsEditor: public Container
 					shouldRecreate = 1;
 				}
 			}else 
-			if (input.rMouse.released() && input.hasFocus && currentBlock != 0)
+			if (input.rMouse.pressed() && input.hasFocus && input.lastFrameHasFocus && currentBlock != 0)
 			{
 				auto cameraRayPos = renderer.camera.position;
 				cameraRayPos.y += 1.5;

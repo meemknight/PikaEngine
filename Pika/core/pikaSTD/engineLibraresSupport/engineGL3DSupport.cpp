@@ -448,7 +448,7 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 	renderer.camera.moveFPS(dir);
 
 	{
-		if (input.hasFocus)
+		if (input.hasFocus && input.lastFrameHasFocus)
 		{
 			requestedInfo.setFpsCursor();
 
@@ -460,19 +460,12 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 			delta *= speed * input.deltaTime;
 
 			renderer.camera.rotateCamera(delta);
-
-			glm::ivec2 windowMid = windowSize / 2;
-			//requestedInfo.setMousePositionRelevantToWindow(windowMid.x, windowMid.y);
 			lastMousePos = currentMousePos;
-			//lastMousePos = {windowMid.x, windowMid.y};
-
-			//requestedInfo.consoleWrite((std::to_string(currentMousePos.y) + " " + std::to_string(windowMid.y) + '\n').c_str());
 		}
 		else
 		{
-			lastMousePos = {input.mouseX, input.mouseY};
 			requestedInfo.setNormalCursor();
-
+			lastMousePos = {input.mouseX, input.mouseY};
 		}
 
 	}

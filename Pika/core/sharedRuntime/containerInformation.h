@@ -38,7 +38,7 @@ struct ContainerInformation
 	size_t containerStructBaseSize = 0; //static memory
 	std::string containerName = "";
 	ContainerStaticInfo containerStaticInfo = {};
-	bool useDefaultAllocator = 0;
+	bool useDefaultAllocator = 0; //move into container static info when implementing
 
 	size_t calculateMemoryRequirements()
 	{

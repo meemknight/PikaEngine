@@ -182,6 +182,9 @@ pika::containerId_t pika::ContainerManager::createContainer
 	pika::strlcpy(container.baseContainerName, containerInformation.containerName,
 		sizeof(container.baseContainerName));
 
+	container.andInputWithWindowHasFocus = containerInformation.containerStaticInfo.andInputWithWindowHasFocus;
+	container.andInputWithWindowHasFocusLastFrame = containerInformation.containerStaticInfo.andInputWithWindowHasFocusLastFrame;
+
 	if (!allocateContainerMemory(container, containerInformation, (void*)memoryPos))
 	{
 		logManager.log((std::string("Couldn't allocate memory for constructing container: #") 
@@ -394,6 +397,34 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			auto callUpdate = [&](pika::WindowState &windowState) -> bool
 			{
+				windowInput.lastFrameHasFocus = c.second.lastFrameFocus;
+				c.second.lastFrameFocus = windowInput.hasFocus;
+
+				if (c.second.andInputWithWindowHasFocus || c.second.andInputWithWindowHasFocusLastFrame)
+				{
+					bool andValue = 1;
+					if (c.second.andInputWithWindowHasFocus && !windowInput.hasFocus)
+					{
+						andValue = 0;
+					}
+					if (c.second.andInputWithWindowHasFocusLastFrame && !windowInput.lastFrameHasFocus)
+					{
+						andValue = 0;
+					}
+
+					if (!andValue) 
+					{
+						memset(windowInput.typedInput, 0, sizeof(windowInput.typedInput));
+						windowInput.lMouse = {};
+						windowInput.rMouse = {};
+						for (int i = 0; i < Button::BUTTONS_COUNT; i++)
+						{
+							windowInput.buttons[i] = {};
+						}
+					}
+
+				}
+
 
 				c.second.requestedContainerInfo.mainAllocator = &c.second.allocator; //reset this
 				c.second.requestedContainerInfo.bonusAllocators = &c.second.bonusAllocators;
@@ -465,6 +496,10 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 						windowInput.hasFocus = ImGui::IsWindowFocused()
 							&& ImGui::GetPlatformIO().Platform_GetWindowFocus(viewPort) && !io.AppFocusLost;
 					}
+					else
+					{
+						windowInput.hasFocus = 0;
+					}
 
 					//windowInput.hasFocus = windowInput.hasFocus && !io.AppFocusLost;
 				}
@@ -521,6 +556,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				rez = callUpdate(window.windowState);
 			}
+
 
 			if (!rez) 
 			{

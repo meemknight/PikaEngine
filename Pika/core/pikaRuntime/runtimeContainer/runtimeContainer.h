@@ -39,6 +39,12 @@ struct RuntimeContainer
 	float frameTimer = 0;
 	float currentMs = 0;
 
+	bool lastFrameFocus = 0;
+
+	//passed from container static info
+	bool andInputWithWindowHasFocus = 0;
+	bool andInputWithWindowHasFocusLastFrame = 0;
+
 	struct FLAGS
 	{
 		enum

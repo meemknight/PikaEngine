@@ -267,6 +267,10 @@ struct ContainerStaticInfo
 
 	unsigned int requestImguiIds = 0;
 
+	bool andInputWithWindowHasFocus = 1;
+	bool andInputWithWindowHasFocusLastFrame = 1;
+
+
 	bool _internalNotImplemented = 0;
 
 	bool operator==(const ContainerStaticInfo &other)
@@ -279,7 +283,9 @@ struct ContainerStaticInfo
 			this->_internalNotImplemented == other._internalNotImplemented &&
 			this->requestImguiFbo == other.requestImguiFbo &&
 			this->requestImguiIds == other.requestImguiIds &&
-			this->useDefaultAllocator == other.useDefaultAllocator;
+			this->useDefaultAllocator == other.useDefaultAllocator &&
+			this->andInputWithWindowHasFocus == other.andInputWithWindowHasFocus &&
+			this->andInputWithWindowHasFocusLastFrame == other.andInputWithWindowHasFocusLastFrame;
 		;
 	}
 

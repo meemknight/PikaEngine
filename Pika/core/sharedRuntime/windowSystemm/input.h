@@ -68,10 +68,12 @@ namespace pika
 		
 		char typedInput[20] = {};
 
+		float deltaTime = 0;
+
 		//focus is here because it makes sense for the replay
 		bool hasFocus = 0;
+		bool lastFrameHasFocus = 0;
 
-		float deltaTime = 0;
 	};
 
 	
