@@ -40527,7 +40527,11 @@ namespace gl3d
 							glm::vec3 lightDir = internal.directionalLights[lightIndex].direction;
 							//glm::mat4 lightView = lookAtSafe(-lightDir, {}, { 0.f,1.f,0.f });
 
-							glm::mat4 lightView = lookAtSafe(camera.position - (lightDir), camera.position, { 0.f,1.f,0.f });
+							glm::vec3 direction = lightDir;
+							glm::vec3 eye = camera.position - (direction);
+							glm::vec3 center = eye + direction;
+
+							glm::mat4 lightView = lookAtSafe(eye, center, { 0.f,1.f,0.f });
 							//glm::mat4 lightView = lookAtSafe(camera.position, camera.position + lightDir, { 0.f,1.f,0.f });
 
 							//zoffset is used to move the light further

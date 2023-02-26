@@ -41,8 +41,8 @@ struct McDungeonsEditor: public Container
 	pika::gl3d::General3DEditor editor;
 	pika::pikaImgui::FileSelector loadedLevel;
 
-	glm::vec3 worldSize = {300,20,300};
-	unsigned char worldData[300][20][300] = {};
+	glm::vec3 worldSize = {150,30,150};
+	unsigned char worldData[150][30][150] = {};
 
 	unsigned char &getBlockUnsafe(int x, int y, int z)
 	{
@@ -438,6 +438,11 @@ struct McDungeonsEditor: public Container
 		//t.rotation = {1.5, 0 , 0};
 		entity = renderer.createEntity(model, t);
 
+		renderer.camera.farPlane = 200;
+		renderer.directionalShadows.frustumSplits[0] = 0.06;
+		renderer.directionalShadows.frustumSplits[1] = 0.110;
+		renderer.directionalShadows.frustumSplits[2] = 0.200;
+
 		
 		return true;
 	}
@@ -515,18 +520,32 @@ struct McDungeonsEditor: public Container
 			ImGui::DragFloat3("camera pos", &renderer.camera.position[0]);
 
 			ImGui::NewLine();
+
 			{
-				unsigned short localCount = 0;
+				auto uv1 = getAtlasFront(currentBlock);
+				glm::vec4 uv{
+					0.f / 16.f + uv1.x / 16.f,
+					1.f / 16.f + uv1.y / 16.f,
+					1.f / 16.f + uv1.x / 16.f,
+					0.f / 16.f + uv1.y / 16.f
+				};
+				ImGui::Image((void *)(intptr_t)blocksTexture,
+					{35,35}, {uv.x, uv.y}, {uv.z, uv.w});
+			}
+
+			ImGui::NewLine();
+			{
 				for(int mCount =0; mCount <BlockTypes::BlocksCount; mCount++)
 				{
 					auto uv1 = getAtlasFront(mCount);
-
 					glm::vec4 uv{
 						0.f / 16.f + uv1.x / 16.f,
 						1.f / 16.f + uv1.y / 16.f,
 						1.f / 16.f + uv1.x / 16.f,
 						0.f / 16.f + uv1.y / 16.f
 					};
+
+				
 
 					ImGui::PushID(mCount);
 					if (ImGui::ImageButton((void *)(intptr_t)blocksTexture,
@@ -537,11 +556,10 @@ struct McDungeonsEditor: public Container
 
 					ImGui::PopID();
 
-					if (localCount % 5 != 0)
+					if ((mCount+1) % 5 != 0)
 					{
 						ImGui::SameLine();
 					}
-					localCount++;
 
 				}
 			}

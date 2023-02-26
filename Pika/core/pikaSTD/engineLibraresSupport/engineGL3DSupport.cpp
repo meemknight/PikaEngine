@@ -257,6 +257,10 @@ void pika::gl3d::lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &rend
 		ImGui::DragInt("Directional light shadow texture size", &lightSize);
 		renderer.setDirectionalLightShadowSize(lightSize);
 
+		ImGui::DragFloat3("cascades", renderer.directionalShadows.frustumSplits, 0.01, 0, 1);
+
+
+
 		if (directionalLightSelector < -1)
 		{
 			directionalLightSelector = -1;
