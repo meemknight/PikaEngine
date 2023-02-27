@@ -33,6 +33,8 @@ enum BlockTypes
 	crafting_table,
 	furnace_on,
 	furnace_off,
+	glass,
+	hay,
 	BlocksCount
 };
 

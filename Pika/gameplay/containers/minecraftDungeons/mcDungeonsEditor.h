@@ -41,8 +41,8 @@ struct McDungeonsEditor: public Container
 	pika::gl3d::General3DEditor editor;
 	pika::pikaImgui::FileSelector loadedLevel;
 
-	glm::vec3 worldSize = {150,30,150};
-	unsigned char worldData[150][30][150] = {};
+	glm::vec3 worldSize = {150,40,150};
+	unsigned char worldData[150][40][150] = {};
 
 	unsigned char &getBlockUnsafe(int x, int y, int z)
 	{
@@ -97,7 +97,17 @@ struct McDungeonsEditor: public Container
 		for (int x = 0; x < worldSize.x; x++)
 			for (int z = 0; z < worldSize.z; z++)
 			{
-				getBlockUnsafe(x, 0, z) = BlockTypes::grassBlock;
+				for(int y=0; y<10; y++)
+				{
+					getBlockUnsafe(x, y, z) = BlockTypes::stone;
+				}
+				for (int y = 10; y < 12; y++)
+				{
+					getBlockUnsafe(x, y, z) = BlockTypes::dirt;
+				}
+
+				getBlockUnsafe(x, 12, z) = BlockTypes::grassBlock;
+
 			}
 
 		for (int x = 2; x < 8; x++)
@@ -106,13 +116,13 @@ struct McDungeonsEditor: public Container
 				getBlockUnsafe(x, 4, z) = BlockTypes::stone;
 			}
 
-		getBlockUnsafe(4, 5, 4) = BlockTypes::glowStone;
-		getBlockUnsafe(5, 5, 4) = BlockTypes::redstone_ore;
-
-		getBlockUnsafe(7, 6, 4) = BlockTypes::crafting_table;
-		getBlockUnsafe(9, 6, 4) = BlockTypes::furnace_on;
-		getBlockUnsafe(3, 6, 7) = BlockTypes::furnace_off;
-		getBlockUnsafe(2, 5, 9) = BlockTypes::iron_block;
+		//getBlockUnsafe(4, 5, 4) = BlockTypes::glowStone;
+		//getBlockUnsafe(5, 5, 4) = BlockTypes::redstone_ore;
+		//
+		//getBlockUnsafe(7, 6, 4) = BlockTypes::crafting_table;
+		//getBlockUnsafe(9, 6, 4) = BlockTypes::furnace_on;
+		//getBlockUnsafe(3, 6, 7) = BlockTypes::furnace_off;
+		//getBlockUnsafe(2, 5, 9) = BlockTypes::iron_block;
 
 		getBlockUnsafe(0, 0, 0) = BlockTypes::gold_block;
 
@@ -120,6 +130,23 @@ struct McDungeonsEditor: public Container
 
 	gl3d::Model createWorld(gl3d::Renderer3D &renderer, gl3d::Material material)
 	{
+
+		auto &pointLights = renderer.internal.pointLightIndexes;
+		while(!pointLights.empty())
+		{
+			::gl3d::PointLight light;
+			light.id_ = pointLights.back();
+			renderer.detletePointLight(light);
+		}
+
+		auto &spoLights = renderer.internal.spotLightIndexes;
+		while (!spoLights.empty())
+		{
+			::gl3d::SpotLight light;
+			light.id_ = spoLights.back();
+			renderer.deleteSpotLight(light);
+		}
+
 
 	#pragma region data
 
@@ -241,7 +268,6 @@ struct McDungeonsEditor: public Container
 
 		auto addFace = [&](glm::vec3 pos, std::vector<float> &ver, glm::vec2 atlas)
 		{
-			pos.z += 4;
 
 			unsigned int currentIndexPadding = vertexes.size() / 8;
 			for (auto i : ind) { indices.push_back(i + currentIndexPadding); }
@@ -316,7 +342,7 @@ struct McDungeonsEditor: public Container
 			addBack(pos, blockType);
 		};
 
-		auto isSolid = [](unsigned char b) { return b != 0; };
+		auto isSolid = [](unsigned char b) { return b != 0 && b != BlockTypes::glass; };
 
 		for (int x = 0; x < worldSize.x; x++)
 			for (int y = 0; y < worldSize.y; y++)
@@ -355,6 +381,11 @@ struct McDungeonsEditor: public Container
 						if (z == 0 || !isSolid(getBlockUnsafe(x, y, z - 1)))
 						{
 							addBack({x,y,z}, b);
+						}
+
+						if (b == BlockTypes::glowStone)
+						{
+							renderer.createPointLight({x,y,z}, glm::vec3(0.845f, 0.812f, 0.381f)*1.5f, 16.f, 1.5f);
 						}
 
 					}
@@ -431,12 +462,8 @@ struct McDungeonsEditor: public Container
 		}
 
 
-
 		model = createWorld(renderer, defaultMat[0]);
-		gl3d::Transform t;
-		t.position = {0, -1, -4};
-		//t.rotation = {1.5, 0 , 0};
-		entity = renderer.createEntity(model, t);
+		entity = renderer.createEntity(model);
 
 		renderer.camera.farPlane = 200;
 		renderer.directionalShadows.frustumSplits[0] = 0.06;
@@ -479,10 +506,24 @@ struct McDungeonsEditor: public Container
 			glm::vec3 block = {};
 			glm::vec3 prev = {};
 
-			if (input.lMouse.pressed() && input.hasFocus && input.lastFrameHasFocus) //todo and this by the engine
+			if (input.buttons[pika::Button::LeftCtrl].held())
+			{
+				if (input.rMouse.pressed() || input.lMouse.pressed())
+				{
+					auto cameraRayPos = renderer.camera.position;
+					cameraRayPos.y += 0.5;
+					cameraRayPos.x += 0.5;
+					cameraRayPos.z += 0.5;
+					if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, &block, nullptr))
+					{
+						currentBlock = getBlockSafe(block.x, block.y, block.z);
+					}
+				}
+			}else
+			if (input.lMouse.pressed())
 			{
 				auto cameraRayPos = renderer.camera.position;
-				cameraRayPos.y += 1.5;
+				cameraRayPos.y += 0.5;
 				cameraRayPos.x += 0.5;
 				cameraRayPos.z += 0.5;
 				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, &block, nullptr))
@@ -491,10 +532,10 @@ struct McDungeonsEditor: public Container
 					shouldRecreate = 1;
 				}
 			}else 
-			if (input.rMouse.pressed() && input.hasFocus && input.lastFrameHasFocus && currentBlock != 0)
+			if (input.rMouse.pressed() && currentBlock != 0)
 			{
 				auto cameraRayPos = renderer.camera.position;
-				cameraRayPos.y += 1.5;
+				cameraRayPos.y += 0.5;
 				cameraRayPos.x += 0.5;
 				cameraRayPos.z += 0.5;
 				if (rayMarch(cameraRayPos, renderer.camera.viewDirection, 10, nullptr, &block))
@@ -509,6 +550,19 @@ struct McDungeonsEditor: public Container
 
 
 		ImGui::PushID(requestedInfo.requestedImguiIds);
+
+		if (input.buttons[pika::Button::Z].released())
+		{
+			currentBlock--;
+		}
+
+		if (input.buttons[pika::Button::X].released())
+		{
+			currentBlock++;
+		}
+
+		currentBlock = std::max(0, currentBlock);
+		currentBlock = std::min(BlocksCount-1, currentBlock);
 
 		if (ImGui::Begin("General3DEditor"))
 		{

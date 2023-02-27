@@ -35,6 +35,8 @@ int atlasData[] =
 	11, 12,//crafting table
 	13, 12,//furnace on
 	12, 13,//furnace off
+	5, 4,  //glass
+	0, 7, //hay
 
 	//back
 	0, 0,
@@ -67,6 +69,8 @@ int atlasData[] =
 	11, 12,//crafting table
 	13, 13,//furnace on
 	13, 13,//furnace off
+	5, 4,  //glass
+	0, 7, //hay
 
 	//top
 	0, 0,
@@ -99,6 +103,8 @@ int atlasData[] =
 	11, 13,//crafting table
 	14, 12,//furnace on
 	14, 12,//furnace off
+	5, 4,  //glass
+	0, 8, //hay
 
 	//bottom
 	0, 0,
@@ -131,6 +137,8 @@ int atlasData[] =
 	4, 15,//crafting table
 	14, 12,//furnace on
 	14, 12,//furnace off
+	5, 4,  //glass
+	0, 8, //hay
 
 	//left
 	0, 0,
@@ -163,6 +171,8 @@ int atlasData[] =
 	12, 12,//crafting table
 	13, 13,//furnace on
 	13, 13,//furnace off
+	5, 4,  //glass
+	0, 7, //hay
 
 	//right
 	0, 0,
@@ -195,6 +205,8 @@ int atlasData[] =
 	12, 12,//crafting table
 	13, 13,//furnace on
 	13, 13,//furnace off
+	5, 4,  //glass
+	0, 7, //hay
 
 };
 
