@@ -1,8 +1,7 @@
-#2023-02-27 13:11:25: Created container: Gameplay
-#2023-02-27 13:11:30: Created container: McDungeonsEditor
-#2023-02-27 13:11:32: Destroyed continer: Gameplay #1
-#2023-02-27 13:16:07: Reloaded dll
-#2023-02-27 13:23:25: Reloaded dll
-#2023-02-27 13:27:28: Created container: McDungeonsEditor
-#2023-02-27 13:27:33: Destroyed continer: McDungeonsEditor #3
-#2023-02-27 13:27:42: Destroyed continer: McDungeonsEditor #2
+#2023-02-28 14:33:39: Created container: Gameplay
+#2023-02-28 14:33:41: Destroyed continer: Gameplay #1
+#2023-02-28 14:33:45: Created container: ImmageViewer
+#2023-02-28 14:33:47: Terminated container because it returned 0: ImmageViewer #2
+#2023-02-28 14:33:47: Destroyed continer: ImmageViewer #2
+#2023-02-28 14:33:48: Created container: McDungeonsEditor
+#2023-02-28 14:36:19: Destroyed continer: McDungeonsEditor #3

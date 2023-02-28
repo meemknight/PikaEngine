@@ -342,7 +342,8 @@ struct McDungeonsEditor: public Container
 			addBack(pos, blockType);
 		};
 
-		auto isSolid = [](unsigned char b) { return b != 0 && b != BlockTypes::glass; };
+		auto isSolid = [](unsigned char b) { return b != 0 && b != BlockTypes::glass && b != BlockTypes::glowStone
+			&& b != BlockTypes::furnace_on; };
 
 		for (int x = 0; x < worldSize.x; x++)
 			for (int y = 0; y < worldSize.y; y++)
@@ -385,7 +386,11 @@ struct McDungeonsEditor: public Container
 
 						if (b == BlockTypes::glowStone)
 						{
-							renderer.createPointLight({x,y,z}, glm::vec3(0.845f, 0.812f, 0.381f)*1.5f, 16.f, 1.5f);
+							renderer.createPointLight({x,y,z}, glm::vec3(0.845f, 0.812f, 0.381f)*1.5f, 16.f, 2.f);
+						}else 
+						if (b == BlockTypes::furnace_on)
+						{
+							renderer.createSpotLight({x,y,z}, glm::radians(90.f), glm::vec3(0,0,1), 16, 1.5, glm::vec3(1, 0.5f, 0.211f) * 2.f);
 						}
 
 					}
@@ -415,11 +420,17 @@ struct McDungeonsEditor: public Container
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
 		
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
-		
+		renderer.colorCorrectionTexture() = renderer.loadColorLookupTextureFromFile(PIKA_RESOURCES_PATH "/mcDungeons/lut.png");
+
 		//renderer.skyBox = renderer.loadSkyBox(names);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
-		renderer.skyBox = renderer.atmosfericScattering({0,1,0}, {0.2,0.2,0.5}, {0.6,0.2,0.1}, {},
+		renderer.skyBox = renderer.atmosfericScattering({0,0.7,0.3}, {0.2,0.2,0.5}, {0.6,0.2,0.1}, {},
 			false, 10);
+		renderer.frustumCulling = false;
+		renderer.skyBox.color = glm::vec3(0.659f, 0.698f, 0.723f);
+
+		renderer.createDirectionalLight(glm::vec3(0.575, -0.686, 0.445), glm::vec3(0.155f, 0.893f, 1.000f), 2);
+
 
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
 		//model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", 0.5);
