@@ -36,7 +36,7 @@ void pika::PushNotificationManager::update(bool &open)
 		return;
 	}
 
-	static int corner = 0;
+	static int corner = 3;
 	ImGuiIO &io = ImGui::GetIO();
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
 		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
