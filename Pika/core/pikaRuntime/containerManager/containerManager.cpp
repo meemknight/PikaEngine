@@ -697,6 +697,7 @@ bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll 
 	auto name = c->second.baseContainerName;
 
 	loadedDll.bindAllocatorDllRealm(&c->second.allocator);
+	c->second.pointer->destruct();
 	loadedDll.destructContainer_(&(c->second.pointer), &c->second.arena);
 	loadedDll.resetAllocatorDllRealm();
 
