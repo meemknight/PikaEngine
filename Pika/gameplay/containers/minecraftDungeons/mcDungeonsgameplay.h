@@ -28,6 +28,31 @@ struct McDungeonsGameplay: public Container
 		return info;
 	}
 
+
+	struct Player
+	{
+		glm::vec2 size = glm::vec2(0.3f,0.3f);
+		glm::vec2 position = {glm::vec2(0,0)};
+
+		glm::vec2 lastPos{};
+
+		glm::vec2 velocity = {};
+
+		bool movingRight = 0;
+		bool grounded = 0;
+
+		void updateMove() { lastPos = position; }
+	};
+
+	void resolveConstrains(Player &player);
+
+	void checkCollisionBrute(Player &player, glm::vec2 &pos, glm::vec2 lastPos
+		, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+
+	glm::vec2 performCollision(Player &player, glm::vec2 pos, glm::vec2 size,
+		glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+
+
 	gl2d::Renderer2D renderer2d;
 	gl3d::Renderer3D renderer;
 	gl3d::Model model;
@@ -36,7 +61,7 @@ struct McDungeonsGameplay: public Container
 
 	gl3d::Entity player;
 
-	glm::vec2 position{21,32};
+	Player playerPhysics;
 	float rotation = 0;
 	float desiredRotation = 0;
 
@@ -349,6 +374,8 @@ struct McDungeonsGameplay: public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
+		playerPhysics.position = {21,32};
+		playerPhysics.lastPos = {21,32};
 
 		renderer2d.create();
 
@@ -426,6 +453,7 @@ struct McDungeonsGameplay: public Container
 		renderer.bloomHighQualityUpSample() = true;
 		renderer.setSSAOExponent(6.f);
 		renderer.setExposure(1.5f);
+		renderer.frustumCulling = false;
 		
 		return true;
 	}
@@ -532,7 +560,7 @@ struct McDungeonsGameplay: public Container
 				}
 
 				float speed = 3;
-				position += dir * input.deltaTime * speed;
+				playerPhysics.position += dir * input.deltaTime * speed;
 
 			}
 
@@ -591,10 +619,14 @@ struct McDungeonsGameplay: public Container
 			}
 		#pragma endregion
 
+			resolveConstrains(playerPhysics);
+			playerPhysics.updateMove();
+
 		#pragma region player position
 			gl3d::Transform t;
 			t.rotation.y = rotation;
-			t.position = glm::vec3(position.x, 13, position.y);
+			t.position = glm::vec3(playerPhysics.position.x, 13, playerPhysics.position.y);
+			t.scale = glm::vec3(0.2);
 			renderer.setEntityTransform(player, t);
 			glm::vec3 playerPos = t.position;
 			glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 1.7, 1));

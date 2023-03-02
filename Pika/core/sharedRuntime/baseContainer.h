@@ -315,6 +315,8 @@ struct Container
 		pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) = 0;
 
+	virtual void destruct() {};
+
 	virtual ~Container() {};
 
 };

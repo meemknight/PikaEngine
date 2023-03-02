@@ -149,6 +149,12 @@ struct Gameplay : public Container
 		return true;
 	}
 
+	//optional
+	void destruct()
+	{
+
+	}
+
 };
 
 //todo flag to clear screen from engine
