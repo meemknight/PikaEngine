@@ -28,10 +28,9 @@ struct McDungeonsGameplay: public Container
 		return info;
 	}
 
-
 	struct Player
 	{
-		glm::vec2 size = glm::vec2(0.3f,0.3f);
+		glm::vec2 size = glm::vec2(0.3f, 0.3f);
 		glm::vec2 position = {glm::vec2(0,0)};
 
 		glm::vec2 lastPos{};
@@ -51,17 +50,18 @@ struct McDungeonsGameplay: public Container
 
 	glm::vec2 performCollision(Player &player, glm::vec2 pos, glm::vec2 size,
 		glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+
 	gl3d::Entity player;
 
 	enum Animations
 	{
-		attack = 0,
-		idle = 1,
-		run = 2,
-		run2 = 3,
-		zombieAttack = 4,
-		zombieIdle = 5,
-		zombieWalk = 6,
+		attack,
+		idle,
+		run,
+		run2,
+		zombieAttack,
+		zombieIdle,
+		zombieRun,
 	};
 
 
