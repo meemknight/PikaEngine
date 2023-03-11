@@ -70,7 +70,7 @@ namespace pika
 		return size - 1;
 	}
 
-	size_t strlcpy(char *dst, std::string src, size_t size)
+	size_t strlcpy(char *dst, const std::string &src, size_t size)
 	{
 		return strlcpy(dst, src.c_str(), size);
 	}

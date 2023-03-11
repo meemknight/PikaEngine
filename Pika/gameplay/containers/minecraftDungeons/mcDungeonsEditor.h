@@ -673,6 +673,16 @@ struct McDungeonsEditor: public Container
 		return true;
 	}
 
+	void destruct()
+	{
+
+		this->renderer.clearAllRendererResources();
+		this->renderer.skyBox.clearTextures();
+		this->renderer.colorCorrectionTexture().clear();
+		//this->renderer2d.clear();
+
+	}
+
 };
 
 //todo flag to clear screen from engine

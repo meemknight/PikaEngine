@@ -64,9 +64,11 @@ namespace pika
 		std::string longPath = currentPath.string();
 		std::string root = PIKA_RESOURCES_PATH;
 		std::string enginePath = "PIKA_RESOURCES_PATH/";
+		std::string copyPath = "";
 		if (longPath.size() > root.size())
 		{
 			enginePath += (longPath.c_str() + root.size());
+			copyPath += (longPath.c_str() + root.size());
 		}
 
 		for (char &c : enginePath)
@@ -156,7 +158,11 @@ namespace pika
 
 					if (ImGui::Button("copy file location for engine"))
 					{
-						std::string s =  "PIKA_RESOURCES_PATH \"" + p.path().filename().string() + "\"";
+						std::string s = "PIKA_RESOURCES_PATH";
+						if (!copyPath.empty())
+						{
+							s += " \"" + copyPath + "\"";
+						}
 
 						ImGui::SetClipboardText(s.c_str());
 						ImGui::CloseCurrentPopup();

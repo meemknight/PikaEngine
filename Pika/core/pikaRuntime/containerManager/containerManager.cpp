@@ -229,7 +229,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.consoleWindow = consoleWindow;
 #pragma endregion
 
-	pika::StaticString<256> cmdArgs = {};
+	pika::StaticString<256> cmdArgs = {}; //todo magic number
 	
 	if (cmd.size() > cmdArgs.MAX_SIZE)
 	{
@@ -288,13 +288,14 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	
 #pragma endregion
 
-	
+	std::vector<CreateContainerInfo> containersToCreate;
 
 #pragma region running containers
 	for (auto &c : runningContainers)
 	{
 
 		c.second.requestedContainerInfo.consoleWindow = consoleWindow;
+		c.second.requestedContainerInfo.internal.containersToCreate = &containersToCreate;
 
 
 		if (c.second.flags.status == pika::RuntimeContainer::FLAGS::STATUS_RUNNING
@@ -573,6 +574,17 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 	}
 #pragma endregion
+
+
+#pragma region create new containers
+
+	for (auto &i : containersToCreate)
+	{
+		createContainer(i.containerName.to_string(), loadedDll, logs, imguiIdManager, consoleWindow, i.cmdArgs.to_string());
+	}
+
+#pragma endregion
+
 
 }
 

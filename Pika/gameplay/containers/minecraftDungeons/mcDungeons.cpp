@@ -143,11 +143,11 @@ glm::vec2  McDungeonsGameplay::performCollision(Player &player, glm::vec2 pos, g
 
 	const float BLOCK_SIZE = 1.f;
 
-	minX = (pos.x - abs(delta.x) - BLOCK_SIZE) / BLOCK_SIZE;
-	maxX = ceil((pos.x + abs(delta.x) + BLOCK_SIZE + size.x) / BLOCK_SIZE);
+	minX = (pos.x - abs(delta.x) - BLOCK_SIZE - size.x/2.f) / BLOCK_SIZE;
+	maxX = ceil((pos.x + abs(delta.x) + BLOCK_SIZE + size.x / 2.f) / BLOCK_SIZE);
 
-	minY = (pos.y - abs(delta.y) - BLOCK_SIZE) / BLOCK_SIZE;
-	maxY = ceil((pos.y + abs(delta.y) + BLOCK_SIZE + size.y) / BLOCK_SIZE);
+	minY = (pos.y - abs(delta.y) - BLOCK_SIZE - size.y / 2.f) / BLOCK_SIZE;
+	maxY = ceil((pos.y + abs(delta.y) + BLOCK_SIZE + size.y/2.f) / BLOCK_SIZE);
 
 	minX = std::max(0, minX);
 	minY = std::max(0, minY);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
-//gl32 --Vlad Luta -- 
-//built on 2023-02-28
+//gl3D --Vlad Luta -- 
+//built on 2023-03-07
 ////////////////////////////////////////////////
 
 #include "gl3d.h"
@@ -36318,6 +36318,7 @@ namespace gl3d
 #include <random>
 #include <string>
 
+#include <glm/gtx/matrix_decompose.hpp>
 
 #ifdef _MSC_VER
 //#pragma warning( disable : 4244 4305 4267 4996 4018)
@@ -38621,6 +38622,68 @@ namespace gl3d
 		return en.canBeAnimated();
 	}
 
+	int Renderer3D::getEntityJointIndex(Entity &e, std::string name)
+	{
+		auto i = internal.getEntityIndex(e);
+		if (i < 0) { return -1; } //warn or sthing
+		
+		auto &en = internal.cpuEntities[i];
+
+		int index = 0;
+		for (auto &j : en.joints)
+		{
+			if (j.name == name)
+			{
+				return index;
+			}
+			index++;
+		}
+		return -1;
+	}
+
+	bool Renderer3D::getEntityJointTransform(Entity &e, std::string boneName, Transform &t)
+	{
+		return getEntityJointTransform(e, getEntityJointIndex(e, boneName), t);
+	}
+
+	bool Renderer3D::getEntityJointTransform(Entity &e, int boneIndex, Transform &t)
+	{
+		t = {};
+		if (boneIndex < 0) { return false; }
+
+
+		auto i = internal.getEntityIndex(e);
+		if (i < 0) { return -1; } //warn or sthing
+		auto &en = internal.cpuEntities[i];
+		
+		if (en.joints.size() <= boneIndex)
+		{
+			return false;
+		}
+
+		//if (!en.animate())
+		//{
+		//	Transform t;
+		//
+		//	t.position = en.joints[boneIndex].trans;
+		//	t.scale = en.joints[boneIndex].scale;
+		//	t.rotation = glm::eulerAngles(en.joints[boneIndex].rotation);
+		//
+		//	glm::mat4 mat = t.getTransformMatrix();
+		//	mat = getTransformMatrix(en.transform) * mat;
+		//	t.setFromMatrix(mat);
+		//	return true;
+		//}
+		//else
+		{
+			glm::mat4 mat = en.joints[boneIndex].worldMatrix;
+			mat = getTransformMatrix(en.transform) * mat;
+			t.setFromMatrix(mat);
+			return true;
+		}
+		
+	}
+
 	void Renderer3D::setExposure(float exposure)
 	{
 		internal.lightShader.lightPassUniformBlockCpuData.exposure =
@@ -39657,6 +39720,24 @@ namespace gl3d
 
 	};
 
+	void applyPoseToJointsForExtractingPositions(
+		std::vector<glm::mat4> &skinningMatrixes,
+		std::vector<Joint> &joints, int index,
+		glm::mat4 parentTransform
+	)
+	{
+		auto currentLocalTransform = skinningMatrixes[index];
+		auto worldSpaceTransform = parentTransform * currentLocalTransform;
+
+		auto &j = joints[index];
+		for (auto &c : j.children)
+		{
+			applyPoseToJointsForExtractingPositions(skinningMatrixes, joints, c, worldSpaceTransform);
+		}
+
+		joints[index].worldMatrix = worldSpaceTransform * j.localBindTransform;
+
+	};
 
 	ColorLookupTexture Renderer3D::loadColorLookupTextureFromFile(const char *path)
 	{
@@ -39841,7 +39922,8 @@ namespace gl3d
 									float interpolate;
 								};
 
-								auto searchFrame = [&](auto& frames, float time)
+								//trans, rot, scale
+								auto searchFrame = [&](auto& frames, float time, int type)
 								{
 									
 									int size = frames.size();
@@ -39870,9 +39952,55 @@ namespace gl3d
 											}
 											else
 											{
-												float secondTime = animation.keyFramesRot[b][frame + 1].timeStamp;
-												float interpolation = (time - currentFrame.timeStamp) / (secondTime - currentFrame.timeStamp);
-												return FoundFrames{frame, frame + 1, interpolation};
+												float secondTime = 0;
+
+												if (type == 0)
+												{
+													if (animation.keyFramesTrans[b].size() <= frame + 1)
+													{
+														secondTime = 0;
+													}else
+													{
+														secondTime = animation.keyFramesTrans[b][frame + 1].timeStamp;
+													}
+												}
+												else if (type == 1)
+												{
+													if (animation.keyFramesRot[b].size() <= frame + 1)
+													{
+														secondTime = 0;
+													}
+													else
+													{
+														secondTime = animation.keyFramesRot[b][frame + 1].timeStamp;
+													}
+												}
+												else if (type == 2)
+												{
+													if (animation.keyFramesScale[b].size() <= frame + 1)
+													{
+														secondTime = 0;
+													}
+													else
+													{
+														secondTime = animation.keyFramesScale[b][frame + 1].timeStamp;
+													}
+												}
+												else
+												{
+													assert(0);
+												}
+
+												if (secondTime != 0)
+												{
+													float interpolation = (time - currentFrame.timeStamp) / (secondTime - currentFrame.timeStamp);
+													return FoundFrames{frame, frame + 1, interpolation};
+												}
+												else
+												{
+													//last frame reached
+													return FoundFrames{frame, frame, 0};
+												}
 											}
 										}
 										else //not found this time
@@ -39913,7 +40041,7 @@ namespace gl3d
 								{
 									if (!animation.keyFramesRot[b].empty())
 									{
-										auto foundFrames = searchFrame(animation.keyFramesRot[b], time);
+										auto foundFrames = searchFrame(animation.keyFramesRot[b], time, 1);
 
 										rotation = glm::slerp(
 											animation.keyFramesRot[b][foundFrames.id1].rotation,
@@ -39931,7 +40059,7 @@ namespace gl3d
 									if (!animation.keyFramesTrans[b].empty())
 									{
 
-										auto foundFrames = searchFrame(animation.keyFramesTrans[b], time);
+										auto foundFrames = searchFrame(animation.keyFramesTrans[b], time, 0);
 
 										translation = lerp(
 											animation.keyFramesTrans[b][foundFrames.id1].translation,
@@ -39950,7 +40078,7 @@ namespace gl3d
 									if (!animation.keyFramesScale[b].empty())
 									{
 
-										auto foundFrames = searchFrame(animation.keyFramesScale[b], time);
+										auto foundFrames = searchFrame(animation.keyFramesScale[b], time, 2);
 
 										scale = lerp(
 											animation.keyFramesScale[b][foundFrames.id1].scale,
@@ -40029,6 +40157,11 @@ namespace gl3d
 						{
 							applyPoseToJoints(skinningMatrixes, appliedSkinningMatrixes, entity.joints,
 								r, glm::mat4(1.f));
+						}
+
+						for (auto r : animation.root)
+						{
+							applyPoseToJointsForExtractingPositions(skinningMatrixes, entity.joints, r, glm::mat4(1.f));
 						}
 
 					#pragma region save animation data to the gpu

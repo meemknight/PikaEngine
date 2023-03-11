@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
-//gl32 --Vlad Luta -- 
-//built on 2023-02-28
+//gl3D --Vlad Luta -- 
+//built on 2023-03-07
 ////////////////////////////////////////////////
 
 
@@ -318,6 +318,7 @@ namespace gl3d
 		glm::quat rotation{ 0.f,0.f,0.f,1.f };
 		glm::vec3 trans{ 1.f,1.f,1.f };
 		glm::vec3 scale{ 1.f,1.f,1.f };
+		glm::mat4 worldMatrix; //for extracting position data per bone
 
 		//int index{};
 		//int root = 0;
@@ -34792,7 +34793,10 @@ namespace gl3d
 		void setEntityAnimate(Entity& e, bool animate); //true = display animations. To pause set the animation speed to 0.
 		bool getEntityAnimate(Entity& e); //returns true if it is animating
 		bool entityCanAnimate(Entity& e); //returns true if it is can be animated
+		int getEntityJointIndex(Entity &e, std::string name); //returns -1 on error
 
+		bool getEntityJointTransform(Entity &e, std::string boneName, Transform &t); //returns 0 on error
+		bool getEntityJointTransform(Entity &e, int boneIndex, Transform &t); //returns 0 on error
 
 		//this is used for apis like imgui.
 		std::vector<char*> *getEntityMeshesNames(Entity& e);
@@ -34926,7 +34930,7 @@ namespace gl3d
 
 			glm::ivec2 currentDimensions = {};
 
-			bool colorCorrection = 0;
+			bool colorCorrection = 0; //todo also check if texture is present
 
 			void create(int w, int h, ErrorReporter &errorReporter, FileOpener &fileOpener);
 

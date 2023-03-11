@@ -11,6 +11,7 @@
 #include <fstream>
 #include <staticString.h>
 #include <vector>
+#include <stringManipulation/stringManipulation.h>
 
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
@@ -23,6 +24,11 @@ typedef GETFILESIZE(getFileSize_t);
 
 static constexpr size_t MaxAllocatorsCount = 128;
 
+struct CreateContainerInfo
+{
+	pika::StaticString<257> containerName = {};
+	pika::StaticString<257> cmdArgs = {};
+};
 
 //this is passed by the engine. You should not modify the data
 //this is also used by the engine to give you acces to some io functions
@@ -85,7 +91,27 @@ struct RequestedContainerInfo
 		decltype(glfwGetWindowPos) *getWindowPosFunc = nullptr;
 		decltype(glfwSetInputMode) *setInputModeFunc = nullptr;
 
+		std::vector<CreateContainerInfo> *containersToCreate;
+
 	}internal;
+
+	//resets global allocator!
+	void createContainer(std::string containerName, std::string cmdArgs = "")
+	{
+		PIKA_DEVELOPMENT_ONLY_ASSERT(internal.containersToCreate, "missing containersToCreate pointer");
+		CreateContainerInfo info;
+
+		if (containerName.size() >= info.containerName.MAX_SIZE-1) { return; }
+		if (cmdArgs.size() >= info.cmdArgs.MAX_SIZE-1) { return; }
+
+		info.containerName = {containerName.c_str()};
+		info.cmdArgs = {cmdArgs.c_str()};
+
+		pika::memory::setGlobalAllocatorToStandard();
+		internal.containersToCreate->push_back(info);
+		pika::memory::setGlobalAllocator(mainAllocator);
+
+	}
 
 	//returns true if succeded (can return false if console is disabeled)
 	bool consoleWrite(const char* c)

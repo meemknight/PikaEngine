@@ -51,6 +51,18 @@ struct McDungeonsGameplay: public Container
 
 	glm::vec2 performCollision(Player &player, glm::vec2 pos, glm::vec2 size,
 		glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+	gl3d::Entity player;
+
+	enum Animations
+	{
+		attack = 0,
+		idle = 1,
+		run = 2,
+		run2 = 3,
+		zombieAttack = 4,
+		zombieIdle = 5,
+		zombieWalk = 6,
+	};
 
 
 	gl2d::Renderer2D renderer2d;
@@ -59,7 +71,7 @@ struct McDungeonsGameplay: public Container
 	gl3d::Entity entity;
 	GLuint blocksTexture;
 
-	gl3d::Entity player;
+	gl3d::Entity sword;
 
 	Player playerPhysics;
 	float rotation = 0;
@@ -438,12 +450,22 @@ struct McDungeonsGameplay: public Container
 
 
 		auto playerModel = renderer.loadModel(PIKA_RESOURCES_PATH "mcDungeons/steve.glb", 0, 1);
-		auto mat = renderer.loadMaterial(PIKA_RESOURCES_PATH "mcDungeons/steve.mtl", 0);
-		if (mat.size() < 1) { return false; }
+		//auto mat = renderer.loadMaterial(PIKA_RESOURCES_PATH "mcDungeons/steve.mtl", 0);
+		//if (mat.size() < 1) { return false; }
 		player = renderer.createEntity(playerModel, gl3d::Transform{glm::vec3{22,13,32}}, false);
-		renderer.setEntityMeshMaterial(player, 0, mat[0]);
+		//{
+		//	int count = renderer.getEntityMeshesCount(player);
+		//	if (!count)return 0;
+		//	for (int i = 0; i < count; i++)
+		//	{
+		//		renderer.setEntityMeshMaterial(player, i, mat[0]);
+		//	}
+		//}
 		renderer.setEntityAnimate(player, true);
+		renderer.setEntityAnimationIndex(player, Animations::idle);
 
+		auto swordModel = renderer.loadModel(PIKA_RESOURCES_PATH "/mcDungeons/minecraft_sword.glb", gl3d::TextureLoadQuality::maxQuality, 0.1);
+		sword = renderer.createEntity(swordModel, {}, false);
 
 		renderer.camera.farPlane = 200;
 		renderer.directionalShadows.frustumSplits[0] = 0.06;
@@ -551,12 +573,11 @@ struct McDungeonsGameplay: public Container
 					};
 					
 					desiredRotation = std::atan2(dir.x, dir.y);
-					renderer.setEntityAnimate(player, 0);
-
+					renderer.setEntityAnimationIndex(player, Animations::run);
 				}
 				else
 				{
-					renderer.setEntityAnimate(player, 1);
+					renderer.setEntityAnimationIndex(player, Animations::idle);
 				}
 
 				float speed = 3;
@@ -626,12 +647,22 @@ struct McDungeonsGameplay: public Container
 			gl3d::Transform t;
 			t.rotation.y = rotation;
 			t.position = glm::vec3(playerPhysics.position.x, 13, playerPhysics.position.y);
-			t.scale = glm::vec3(0.2);
+			t.scale = glm::vec3(0.5);
 			renderer.setEntityTransform(player, t);
 			glm::vec3 playerPos = t.position;
 			glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 1.7, 1));
 			glm::vec3 cameraPos = playerPos + cameraViewDir * 12.f;
 		#pragma endregion
+
+		#pragma region sword
+			{
+				gl3d::Transform t;
+				renderer.getEntityJointTransform(player, "arm.r", t);
+				t.scale = glm::vec3(1);
+				renderer.setEntityTransform(sword, t);
+			}
+		#pragma endregion
+
 
 		#pragma region camera hover
 			{
@@ -698,7 +729,6 @@ struct McDungeonsGameplay: public Container
 		glDisable(GL_DEPTH_TEST);
 
 
-		renderer2d.renderRectangle({windowState.w / 2 - 5, windowState.h / 2 - 5,10,10}, Colors_Orange);
 
 
 		renderer2d.flush();
