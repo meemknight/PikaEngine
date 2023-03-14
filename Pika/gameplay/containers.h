@@ -22,6 +22,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "pluggins/pikatextEditor.h"
 #include "containers/minecraftDungeons/mcDungeonsEditor.h"
 #include "containers/minecraftDungeons/mcDungeonsgameplay.h"
+#include "containers/minecraftDungeons/mcDungeonsMenu.h"
 
 #define PIKA_ALL_CONTAINERS() \
 	PIKA_DECLARE_CONTAINER(Gameplay) \
@@ -32,4 +33,5 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(Mario) \
 	PIKA_DECLARE_CONTAINER(MarioEditor) \
 	PIKA_DECLARE_CONTAINER(McDungeonsEditor) \
-	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) 
+	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
+	PIKA_DECLARE_CONTAINER(McDungeonsMenu) 

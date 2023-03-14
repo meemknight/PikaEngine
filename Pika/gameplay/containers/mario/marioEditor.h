@@ -7,6 +7,7 @@
 #include <pikaSizes.h>
 #include "marioCommon.h"
 #include <safeSave/safeSave.h>
+#include <engineLibraresSupport/engineGL2DSupport.h>
 
 struct MarioEditor: public Container
 {
@@ -52,20 +53,9 @@ struct MarioEditor: public Container
 		//gl2d::setErrorFuncCallback() //tood
 		//pika::initShortcutApi();
 
-		size_t s = 0;
-		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/mario/1985_tiles.png", s))
-		{
-			void *data = new unsigned char[s];
-			if (requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "/mario/1985_tiles.png", data, s))
-			{
-				tiles.createFromFileDataWithPixelPadding((unsigned char*)data, s, 8, true, false);
-
-			}
-			else { return 0; }
-
-			delete[] data;
-		}
-		else { return 0; }
+		
+		tiles = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "/mario/1985_tiles.png", requestedInfo, 8, true, false);
+		if (tiles.id == 0) { return 0; }
 
 
 		atlas = gl2d::TextureAtlasPadding(8, 10, 8*8, 8*10);

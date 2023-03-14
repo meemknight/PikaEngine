@@ -4,7 +4,7 @@
 
 
 
-void  McDungeonsGameplay::resolveConstrains(Player &player)
+void  McDungeonsGameplay::resolveConstrains(PhysicsComponent &player)
 {
 	glm::ivec2 mapSize = {150,150};
 
@@ -78,7 +78,7 @@ end:
 
 }
 
-void  McDungeonsGameplay::checkCollisionBrute(Player &player, glm::vec2 &pos, glm::vec2 lastPos
+void  McDungeonsGameplay::checkCollisionBrute(PhysicsComponent &player, glm::vec2 &pos, glm::vec2 lastPos
 	, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
 {
 	glm::vec2 delta = pos - lastPos;
@@ -106,7 +106,7 @@ void  McDungeonsGameplay::checkCollisionBrute(Player &player, glm::vec2 &pos, gl
 
 
 const int playerPosY = 13;
-glm::vec2  McDungeonsGameplay::performCollision(Player &player, glm::vec2 pos, glm::vec2 size,
+glm::vec2  McDungeonsGameplay::performCollision(PhysicsComponent &player, glm::vec2 pos, glm::vec2 size,
 	glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
 {
 

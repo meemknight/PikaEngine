@@ -49,10 +49,8 @@
 #include <Windows.h>
 #endif
 
-#include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <iostream>
 
 //if you are not using visual studio make shure you link to "Opengl32.lib"
 #ifdef _MSC_VER
@@ -167,7 +165,7 @@ namespace gl2d
 
 	void defaultErrorFunc(const char *msg)
 	{
-		std::cerr << "gl2d error: " << msg << "\n";
+		//std::cerr << "gl2d error: " << msg << "\n";
 	}
 
 	errorFuncType *setErrorFuncCallback(errorFuncType *newFunc)
@@ -474,28 +472,28 @@ namespace gl2d
 
 	void Font::createFromFile(const char *file)
 	{
-		std::ifstream fileFont(file, std::ios::binary);
-
-		if (!fileFont.is_open())
-		{
-			char c[300] = {0};
-			strcat(c, "error openning: ");
-			strcat(c + strlen(c), file);
-			errorFunc(c);
-			return;
-		}
-
-		int fileSize = 0;
-		fileFont.seekg(0, std::ios::end);
-		fileSize = (int)fileFont.tellg();
-		fileFont.seekg(0, std::ios::beg);
-		unsigned char *fileData = new unsigned char[fileSize];
-		fileFont.read((char *)fileData, fileSize);
-		fileFont.close();
-
-		createFromTTF(fileData, fileSize);
-
-		delete[] fileData;
+		//std::ifstream fileFont(file, std::ios::binary);
+		//
+		//if (!fileFont.is_open())
+		//{
+		//	char c[300] = {0};
+		//	strcat(c, "error openning: ");
+		//	strcat(c + strlen(c), file);
+		//	errorFunc(c);
+		//	return;
+		//}
+		//
+		//int fileSize = 0;
+		//fileFont.seekg(0, std::ios::end);
+		//fileSize = (int)fileFont.tellg();
+		//fileFont.seekg(0, std::ios::beg);
+		//unsigned char *fileData = new unsigned char[fileSize];
+		//fileFont.read((char *)fileData, fileSize);
+		//fileFont.close();
+		//
+		//createFromTTF(fileData, fileSize);
+		//
+		//delete[] fileData;
 	}
 
 
@@ -1668,56 +1666,56 @@ namespace gl2d
 
 	void Texture::loadFromFile(const char *fileName, bool pixelated, bool useMipMaps)
 	{
-		std::ifstream file(fileName, std::ios::binary);
-
-		if (!file.is_open())
-		{
-			char c[300] = {0};
-			strcat(c, "error openning: ");
-			strcat(c + strlen(c), fileName);
-			errorFunc(c);
-			return;
-		}
-
-		int fileSize = 0;
-		file.seekg(0, std::ios::end);
-		fileSize = (int)file.tellg();
-		file.seekg(0, std::ios::beg);
-		unsigned char *fileData = new unsigned char[fileSize];
-		file.read((char *)fileData, fileSize);
-		file.close();
-
-		createFromFileData(fileData, fileSize, pixelated, useMipMaps);
-
-		delete[] fileData;
+		//std::ifstream file(fileName, std::ios::binary);
+		//
+		//if (!file.is_open())
+		//{
+		//	char c[300] = {0};
+		//	strcat(c, "error openning: ");
+		//	strcat(c + strlen(c), fileName);
+		//	errorFunc(c);
+		//	return;
+		//}
+		//
+		//int fileSize = 0;
+		//file.seekg(0, std::ios::end);
+		//fileSize = (int)file.tellg();
+		//file.seekg(0, std::ios::beg);
+		//unsigned char *fileData = new unsigned char[fileSize];
+		//file.read((char *)fileData, fileSize);
+		//file.close();
+		//
+		//createFromFileData(fileData, fileSize, pixelated, useMipMaps);
+		//
+		//delete[] fileData;
 
 	}
 
 	void Texture::loadFromFileWithPixelPadding(const char *fileName, int blockSize,
 		bool pixelated, bool useMipMaps)
 	{
-		std::ifstream file(fileName, std::ios::binary);
-
-		if (!file.is_open())
-		{
-			char c[300] = {0};
-			strcat(c, "error openning: ");
-			strcat(c + strlen(c), fileName);
-			errorFunc(c);
-			return;
-		}
-
-		int fileSize = 0;
-		file.seekg(0, std::ios::end);
-		fileSize = (int)file.tellg();
-		file.seekg(0, std::ios::beg);
-		unsigned char *fileData = new unsigned char[fileSize];
-		file.read((char *)fileData, fileSize);
-		file.close();
-
-		createFromFileDataWithPixelPadding(fileData, fileSize, blockSize, pixelated, useMipMaps);
-
-		delete[] fileData;
+		//std::ifstream file(fileName, std::ios::binary);
+		//
+		//if (!file.is_open())
+		//{
+		//	char c[300] = {0};
+		//	strcat(c, "error openning: ");
+		//	strcat(c + strlen(c), fileName);
+		//	errorFunc(c);
+		//	return;
+		//}
+		//
+		//int fileSize = 0;
+		//file.seekg(0, std::ios::end);
+		//fileSize = (int)file.tellg();
+		//file.seekg(0, std::ios::beg);
+		//unsigned char *fileData = new unsigned char[fileSize];
+		//file.read((char *)fileData, fileSize);
+		//file.close();
+		//
+		//createFromFileDataWithPixelPadding(fileData, fileSize, blockSize, pixelated, useMipMaps);
+		//
+		//delete[] fileData;
 
 	}
 

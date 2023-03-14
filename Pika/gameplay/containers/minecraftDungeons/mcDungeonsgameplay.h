@@ -28,7 +28,7 @@ struct McDungeonsGameplay: public Container
 		return info;
 	}
 
-	struct Player
+	struct PhysicsComponent
 	{
 		glm::vec2 size = glm::vec2(0.3f, 0.3f);
 		glm::vec2 position = {glm::vec2(0,0)};
@@ -40,16 +40,32 @@ struct McDungeonsGameplay: public Container
 		bool movingRight = 0;
 		bool grounded = 0;
 
+		float rotation = 0;
+		float desiredRotation = 0;
+
 		void updateMove() { lastPos = position; }
 	};
 
-	void resolveConstrains(Player &player);
+	void resolveConstrains(PhysicsComponent &player);
 
-	void checkCollisionBrute(Player &player, glm::vec2 &pos, glm::vec2 lastPos
+	void checkCollisionBrute(PhysicsComponent &player, glm::vec2 &pos, glm::vec2 lastPos
 		, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
 
-	glm::vec2 performCollision(Player &player, glm::vec2 pos, glm::vec2 size,
+	glm::vec2 performCollision(PhysicsComponent &player, glm::vec2 pos, glm::vec2 size,
 		glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+
+
+	struct Zombie
+	{
+		PhysicsComponent physics;
+		gl3d::Entity entity;
+
+		Zombie() {};
+		Zombie(int x, int z) { physics.position = {x,z}; physics.lastPos = {x,z}; };
+	};
+
+	std::vector<Zombie> enemies;
+
 
 	gl3d::Entity player;
 
@@ -73,9 +89,8 @@ struct McDungeonsGameplay: public Container
 
 	gl3d::Entity sword;
 
-	Player playerPhysics;
-	float rotation = 0;
-	float desiredRotation = 0;
+	PhysicsComponent playerPhysics;
+	
 
 	pika::gl3d::General3DEditor editor;
 
@@ -448,6 +463,8 @@ struct McDungeonsGameplay: public Container
 		model = createWorld(renderer, defaultMat[0]);
 		entity = renderer.createEntity(model);
 
+		auto zombieMat = renderer.loadMaterial(PIKA_RESOURCES_PATH "mcDungeons/zombie.mtl", 0);
+		if (zombieMat.size() != 1) { return false; }
 
 		auto playerModel = renderer.loadModel(PIKA_RESOURCES_PATH "mcDungeons/steve.glb", 0, 1);
 		//auto mat = renderer.loadMaterial(PIKA_RESOURCES_PATH "mcDungeons/steve.mtl", 0);
@@ -466,6 +483,30 @@ struct McDungeonsGameplay: public Container
 
 		auto swordModel = renderer.loadModel(PIKA_RESOURCES_PATH "/mcDungeons/minecraft_sword.glb", gl3d::TextureLoadQuality::maxQuality, 0.1);
 		sword = renderer.createEntity(swordModel, {}, false);
+
+		//enemies
+		{
+			enemies.push_back(Zombie(22, 33));
+			
+
+			for (auto &i : enemies)
+			{
+				i.entity = renderer.createEntity(playerModel, gl3d::Transform{glm::vec3{i.physics.position.x, 13, i.physics.position.y}}, false);
+			
+				int count = renderer.getEntityMeshesCount(i.entity);
+				if (!count)return 0;
+				for (int j = 0; j < count; j++)
+				{
+					renderer.setEntityMeshMaterial(i.entity, j, zombieMat[0]);
+				}
+				
+				renderer.setEntityAnimate(i.entity, true);
+				renderer.setEntityAnimationIndex(i.entity, Animations::zombieIdle);
+			}
+
+
+		}
+
 
 		renderer.camera.farPlane = 200;
 		renderer.directionalShadows.frustumSplits[0] = 0.06;
@@ -572,7 +613,7 @@ struct McDungeonsGameplay: public Container
 						return x * (1 - a) + y * (a);
 					};
 					
-					desiredRotation = std::atan2(dir.x, dir.y);
+					playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
 					renderer.setEntityAnimationIndex(player, Animations::run);
 				}
 				else
@@ -591,47 +632,47 @@ struct McDungeonsGameplay: public Container
 			{
 				const float pi2 = 3.1415926f * 2.f;
 
-				if (desiredRotation != rotation)
+				if (playerPhysics.desiredRotation != playerPhysics.rotation)
 				{
 					float pozDistance = 0;
 					float negDistance = 0;
-					if (desiredRotation > rotation)
+					if (playerPhysics.desiredRotation > playerPhysics.rotation)
 					{
-						pozDistance = desiredRotation - rotation;
-						negDistance = rotation + pi2 - desiredRotation;
+						pozDistance = playerPhysics.desiredRotation - playerPhysics.rotation;
+						negDistance = playerPhysics.rotation + pi2 - playerPhysics.desiredRotation;
 					}
 					else
 					{
-						pozDistance = pi2 - rotation + desiredRotation;
-						negDistance = rotation - desiredRotation;
+						pozDistance = pi2 - playerPhysics.rotation + playerPhysics.desiredRotation;
+						negDistance = playerPhysics.rotation - playerPhysics.desiredRotation;
 					}
 
 					float speed = input.deltaTime * 3.141592f * 2.f;
-					float oldRot = rotation;
+					float oldRot = playerPhysics.rotation;
 					if (pozDistance > negDistance)
 					{
 						if (negDistance < speed)
 						{
-							rotation = desiredRotation;
+							playerPhysics.rotation = playerPhysics.desiredRotation;
 						}
 						else
 						{
-							rotation -= speed;
+							playerPhysics.rotation -= speed;
 						}
 					}
 					else
 					{
 						if (pozDistance < speed)
 						{
-							rotation = desiredRotation;
+							playerPhysics.rotation = playerPhysics.desiredRotation;
 						}
 						else
 						{
-							rotation += speed;
+							playerPhysics.rotation += speed;
 						}
 					}
 
-					if (rotation > pi2) { rotation -= pi2; }
+					if (playerPhysics.rotation > pi2) { playerPhysics.rotation -= pi2; }
 					
 
 				}
@@ -643,22 +684,41 @@ struct McDungeonsGameplay: public Container
 			resolveConstrains(playerPhysics);
 			playerPhysics.updateMove();
 
+			auto setTransform = [&](PhysicsComponent &p, gl3d::Entity &e)
+			{
+				gl3d::Transform t;
+				t.rotation.y = p.rotation;
+				t.position = glm::vec3(p.position.x, 12.55, p.position.y);
+				t.scale = glm::vec3(0.45);
+				renderer.setEntityTransform(e, t);
+				return t;
+			};
+
 		#pragma region player position
-			gl3d::Transform t;
-			t.rotation.y = rotation;
-			t.position = glm::vec3(playerPhysics.position.x, 13, playerPhysics.position.y);
-			t.scale = glm::vec3(0.5);
-			renderer.setEntityTransform(player, t);
+			auto t = setTransform(playerPhysics, player);
 			glm::vec3 playerPos = t.position;
 			glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 1.7, 1));
 			glm::vec3 cameraPos = playerPos + cameraViewDir * 12.f;
 		#pragma endregion
 
+			for (auto &e : enemies)
+			{
+				setTransform(e.physics, e.entity);
+			}
+
+
 		#pragma region sword
 			{
 				gl3d::Transform t;
 				renderer.getEntityJointTransform(player, "arm.r", t);
-				t.scale = glm::vec3(1);
+				t.scale = glm::vec3(0.5);
+
+				gl3d::Transform offset;
+				offset.rotation.x = glm::radians(90.f);
+				//offset.position.y = -1.f;
+
+				t.setFromMatrix(t.getTransformMatrix() *offset.getTransformMatrix());
+
 				renderer.setEntityTransform(sword, t);
 			}
 		#pragma endregion

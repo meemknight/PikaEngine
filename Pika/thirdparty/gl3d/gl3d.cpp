@@ -38661,23 +38661,24 @@ namespace gl3d
 			return false;
 		}
 
-		//if (!en.animate())
-		//{
-		//	Transform t;
-		//
-		//	t.position = en.joints[boneIndex].trans;
-		//	t.scale = en.joints[boneIndex].scale;
-		//	t.rotation = glm::eulerAngles(en.joints[boneIndex].rotation);
-		//
-		//	glm::mat4 mat = t.getTransformMatrix();
-		//	mat = getTransformMatrix(en.transform) * mat;
-		//	t.setFromMatrix(mat);
-		//	return true;
-		//}
-		//else
+		glm::mat4 beginPos = en.joints[boneIndex].localBindTransform;
+
+		if (!en.animate())
+		{
+			//t.position = en.joints[boneIndex].trans;
+			//t.scale = en.joints[boneIndex].scale;
+			//t.rotation = glm::eulerAngles(en.joints[boneIndex].rotation);
+		
+			//glm::mat4 mat = t.getTransformMatrix();
+			glm::mat4 mat = beginPos;
+			mat = getTransformMatrix(en.transform) * mat;
+			t.setFromMatrix(mat);
+			return true;
+		}
+		else
 		{
 			glm::mat4 mat = en.joints[boneIndex].worldMatrix;
-			mat = getTransformMatrix(en.transform) * mat;
+			mat = getTransformMatrix(en.transform) * mat * beginPos;
 			t.setFromMatrix(mat);
 			return true;
 		}
