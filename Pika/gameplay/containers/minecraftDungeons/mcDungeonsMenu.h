@@ -43,8 +43,6 @@ struct McDungeonsMenu : public Container
 		button = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/button.png", requestedInfo);
 
 
-
-
 		return true;
 	}
 

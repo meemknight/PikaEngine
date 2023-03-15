@@ -86,7 +86,7 @@ void  McDungeonsGameplay::checkCollisionBrute(PhysicsComponent &player, glm::vec
 
 	glm::vec2 &dimensions = player.size;
 
-	glm::ivec2 mapSize = {100,100};
+	glm::ivec2 mapSize = {150,150};
 
 	if (
 		(pos.y < -dimensions.y)

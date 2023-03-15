@@ -11,6 +11,8 @@
 #include <engineLibraresSupport/engineGL3DSupport.h>
 #include "blocks.h"
 #include <stringManipulation/stringManipulation.h>
+#include <engineLibraresSupport/engineGL2DSupport.h>
+#include <glui/glui.h>
 
 struct McDungeonsGameplay: public Container
 {
@@ -66,6 +68,8 @@ struct McDungeonsGameplay: public Container
 
 	std::vector<Zombie> enemies;
 
+	std::vector<gl3d::Entity> diamonds;
+
 
 	gl3d::Entity player;
 
@@ -81,16 +85,24 @@ struct McDungeonsGameplay: public Container
 	};
 
 
+	float winTimer = 4;
+	float cameraYoffset = 0;
+
 	gl2d::Renderer2D renderer2d;
 	gl3d::Renderer3D renderer;
 	gl3d::Model model;
 	gl3d::Entity entity;
 	GLuint blocksTexture;
+	gl3d::Model diamondModel;
+
+	gl2d::Texture diamondTexture;
+	gl2d::Font font;
 
 	gl3d::Entity sword;
 
 	PhysicsComponent playerPhysics;
-	
+	float diamondPeriod = 0;
+
 
 	pika::gl3d::General3DEditor editor;
 
@@ -406,6 +418,10 @@ struct McDungeonsGameplay: public Container
 
 		renderer2d.create();
 
+		diamondTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/diamond.png", requestedInfo, true, false);
+		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);
+
+
 		//todo close function for containers
 		//todo check out why mouse don't work in outside window
 
@@ -459,9 +475,11 @@ struct McDungeonsGameplay: public Container
 			return 0;
 		}
 
-
 		model = createWorld(renderer, defaultMat[0]);
 		entity = renderer.createEntity(model);
+
+		diamondModel = renderer.loadModel(PIKA_RESOURCES_PATH "mcDungeons/diamond.glb", 0, 1.f);
+		
 
 		auto zombieMat = renderer.loadMaterial(PIKA_RESOURCES_PATH "mcDungeons/zombie.mtl", 0);
 		if (zombieMat.size() != 1) { return false; }
@@ -486,7 +504,15 @@ struct McDungeonsGameplay: public Container
 
 		//enemies
 		{
-			enemies.push_back(Zombie(22, 33));
+			enemies.push_back(Zombie(18, 46));
+			enemies.push_back(Zombie(16, 46));
+			enemies.push_back(Zombie(65, 27));
+			enemies.push_back(Zombie(61, 23));
+			enemies.push_back(Zombie(68, 23));
+			enemies.push_back(Zombie(63, 48));
+			enemies.push_back(Zombie(66, 64));
+			enemies.push_back(Zombie(71, 63));
+			enemies.push_back(Zombie(56, 72));
 			
 
 			for (auto &i : enemies)
@@ -505,6 +531,17 @@ struct McDungeonsGameplay: public Container
 			}
 
 
+		}
+
+		//diamonds
+		{
+
+			diamonds.push_back(renderer.createEntity(diamondModel, {glm::vec3(16, 13, 56)}, false));
+			diamonds.push_back(renderer.createEntity(diamondModel, {glm::vec3(30, 13, 53)}, false));
+			diamonds.push_back(renderer.createEntity(diamondModel, {glm::vec3(116, 13, 63)}, false));
+			diamonds.push_back(renderer.createEntity(diamondModel, {glm::vec3(73, 13, 100)}, false));
+			diamonds.push_back(renderer.createEntity(diamondModel, {glm::vec3(100, 13, 45)}, false));
+		
 		}
 
 
@@ -559,6 +596,7 @@ struct McDungeonsGameplay: public Container
 			}
 
 			ImGui::DragFloat3("camera pos", &renderer.camera.position[0]);
+			ImGui::DragFloat2("playerPos pos", &playerPhysics.position[0]);
 
 		}
 
@@ -582,6 +620,7 @@ struct McDungeonsGameplay: public Container
 			
 		#pragma region input
 			
+			if(!diamonds.empty())
 			{
 				glm::vec2 dir = {};
 
@@ -628,58 +667,58 @@ struct McDungeonsGameplay: public Container
 
 		#pragma endregion
 
-		#pragma region rotate
+			auto solveRotation = [deltaTime = input.deltaTime](PhysicsComponent &p)
 			{
 				const float pi2 = 3.1415926f * 2.f;
 
-				if (playerPhysics.desiredRotation != playerPhysics.rotation)
+				if (p.desiredRotation != p.rotation)
 				{
 					float pozDistance = 0;
 					float negDistance = 0;
-					if (playerPhysics.desiredRotation > playerPhysics.rotation)
+					if (p.desiredRotation > p.rotation)
 					{
-						pozDistance = playerPhysics.desiredRotation - playerPhysics.rotation;
-						negDistance = playerPhysics.rotation + pi2 - playerPhysics.desiredRotation;
+						pozDistance = p.desiredRotation - p.rotation;
+						negDistance = p.rotation + pi2 - p.desiredRotation;
 					}
 					else
 					{
-						pozDistance = pi2 - playerPhysics.rotation + playerPhysics.desiredRotation;
-						negDistance = playerPhysics.rotation - playerPhysics.desiredRotation;
+						pozDistance = pi2 - p.rotation + p.desiredRotation;
+						negDistance = p.rotation - p.desiredRotation;
 					}
 
-					float speed = input.deltaTime * 3.141592f * 2.f;
-					float oldRot = playerPhysics.rotation;
+					float speed = deltaTime * 3.141592f * 2.f;
+					float oldRot = p.rotation;
 					if (pozDistance > negDistance)
 					{
 						if (negDistance < speed)
 						{
-							playerPhysics.rotation = playerPhysics.desiredRotation;
+							p.rotation = p.desiredRotation;
 						}
 						else
 						{
-							playerPhysics.rotation -= speed;
+							p.rotation -= speed;
 						}
 					}
 					else
 					{
 						if (pozDistance < speed)
 						{
-							playerPhysics.rotation = playerPhysics.desiredRotation;
+							p.rotation = p.desiredRotation;
 						}
 						else
 						{
-							playerPhysics.rotation += speed;
+							p.rotation += speed;
 						}
 					}
 
-					if (playerPhysics.rotation > pi2) { playerPhysics.rotation -= pi2; }
-					
+					if (p.rotation > pi2) { p.rotation -= pi2; }
+
 
 				}
 
+			};
 
-			}
-		#pragma endregion
+			solveRotation(playerPhysics);
 
 			resolveConstrains(playerPhysics);
 			playerPhysics.updateMove();
@@ -703,6 +742,37 @@ struct McDungeonsGameplay: public Container
 
 			for (auto &e : enemies)
 			{
+				float d = glm::distance(e.physics.position, playerPhysics.position);
+				if (d < 8.f)
+				{
+					if (d > 1.f)
+					{
+						glm::vec2 dir = glm::normalize(playerPhysics.position - e.physics.position);
+						float speed = 1.4;
+						e.physics.position += dir * input.deltaTime * speed;
+						
+						e.physics.desiredRotation = std::atan2(dir.x, dir.y);
+
+						renderer.setEntityAnimationIndex(e.entity, Animations::zombieRun);
+					
+					}
+					else
+					{
+						renderer.setEntityAnimationIndex(e.entity, Animations::zombieAttack);
+
+						//attack
+					}
+				}
+				else
+				{
+					renderer.setEntityAnimationIndex(e.entity, Animations::zombieIdle);
+				}
+
+				solveRotation(e.physics);
+
+				resolveConstrains(e.physics);
+				e.physics.updateMove();
+
 				setTransform(e.physics, e.entity);
 			}
 
@@ -726,7 +796,6 @@ struct McDungeonsGameplay: public Container
 
 		#pragma region camera hover
 			{
-				static float cameraYoffset = 0;
 				cameraPos.y += cameraYoffset;
 
 				auto checkHit = [&](glm::vec3 pos) -> bool
@@ -743,25 +812,35 @@ struct McDungeonsGameplay: public Container
 							}
 					return false;
 				};
-				
-				
+
 				float hoverSpeed = 2;
-				if (checkHit(cameraPos))
+				if (!diamonds.empty())
 				{
-					cameraYoffset += input.deltaTime * hoverSpeed;
+					if (checkHit(cameraPos))
+					{
+						cameraYoffset += input.deltaTime * hoverSpeed;
+					}
+					else
+					{
+						if (cameraYoffset > 0)
+							if (!checkHit(cameraPos -= glm::vec3(0, 0.1f, 0)))
+							{
+								cameraYoffset -= input.deltaTime * hoverSpeed;
+							}
+					}
 				}
 				else
 				{
-					if(cameraYoffset>0)
-					if (!checkHit(cameraPos -= glm::vec3(0, 0.1f, 0)))
-					{
-						cameraYoffset -= input.deltaTime * hoverSpeed;
-					}
+					cameraYoffset += input.deltaTime;
 				}
+				
 
 				cameraYoffset = std::max(cameraYoffset, 0.f);
 
+				cameraPos.x = std::max(cameraPos.x, 2.f);
+
 			}
+		
 		#pragma endregion
 
 
@@ -779,6 +858,43 @@ struct McDungeonsGameplay: public Container
 		}
 	#pragma endregion
 
+		if (diamonds.empty())
+		{
+			winTimer -= input.deltaTime;
+			if (winTimer <= 0.f)
+			{
+				return 0;
+			}
+		}
+
+		diamondPeriod += input.deltaTime * 0.2;
+
+		while (diamondPeriod > 1) { diamondPeriod -= 1; }
+
+		for (int i=0; i<diamonds.size(); i++)
+		{
+
+			gl3d::Transform t = renderer.getEntityTransform(diamonds[i]);
+
+			glm::vec2 diamondPos(t.position.x, t.position.z);
+
+			if (glm::distance(diamondPos, playerPhysics.position) < 1.f)
+			{
+				renderer.deleteEntity(diamonds[i]);
+				diamonds.erase(diamonds.begin() + i);
+				i--;
+				continue;
+			}
+			
+			t.position.y = 13 + std::sin(diamondPeriod * 2.f * 3.1415926) *0.5 + 0.2;
+
+			t.rotation.y = diamondPeriod * 2.f * 3.1415926;
+
+			renderer.setEntityTransform(diamonds[i], t);
+
+		}
+
+
 
 
 	#pragma endregion
@@ -789,6 +905,32 @@ struct McDungeonsGameplay: public Container
 		glDisable(GL_DEPTH_TEST);
 
 
+
+		{
+			glui::Frame screen({0,0,windowState.w, windowState.h});
+
+			{
+				glui::Frame diamondBox(glui::Box().xLeft(10).yTop(20).xDimensionPercentage(0.2).yAspectRatio(0.5)());
+
+				//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)(),
+				//	{1,0.5,0,0.5});
+
+				renderer2d.renderRectangle(glui::Box().xLeft(5).yTop(5).xDimensionPercentage(0.45).yAspectRatio(1.f), 
+					{1,1,1,0.5},
+					{}, 0,
+					diamondTexture);
+
+				std::string s;
+				s += std::to_string(5 - diamonds.size());
+				s += "/5";
+
+				renderer2d.renderText({glui::Box().xLeftPerc(0.5f).yTopPerc(0.9f)()}, s.c_str(), font,
+					{1,1,1,0.5}, 1.0f, 4, 3, false);
+					
+
+			}
+
+		}
 
 
 		renderer2d.flush();
