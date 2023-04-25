@@ -1071,7 +1071,7 @@ namespace gl2d
 
 	void Renderer2D::clear()
 	{
-		white1pxSquareTexture.cleanup();
+		//white1pxSquareTexture.cleanup(); //todo move
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(Renderer2DBufferType::bufferSize, buffers);
 

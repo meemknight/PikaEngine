@@ -363,5 +363,151 @@ end:
 
 }
 
+void getVision(char vision[visionSizeX * visionSizeY], mario::GameplaySimulation &simulator, PlayerSimulation &p)
+{
+	memset(vision, 0, sizeof(vision));
+	for (int y = 0; y < visionSizeY; y++)
+	{
+		for (int x = 0; x < visionSizeX; x++)
+		{
+			auto b = simulator.
+				getMapBlockSafe(
+				x + p.p.position.getCenter().x - 1,
+				y + p.p.position.getCenter().y - visionSizeY + 4);
+
+			vision[x + y * visionSizeX] = b.isCollidable();
+		}
+	}
+}
+
+bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::GameplaySimulation &simulator, mario::NeuralNetork
+	&network)
+{
+	if (p.p.position.position.x > p.maxFit)
+	{
+		p.maxFit = p.p.position.position.x;
+		p.killTimer = 0;
+	}
+	else
+	{
+		p.killTimer += deltaTime;
+		if (p.killTimer > 3)
+		{
+			//	return 0;
+		}
+	}
+
+	//simulator.moveDelta = 1;
+	//simulator.jump = 0;
+	char vision[visionSizeX * visionSizeY];
+	getVision(vision, simulator, p);
+
+	//input
+	network.compute(simulator.moveDelta, simulator.jump, vision);
+
+	if (!simulator.updateFrame(deltaTime, p.p))
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+
+}
+
+void renderNeuralNetwork(gl2d::Renderer2D &renderer, char vision[mario::visionSizeX * mario::visionSizeY], float blockSizePreview, mario::NeuralNetork &network)
+{
+	auto renderLine = [&](glm::vec2 a, glm::vec2 b, glm::vec4 color)
+	{
+		float dist = glm::distance(a, b);
+		float thickness = 5;
+
+		glm::vec2 vect = b - a;
+
+		float angle = -std::atan2(vect.y, vect.x);
+		//float angle = 0;
+
+		renderer.renderRectangle({a, dist, thickness}, color, {-dist / 2.f,0}, glm::degrees(angle));
+	};
+
+	renderer.pushCamera();
+	renderer.renderRectangle(
+		glm::vec4(0, 0, mario::visionSizeX * (float)blockSizePreview, mario::visionSizeY * (float)blockSizePreview)
+		, {0.5,0.5,0.5,0.5});
+	for (int y = 0; y < mario::visionSizeY; y++)
+	{
+		for (int x = 0; x < mario::visionSizeX; x++)
+		{
+			auto b = vision[x + y * mario::visionSizeX];
+			if (b == 1)
+			{
+				renderer.renderRectangle(glm::vec4(x, y, 0.95, 0.95) * (float)blockSizePreview, {0,1,0,0.5});
+			}
+			//else
+			//{
+			//	renderer.renderer.renderRectangle(glm::vec4(x, y, 0.95, 0.95) * (float)blockSizePreview, {0.5,0.5,0.5,0.5});
+			//}
+		}
+	}
+	renderer.renderRectangle(
+		glm::vec4(
+		1,
+		mario::visionSizeY - 4,
+		PLAYER_SIZE) *
+		(float)blockSizePreview, {0,0,1,0.5});
+
+	glm::vec2 upkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+		mario::visionSizeY * blockSizePreview * 0.5 - blockSizePreview * 2);
+
+	glm::vec2 leftkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+		mario::visionSizeY * blockSizePreview * 0.5);
+
+	glm::vec2 rightkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+		mario::visionSizeY * blockSizePreview * 0.5 + blockSizePreview * 2);
+
+
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < mario::visionTotal; j++)
+		{
+
+			if (network.weights[i][j] != 0)
+			{
+				glm::vec4 color;
+				if (network.weights[i][j] > 0)
+				{
+					color = glm::vec4(0, 1, 0, network.weights[i][j] / 1.5);
+				}
+				else
+				{
+					color = glm::vec4(1, 0, 0, network.weights[i][j] / -1.5);
+				}
+
+				color.w = glm::clamp(color.w, 0.1f, 1.f);
+
+				glm::vec2 positions[] = {upkeyPositions, leftkeyPositions, rightkeyPositions};
+
+				renderLine((glm::vec2(j % mario::visionSizeX, j / mario::visionSizeX) + glm::vec2(0.5, 0.5)) * (float)blockSizePreview, positions[i] + glm::vec2(blockSizePreview) / 2.f,
+					color);
+
+			}
+
+
+		}
+	}
+
+	renderer.renderRectangle(
+		glm::vec4(upkeyPositions, blockSizePreview, blockSizePreview)
+		, {0,0,1,0.5});
+	renderer.renderRectangle(
+		glm::vec4(leftkeyPositions, blockSizePreview, blockSizePreview)
+		, {0,0,1,0.5});
+	renderer.renderRectangle(
+		glm::vec4(rightkeyPositions, blockSizePreview, blockSizePreview)
+		, {0,0,1,0.5});
+
+	renderer.popCamera();
+}
 
 };

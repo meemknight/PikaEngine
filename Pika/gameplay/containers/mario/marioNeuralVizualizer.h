@@ -14,8 +14,8 @@ struct MarioNeuralVizualizer: public Container
 {
 
 	mario::GameplayRenderer renderer;
-	mario::NeuralSimulator simulator;
-	//gl2d::FrameBuffer visionFBO;
+	mario::GameplaySimulation simulator;
+	mario::PlayerSimulation player;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -33,7 +33,6 @@ struct MarioNeuralVizualizer: public Container
 
 	std::string mapFile = PIKA_RESOURCES_PATH "/mario/map1.mario";
 
-	const int blockSizePreview = 50;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
@@ -46,7 +45,14 @@ struct MarioNeuralVizualizer: public Container
 
 		rez &= renderer.init(requestedInfo);
 
-		//visionFBO.create(blockSizePreview * mario::NeuralSimulator::visionSizeX, blockSizePreview * mario::NeuralSimulator::visionSizeY);
+		std::mt19937 rng(std::random_device{}());
+
+		network.addRandomNeuron(rng);
+		network.addRandomNeuron(rng);
+		network.addRandomNeuron(rng);
+
+		player.p.position.position = {1,1};
+		player.p.lastPos = {1,1};
 
 		return rez;
 	}
@@ -56,6 +62,8 @@ struct MarioNeuralVizualizer: public Container
 		return v - (int)v;
 	}
 
+	mario::NeuralNetork network;
+
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
@@ -63,88 +71,25 @@ struct MarioNeuralVizualizer: public Container
 		//simulator.moveDelta = 0;
 		//simulator.jump = false;
 
-		if (!simulator.updateFrame(input.deltaTime))
+		renderer.update(input, windowState, simulator);
+		renderer.followPlayer(player.p, input, windowState);
+		renderer.drawPlayer(player.p);
+
+		if (!mario::performNeuralSimulation(player, input.deltaTime, simulator, network))
 		{
-			return false;
+			return 0;
 		}
 
-		renderer.update(input, windowState, simulator.simulator);
-
-
-		{
-			int delta = 0;
-
-			if (input.hasFocus)
-			{
-				if (input.buttons[pika::Button::A].held())
-				{
-					delta -= 1;
-				}
-				if (input.buttons[pika::Button::D].held())
-				{
-					delta += 1;
-				}
-
-			}
-
-			simulator.simulator.moveDelta = delta;
-
-			if (input.buttons[pika::Button::Space].pressed())
-			{
-				simulator.simulator.jump = true;
-			}
-			else
-			{
-				simulator.simulator.jump = false;
-			}
-
-		}
-
-		//visionFBO.clear();
-		renderer.renderer.pushCamera();
-		renderer.renderer.renderRectangle(
-			glm::vec4(0, 0, mario::NeuralSimulator::visionSizeX * (float)blockSizePreview, mario::NeuralSimulator::visionSizeY * (float)blockSizePreview)
-			, {0.5,0.5,0.5,0.5});
-		for (int y = 0; y < mario::NeuralSimulator::visionSizeY; y++)
-		{
-			for (int x = 0; x < mario::NeuralSimulator::visionSizeX; x++)
-			{
-				auto b = simulator.vision[x + y * mario::NeuralSimulator::visionSizeX];
-				if (b == 1)
-				{
-					renderer.renderer.renderRectangle(glm::vec4(x, y, 0.95, 0.95) * (float)blockSizePreview, {0,1,0,0.5});
-				}
-				//else
-				//{
-				//	renderer.renderer.renderRectangle(glm::vec4(x, y, 0.95, 0.95) * (float)blockSizePreview, {0.5,0.5,0.5,0.5});
-				//}
-			}
-		}
-		renderer.renderer.renderRectangle(
-			glm::vec4(
-			1 , 
-			simulator.visionSizeY - 4,
-			PLAYER_SIZE) *
-			(float)blockSizePreview, {0,0,1,0.5});
-
-		renderer.renderer.popCamera();
-		//renderer.renderer.flushFBO(visionFBO);
+		char vision[mario::visionSizeX * mario::visionSizeY] = {};
+		mario::getVision(vision, simulator, player);
+		mario::renderNeuralNetwork(renderer.renderer, vision, 20, network);
 		
-
-		//renderer.renderer.renderRectangle({10,10, blockSizePreview * mario::NeuralSimulator::visionSizeX,blockSizePreview * mario::NeuralSimulator::visionSizeY},
-		//	{}, 0, visionFBO.texture);
-
+		//simulator.simulator.player.position.position.x;
+	
 
 
 		glBindFramebuffer(GL_FRAMEBUFFER, requestedInfo.requestedFBO.fbo);
 		renderer.render();
-
-		//ImGui::Begin("Neural vision");
-		//{
-		//
-		//
-		//
-		//}
 
 
 		return true;
@@ -154,7 +99,6 @@ struct MarioNeuralVizualizer: public Container
 	{
 		renderer.cleanup();
 		simulator.cleanup();
-		//visionFBO.cleanup();
 	}
 };
 

@@ -15,6 +15,7 @@ struct Mario: public Container
 
 	mario::GameplaySimulation simulator;
 	mario::GameplayRenderer renderer;
+	mario::Player player;
 	
 	pika::FileChanged fileChanged;
 
@@ -35,6 +36,9 @@ struct Mario: public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
+		player.position.position = {1,1};
+		player.lastPos = {1,1};
+
 		if (commandLineArgument.size() != 0)
 		{
 			mapFile = commandLineArgument.to_string();
@@ -85,16 +89,18 @@ struct Mario: public Container
 				simulator.jump = false;
 			}
 
-			if (!simulator.updateFrame(input.deltaTime))
+			if (!simulator.updateFrame(input.deltaTime, player))
 			{
-				simulator.player.position.position = {1,1};
-				simulator.player.lastPos = {1,1};
+				player.position.position = {1,1};
+				player.lastPos = {1,1};
 			}
 
 		
 		}
 		
 		renderer.update(input, windowState, simulator);
+		renderer.followPlayer(player, input, windowState);
+		renderer.drawPlayer(player);
 		renderer.render();
 
 		return true;

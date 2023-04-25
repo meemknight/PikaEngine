@@ -18,6 +18,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "containers/mario/mario.h"
 #include "containers/mario/marioEditor.h"
 #include "containers/mario/marioNeuralVizualizer.h"
+#include "containers/mario/marioNeuralTrainer.h"
 #include "pluggins/immageviewer.h"
 #include "pluggins/threeDEditor.h"
 #include "pluggins/pikatextEditor.h"
@@ -41,6 +42,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(PikaTextEditor) \
 	PIKA_DECLARE_CONTAINER(Mario) \
 	PIKA_DECLARE_CONTAINER(MarioEditor) \
+	PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer)// \
 	//PIKA_DECLARE_CONTAINER(McDungeonsEditor) \
 	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \

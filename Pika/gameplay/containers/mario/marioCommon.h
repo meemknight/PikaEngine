@@ -101,14 +101,12 @@ struct GameplaySimulation
 
 	bool create(RequestedContainerInfo &requestedInfo, std::string file)
 	{
-		player.position.position = {1,1};
+		//player.position.position = {1,1};
 
 		bool rez = loadMap(requestedInfo, file, &map, mapSize);
 
 		return rez;
 	}
-
-	Player player;
 
 	Block *map;
 	glm::ivec2 mapSize = {100, 100};
@@ -131,7 +129,7 @@ struct GameplaySimulation
 	int moveDelta = 0;
 	bool jump = 0;
 
-	bool updateFrame(float deltaTime)
+	bool updateFrame(float deltaTime, Player &player)
 	{
 		player.input = moveDelta;
 		if(jump)player.jump(50);
@@ -212,7 +210,7 @@ struct GameplayRenderer
 	}
 
 
-	void update(pika::Input input, pika::WindowState windowState,
+	void update(pika::Input &input, pika::WindowState &windowState,
 		GameplaySimulation &simulator)
 	{
 		{
@@ -232,10 +230,7 @@ struct GameplayRenderer
 		renderer.currentCamera.zoom = std::min(renderer.currentCamera.zoom, 70.f);
 		renderer.currentCamera.zoom = std::max(renderer.currentCamera.zoom, 50.f);
 
-		//todo update gl2d this function
-		renderer.currentCamera.follow(simulator.player.position.getCenter(), input.deltaTime * 3, 0.0001, 0.2, windowState.w, windowState.h);
-		
-
+	
 		auto viewRect = renderer.getViewRect();
 
 		glm::ivec2 minV;
@@ -260,14 +255,28 @@ struct GameplayRenderer
 				}
 		}
 
-		glm::vec4 pos(simulator.player.position.position, 1, 1);
+		
+
+		
+
+
+	}
+
+	void followPlayer(mario::Player &p, pika::Input &input, pika::WindowState &windowState)
+	{
+		//todo update gl2d this function
+		renderer.currentCamera.follow(p.position.getCenter(), input.deltaTime * 3, 0.0001, 0.2, windowState.w, windowState.h);
+
+
+	}
+
+	void drawPlayer(mario::Player &p)
+	{
+		glm::vec4 pos(p.position.position, 1, 1);
 		//pos.y -= 1 / 8.f;
 		pos.x -= 1 / 8.f;
-
 		renderer.renderRectangle(pos, {}, {}, marioTexture,
-			simulator.player.movingRight ? glm::vec4(0, 1, 1, 0) : glm::vec4(1, 1, 0, 0));
-
-
+			p.movingRight ? glm::vec4(0, 1, 1, 0) : glm::vec4(1, 1, 0, 0));
 	}
 
 	void render()
@@ -285,77 +294,97 @@ struct GameplayRenderer
 
 };
 
-struct NeuralSimulator
+static constexpr int visionSizeX = 6;
+static constexpr int visionSizeY = 9;
+
+static constexpr int visionTotal = visionSizeX * visionSizeY;
+
+struct NeuralNetork
 {
-	mario::GameplaySimulation simulator;
+	float weights[3][visionTotal] = {};
 
-	float maxFit = 0;
-	float currentPos = 0;
-	float killTimer = 0;
-
-	bool create(RequestedContainerInfo &requestedInfo, std::string_view file)
+	void compute(int &moveDirection, bool &jump, char input[visionTotal])
 	{
-		bool rez = simulator.create(requestedInfo, std::string(file));
-
-		currentPos = simulator.player.position.position.x;
-
-		return rez;
-	}
-
-	static constexpr int visionSizeX = 6;
-	static constexpr int visionSizeY = 9;
-	char vision[visionSizeX * visionSizeY] = {};
-
-	bool updateFrame(float deltaTime)
-	{
-
-		if (simulator.player.position.position.x > maxFit)
+		float rezult[3] = {};
+		for (int i = 0; i < 3; i++)
 		{
-			maxFit = simulator.player.position.position.x;
-			killTimer = 0;
-		}
-		else
-		{
-			killTimer += deltaTime;
-			if (killTimer > 3)
+			for (int j = 0; j < visionTotal; j++)
 			{
-			//	return 0;
+				rezult[i] += input[j] * weights[i][j];
 			}
 		}
 
-		//simulator.moveDelta = 1;
-		//simulator.jump = 0;
-
-		memset(vision, 0, sizeof(vision));
-		for (int y = 0; y < visionSizeY; y++)
+		float dir = rezult[2] - rezult[1];
+		if (std::abs(dir) < 1) { moveDirection = 0; }
+		else if(dir > 0)
 		{
-			for (int x = 0; x < visionSizeX; x++)
-			{
-				auto b = simulator.
-					getMapBlockSafe(
-					x + simulator.player.position.getCenter().x - 1, 
-					y + simulator.player.position.getCenter().y - visionSizeY + 4);
-
-				vision[x + y * visionSizeX] = b.isCollidable();
-			}
-		}
-
-		if (!simulator.updateFrame(deltaTime))
-		{
-			return 0;
+			moveDirection = 1;
 		}
 		else
 		{
-			return 1;
+			moveDirection = -1;
+		}
+
+		if (rezult[0] > 1)
+		{
+			jump = 1;
+		}
+		else
+		{
+			jump = 0;
 		}
 
 	}
 
-	void cleanup()
+	float getRandomFloat(std::mt19937 &rng, float min, float max)
 	{
-		simulator.cleanup();
+		std::uniform_real_distribution<float> dist(min, max);
+		return dist(rng);
+	}
+
+	int getRandomInt(std::mt19937 &rng, int min, int max)
+	{
+		std::uniform_int_distribution<int> dist(min, max);
+		return dist(rng);
+	}
+
+	void addRandomNeuron(std::mt19937 &rng)
+	{
+		std::vector<glm::ivec2> positions;
+		positions.reserve(visionTotal*3);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < visionTotal; j++)
+			{
+				if (weights[i][j] == 0)
+				{
+					positions.push_back({i,j});
+				}
+			}
+
+		if (!positions.empty())
+		{
+			auto index = getRandomInt(rng, 0, positions.size() - 1);
+			weights[positions[index].x][positions[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+
 	}
 
 };
+
+struct PlayerSimulation
+{
+	mario::Player p;
+	float maxFit = 0;
+	float killTimer = 0;
+};
+
+bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::GameplaySimulation &simulator, mario::NeuralNetork
+	&network);
+
+void renderNeuralNetwork(gl2d::Renderer2D &renderer, char vision[mario::visionSizeX * mario::visionSizeY], 
+	float blockSizePreview, mario::NeuralNetork &network);
+
+void getVision(char vision[visionSizeX * visionSizeY], mario::GameplaySimulation &simulator, PlayerSimulation &p);
+
 
 };
