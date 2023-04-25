@@ -81,12 +81,12 @@ struct Player
 	void updatePhisics(float deltaTime);
 
 
-	void resolveConstrains(Block *map);
+	void resolveConstrains(Block *map, glm::ivec2 mapSize);
 
 	void checkCollisionBrute(glm::vec2 &pos, glm::vec2 lastPos,
-		Block *map, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
+		Block *map, glm::ivec2 mapSize, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
 
-	glm::vec2 Player::performCollision(Block *map, glm::vec2 pos, glm::vec2 size,
+	glm::vec2 Player::performCollision(Block *map, glm::ivec2 mapSize, glm::vec2 pos, glm::vec2 size,
 		glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch);
 
 	int input = 0;
@@ -118,12 +118,20 @@ struct GameplaySimulation
 		return map[x + y * mapSize.x];
 	}
 
+	Block getMapBlockSafe(int x, int y)
+	{
+		if (x < 0 || y < 0 || x >= mapSize.x || y >= mapSize.y)
+		{
+			return {27};
+		}
+
+		return map[x + y * mapSize.x];
+	}
 
 	int moveDelta = 0;
 	bool jump = 0;
 
-	
-	void updateFrame(float deltaTime)
+	bool updateFrame(float deltaTime)
 	{
 		player.input = moveDelta;
 		if(jump)player.jump(50);
@@ -137,7 +145,7 @@ struct GameplaySimulation
 			player.updatePhisics(deltaTime);
 
 			player.grounded = false;
-			player.resolveConstrains(map);
+			player.resolveConstrains(map, mapSize);
 
 			//player.playerAnimation.grounded = i.second.grounded;
 
@@ -146,9 +154,19 @@ struct GameplaySimulation
 			//player.playerAnimation.update(input.deltaTime);
 		}
 
+		//check fall out
+		if (player.position.getTopLeftCorner().y > mapSize.y)
+		{
+			return 0;
+		}
 
+		return true;
 	}
 
+	void cleanup()
+	{
+		delete[] map;
+	}
 
 };
 
@@ -182,7 +200,6 @@ struct GameplayRenderer
 
 		//todo push pop or sthing
 		pika::memory::setGlobalAllocatorToStandard();
-		marioTexture.loadFromFile(PIKA_RESOURCES_PATH "/mario/mario.png", true, false);
 		marioTexture.loadFromFile(PIKA_RESOURCES_PATH "/mario/mario.png", true, false);
 		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
 
@@ -251,12 +268,93 @@ struct GameplayRenderer
 			simulator.player.movingRight ? glm::vec4(0, 1, 1, 0) : glm::vec4(1, 1, 0, 0));
 
 
-		renderer.flush();
+	}
 
+	void render()
+	{
+		renderer.flush();
 
 	}
 
+	void cleanup()
+	{
+		renderer.clear();
+		marioTexture.cleanup();
+		tiles.cleanup();
+	}
 
+};
+
+struct NeuralSimulator
+{
+	mario::GameplaySimulation simulator;
+
+	float maxFit = 0;
+	float currentPos = 0;
+	float killTimer = 0;
+
+	bool create(RequestedContainerInfo &requestedInfo, std::string_view file)
+	{
+		bool rez = simulator.create(requestedInfo, std::string(file));
+
+		currentPos = simulator.player.position.position.x;
+
+		return rez;
+	}
+
+	static constexpr int visionSizeX = 6;
+	static constexpr int visionSizeY = 9;
+	char vision[visionSizeX * visionSizeY] = {};
+
+	bool updateFrame(float deltaTime)
+	{
+
+		if (simulator.player.position.position.x > maxFit)
+		{
+			maxFit = simulator.player.position.position.x;
+			killTimer = 0;
+		}
+		else
+		{
+			killTimer += deltaTime;
+			if (killTimer > 3)
+			{
+			//	return 0;
+			}
+		}
+
+		//simulator.moveDelta = 1;
+		//simulator.jump = 0;
+
+		memset(vision, 0, sizeof(vision));
+		for (int y = 0; y < visionSizeY; y++)
+		{
+			for (int x = 0; x < visionSizeX; x++)
+			{
+				auto b = simulator.
+					getMapBlockSafe(
+					x + simulator.player.position.getCenter().x - 1, 
+					y + simulator.player.position.getCenter().y - visionSizeY + 4);
+
+				vision[x + y * visionSizeX] = b.isCollidable();
+			}
+		}
+
+		if (!simulator.updateFrame(deltaTime))
+		{
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
+
+	}
+
+	void cleanup()
+	{
+		simulator.cleanup();
+	}
 
 };
 

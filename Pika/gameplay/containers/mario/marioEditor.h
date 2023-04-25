@@ -17,6 +17,9 @@ struct MarioEditor: public Container
 	gl2d::TextureAtlasPadding atlas;
 	glm::ivec2 mapSize = {100, 100};
 
+	glm::ivec2 mapSizeEditor = {100, 100};
+
+
 	char path[257] = {};
 
 	glm::vec2 pos = {};
@@ -39,6 +42,7 @@ struct MarioEditor: public Container
 
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
+		info.pushAnImguiIdForMe = true;
 
 		info.extensionsSuported = {".mario"};
 
@@ -61,6 +65,7 @@ struct MarioEditor: public Container
 		atlas = gl2d::TextureAtlasPadding(8, 10, 8*8, 8*10);
 		
 		bool rez = mario::loadMap(requestedInfo, commandLineArgument.to_string(), &map, mapSize);
+		mapSizeEditor = mapSize;
 
 		if (rez)
 		{
@@ -175,6 +180,10 @@ struct MarioEditor: public Container
 
 		}
 
+		if (input.buttons[pika::Button::F].released())
+		{
+			flip = !flip;
+		}
 
 		ImGui::Begin("Block picker");
 		{
@@ -185,6 +194,29 @@ struct MarioEditor: public Container
 			ImGui::Checkbox("Show Non-Collidable Blocks", &nonCollidable);
 			ImGui::Checkbox("Flip", &flip);
 			ImGui::Text("MousePos: %d, %d", blockPosition.x, blockPosition.y);
+
+			ImGui::InputInt2("Map size", &mapSizeEditor[0]); ImGui::SameLine();
+
+			if (ImGui::Button("Set size"))
+			{
+				mario::Block *newMap = 0;
+				newMap = new mario::Block[mapSizeEditor.x * mapSizeEditor.y];
+				mario::Block d{27,0};
+				memset(newMap, *(int *)(&d), mapSizeEditor.x *mapSizeEditor.y);
+
+				for (int y = 0; y < std::min(mapSize.y, mapSizeEditor.y); y++)
+				{
+					for (int x = 0; x < std::min(mapSize.x, mapSizeEditor.x); x++)
+					{
+						newMap[x + y * mapSizeEditor.x] = map[x + y * mapSize.x];
+					}
+				}
+				
+				delete[] map;
+				map = newMap;
+				mapSize = mapSizeEditor;
+			}
+
 
 			ImGui::InputText("Save file", path, sizeof(path));
 			
@@ -288,7 +320,6 @@ struct MarioEditor: public Container
 
 		}
 		ImGui::End();
-
 	
 
 		if (input.hasFocus && input.lMouse.held() && blockPosition.x >= 0)
@@ -313,6 +344,13 @@ struct MarioEditor: public Container
 		renderer.flush();
 	
 		return true;
+	}
+
+	void destruct() override
+	{
+		tiles.cleanup();
+		renderer.clear();
+		delete[] map;
 	}
 
 };

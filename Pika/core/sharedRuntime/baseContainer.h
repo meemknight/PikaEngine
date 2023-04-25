@@ -44,6 +44,7 @@ struct RequestedContainerInfo
 
 	int requestedImguiIds = 0;
 	int imguiTotalRequestedIds = 0;
+	int pushImguiIdForMe = 0;
 
 	pika::ConsoleWindow *consoleWindow = nullptr;
 
@@ -309,6 +310,7 @@ struct ContainerStaticInfo
 	bool andInputWithWindowHasFocus = 1;
 	bool andInputWithWindowHasFocusLastFrame = 1;
 	bool openOnApplicationStartup = 0;
+	bool pushAnImguiIdForMe = 0;
 
 	bool _internalNotImplemented = 0;
 
@@ -325,6 +327,7 @@ struct ContainerStaticInfo
 			this->useDefaultAllocator == other.useDefaultAllocator &&
 			this->andInputWithWindowHasFocus == other.andInputWithWindowHasFocus &&
 			this->andInputWithWindowHasFocusLastFrame == other.andInputWithWindowHasFocusLastFrame &&
+			this->pushAnImguiIdForMe == other.pushAnImguiIdForMe &&
 			this->openOnApplicationStartup == other.openOnApplicationStartup;
 	}
 

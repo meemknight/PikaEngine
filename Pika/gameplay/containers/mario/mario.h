@@ -85,14 +85,25 @@ struct Mario: public Container
 				simulator.jump = false;
 			}
 
-			simulator.updateFrame(input.deltaTime);
+			if (!simulator.updateFrame(input.deltaTime))
+			{
+				simulator.player.position.position = {1,1};
+				simulator.player.lastPos = {1,1};
+			}
 
 		
 		}
 		
 		renderer.update(input, windowState, simulator);
+		renderer.render();
 
 		return true;
+	}
+
+	void destruct() override
+	{
+		renderer.cleanup();
+		simulator.cleanup();
 	}
 
 };

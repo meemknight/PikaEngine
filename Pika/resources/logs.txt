@@ -1,2 +1,11 @@
-#2023-04-25 10:00:19: Created container: Mario
-#2023-04-25 10:00:22: Destroyed continer: Mario #1
+#2023-04-25 12:54:47: Created container: MarioNeuralVizualizer
+#2023-04-25 12:55:04: Reloaded dll
+#2023-04-25 13:01:24: Reloaded dll
+#2023-04-25 13:02:53: Reloaded dll
+#2023-04-25 13:03:46: Reloaded dll
+#2023-04-25 13:04:30: Reloaded dll
+#2023-04-25 13:04:53: Reloaded dll
+#2023-04-25 13:05:27: Reloaded dll
+#2023-04-25 13:09:04: Reloaded dll
+#2023-04-25 13:09:48: Reloaded dll
+#2023-04-25 13:10:16: Destroyed continer: MarioNeuralVizualizer #1

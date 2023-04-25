@@ -228,6 +228,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.requestedImguiIds =
 		imguiIDsManager.getImguiIds(containerInformation.containerStaticInfo.requestImguiIds);
 	container.requestedContainerInfo.imguiTotalRequestedIds = containerInformation.containerStaticInfo.requestImguiIds;
+	container.requestedContainerInfo.pushImguiIdForMe = imguiIDsManager.getImguiIds(containerInformation.containerStaticInfo.pushAnImguiIdForMe);
 
 	container.requestedContainerInfo.consoleWindow = consoleWindow;
 #pragma endregion
@@ -436,6 +437,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				c.second.requestedContainerInfo.bonusAllocators = &c.second.bonusAllocators;
 
 
+				if (c.second.requestedContainerInfo.pushImguiIdForMe)
+				{
+					ImGui::PushID(c.second.requestedContainerInfo.pushImguiIdForMe);
+				}
+
 				auto t1 = std::chrono::high_resolution_clock::now();
 
 				loadedDll.bindAllocatorDllRealm(&c.second.allocator);
@@ -444,6 +450,12 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				auto t2 = std::chrono::high_resolution_clock::now();
 				
+				if (c.second.requestedContainerInfo.pushImguiIdForMe)
+				{
+					ImGui::PopID();
+				}
+
+
 				auto milliseconds = (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1)).count()/1000.f;
 
 				c.second.frameTimer += milliseconds;

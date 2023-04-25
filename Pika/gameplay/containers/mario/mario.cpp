@@ -182,36 +182,32 @@ void Player::updatePhisics(float deltaTime)
 
 }
 
-void Player::checkCollisionBrute(glm::vec2 &pos, glm::vec2 lastPos, Block *map, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
+void Player::checkCollisionBrute(glm::vec2 &pos, glm::vec2 lastPos, Block *map, glm::ivec2 mapSize, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
 {
 	glm::vec2 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1.f;
 
 	glm::vec2 &dimensions = position.size;
 
-	glm::ivec2 mapSize = {100,100};
-
 	if (
 		(pos.y < -dimensions.y)
 		|| (pos.x < -dimensions.x)
-		|| (pos.y > mapSize.x * BLOCK_SIZE)
-		|| (pos.x > mapSize.y * BLOCK_SIZE)
+		|| (pos.y > mapSize.y * BLOCK_SIZE)
+		|| (pos.x > mapSize.x * BLOCK_SIZE)
 		)
 	{
 		return;
 	}
 
-	glm::vec2 newPos = performCollision(map, {pos.x, lastPos.y}, {dimensions.x, dimensions.y}, {delta.x, 0},
+	glm::vec2 newPos = performCollision(map, mapSize, {pos.x, lastPos.y}, {dimensions.x, dimensions.y}, {delta.x, 0},
 		upTouch, downTouch, leftTouch, rightTouch);
-	pos = performCollision(map, {newPos.x, pos.y}, {dimensions.x, dimensions.y}, {0, delta.y},
+	pos = performCollision(map, mapSize, {newPos.x, pos.y}, {dimensions.x, dimensions.y}, {0, delta.y},
 		upTouch, downTouch, leftTouch, rightTouch);
 
 }
 
-glm::vec2 Player::performCollision(Block *map, glm::vec2 pos, glm::vec2 size, glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
+glm::vec2 Player::performCollision(Block *map, glm::ivec2 mapSize, glm::vec2 pos, glm::vec2 size, glm::vec2 delta, bool &upTouch, bool &downTouch, bool &leftTouch, bool &rightTouch)
 {
-	glm::ivec2 mapSize = {100,100};
-
 	int minX = 0;
 	int minY = 0;
 	int maxX = mapSize.x;
@@ -285,10 +281,8 @@ end:
 
 }
 
-void Player::resolveConstrains(Block *map)
+void Player::resolveConstrains(Block *map, glm::ivec2 mapSize)
 {
-	glm::ivec2 mapSize = {100,100};
-
 	bool upTouch = 0;
 	bool downTouch = 0;
 	bool leftTouch = 0;
@@ -304,6 +298,7 @@ void Player::resolveConstrains(Block *map)
 		checkCollisionBrute(pos,
 			lastPos,
 			map,
+			mapSize,
 			upTouch,
 			downTouch,
 			leftTouch,
@@ -324,6 +319,7 @@ void Player::resolveConstrains(Block *map)
 			checkCollisionBrute(newPos,
 				lastPos,
 				map,
+				mapSize,
 				upTouch,
 				downTouch,
 				leftTouch,
@@ -340,6 +336,7 @@ void Player::resolveConstrains(Block *map)
 		checkCollisionBrute(pos,
 			lastPos,
 			map,
+			mapSize,
 			upTouch,
 			downTouch,
 			leftTouch,
