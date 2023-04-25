@@ -91,7 +91,7 @@ struct LoadedDll
 
 	std::vector<pika::ContainerInformation> containerInfo;
 
-	std::unordered_map<std::string, std::string> containerExtensionsSupport;
+	std::unordered_map<std::string, std::vector<std::string>> containerExtensionsSupport;
 
 	bool constructRuntimeContainer(pika::RuntimeContainer &c, const char *name);
 

@@ -66,11 +66,11 @@ namespace gl2d
 
 	void init();
 
-	void defaultErrorFunc(const char *msg);
+	void defaultErrorFunc(const char* msg);
 
 	using errorFuncType = decltype(defaultErrorFunc);
 
-	errorFuncType *setErrorFuncCallback(errorFuncType *newFunc);
+	errorFuncType* setErrorFuncCallback(errorFuncType* newFunc);
 
 	struct Font;
 
@@ -128,29 +128,27 @@ namespace gl2d
 		GLuint id = 0;
 
 		Texture() {};
-		Texture(const char *file, bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED,
+		explicit Texture(const char* file, bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED,
 			bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS)
-		{
-			loadFromFile(file, pixelated, useMipMaps);
-		}
+			{ loadFromFile(file, pixelated, useMipMaps); }
 
 		glm::ivec2 GetSize();
 
 		//Note: This function expects a buffer of bytes in GL_RGBA format
-		void createFromBuffer(const char *image_data, const int width,
+		void createFromBuffer(const char* image_data, const int width,
 			const int height, bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED, bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS);
-		void create1PxSquare(const char *b = 0);
-		void createFromFileData(const unsigned char *image_file_data, const size_t image_file_size,
+		void create1PxSquare(const char* b = 0);
+		void createFromFileData(const unsigned char* image_file_data, const size_t image_file_size, 
 			bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED, bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS);
-		void createFromFileDataWithPixelPadding(const unsigned char *image_file_data,
+		void createFromFileDataWithPixelPadding(const unsigned char* image_file_data,
 			const size_t image_file_size, int blockSize,
 			bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED, bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS);
 
-		void loadFromFile(const char *fileName,
+		void loadFromFile(const char* fileName,
 			bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED, bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS);
 
 		//used for texture atlases, adds a pixel between each item to remove visual artefacts
-		void loadFromFileWithPixelPadding(const char *fileName, int blockSize,
+		void loadFromFileWithPixelPadding(const char* fileName, int blockSize,
 			bool pixelated = GL2D_DEFAULT_TEXTURE_LOAD_MODE_PIXELATED, bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS);
 
 		void bind(const unsigned int sample = 0);
@@ -159,7 +157,7 @@ namespace gl2d
 		void cleanup();
 	};
 
-	struct TextureRegion
+	struct TextureRegion //todo add uses for this
 	{
 		Texture texture;
 		glm::vec4 textureCoords;
@@ -178,7 +176,7 @@ namespace gl2d
 	struct TextureAtlas
 	{
 		TextureAtlas() {};
-		TextureAtlas(int x, int y):xCount(x), yCount(y) {};
+		TextureAtlas(int x, int y) :xCount(x), yCount(y) {};
 
 		int xCount = 0;
 		int yCount = 0;
@@ -194,7 +192,7 @@ namespace gl2d
 		TextureAtlasPadding() {};
 
 		//count count size of the full texture(in pixels)
-		TextureAtlasPadding(int x, int y, int xSize, int ySize):xCount(x), yCount(y)
+		TextureAtlasPadding(int x, int y, int xSize, int ySize) :xCount(x), yCount(y)
 			, xSize(xSize), ySize(ySize)
 		{
 		};
@@ -215,13 +213,7 @@ namespace gl2d
 
 	///////////////////// Font /////////////////////
 #pragma region Font
-#define Default_Font_Characters_Range_Begin cast(char, ' ')
-#define Default_Font_Characters_Range_End cast(char, '~')
-#define Default_Font_Characters_Range_Size cast(isize, Default_Font_Characters_Range_End - Default_Font_Characters_Range_Begin)
 
-	typedef float Font_Size;
-
-	typedef struct Font Font;
 	struct Font
 	{
 		Texture           texture = {};
@@ -235,7 +227,9 @@ namespace gl2d
 
 		void createFromTTF(const unsigned char *ttf_data, const size_t ttf_data_size);
 		void createFromFile(const char *file);
+
 	};
+
 
 #pragma endregion
 
@@ -256,7 +250,7 @@ namespace gl2d
 
 		void follow(glm::vec2 pos, float speed, float min, float max, float w, float h);
 
-		glm::vec2 convertPoint(const glm::vec2 &p, float windowW, float windowH); //todo move to internal
+		glm::vec2 convertPoint(const glm::vec2& p, float windowW, float windowH); //todo move to internal
 	};
 
 
@@ -300,12 +294,12 @@ namespace gl2d
 		Renderer2D() {};
 
 		//feel free to delete this lines but you probably don't want to copy the renderer from a place to another
-		Renderer2D(Renderer2D &other) = delete;
+		Renderer2D(Renderer2D &other) = delete; 
 		Renderer2D operator=(Renderer2D &other) = delete;
 
 		void create();
 
-		//todo
+		//does not clear resources allocated by user like textures, fonts and fbos
 		void clear();
 
 		GLuint buffers[Renderer2DBufferType::bufferSize] = {};
@@ -322,7 +316,6 @@ namespace gl2d
 		int texturePositionsCount = 0;
 		int spriteTexturesCount = 0;
 
-		Texture white1pxSquareTexture = {};
 
 		internal::ShaderProgram currentShader = {};
 		std::vector<internal::ShaderProgram> shaderPushPop;
@@ -343,7 +336,7 @@ namespace gl2d
 		void updateWindowMetrics(int w, int h) { windowW = w; windowH = h; }
 
 		//converts pixels to screen (top left) (bottom right)
-		glm::vec4 toScreen(const glm::vec4 &transform);
+		glm::vec4 toScreen(const glm::vec4& transform);
 
 		inline void clearDrawData()
 		{
@@ -366,31 +359,31 @@ namespace gl2d
 		void renderRectangle(const Rect transforms, const Color4f colors[4], const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords);
 		inline void renderRectangle(const Rect transforms, const Color4f colors, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords)
 		{
-			Color4f c[4] = {colors,colors,colors,colors};
+			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangle(transforms, c, origin, rotation, texture, textureCoords);
 		}
 
 		void renderRectangleAbsRotation(const Rect transforms, const Color4f colors[4], const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords);
 		inline void renderRectangleAbsRotation(const Rect transforms, const Color4f colors, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords)
 		{
-			Color4f c[4] = {colors,colors,colors,colors};
+			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangleAbsRotation(transforms, c, origin, rotation, texture, textureCoords);
 		}
 
 		void renderRectangle(const Rect transforms, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords);
 		void renderRectangleAbsRotation(const Rect transforms, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords = GL2D_DefaultTextureCoords);
 
-		void renderRectangle(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = {0,0}, const float rotation = 0);
-		inline void renderRectangle(const Rect transforms, const Color4f colors, const glm::vec2 origin = {0,0}, const float rotation = 0)
+		void renderRectangle(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = { 0,0 }, const float rotation = 0);
+		inline void renderRectangle(const Rect transforms, const Color4f colors, const glm::vec2 origin = { 0,0 }, const float rotation = 0)
 		{
-			Color4f c[4] = {colors,colors,colors,colors};
+			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangle(transforms, c, origin, rotation);
 		}
 
-		void renderRectangleAbsRotation(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = {0,0}, const float rotation = 0);
-		inline void renderRectangleAbsRotation(const Rect transforms, const Color4f colors, const glm::vec2 origin = {0,0}, const float rotation = 0)
+		void renderRectangleAbsRotation(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = { 0,0 }, const float rotation = 0);
+		inline void renderRectangleAbsRotation(const Rect transforms, const Color4f colors, const glm::vec2 origin = { 0,0 }, const float rotation = 0)
 		{
-			Color4f c[4] = {colors,colors,colors,colors};
+			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangleAbsRotation(transforms, c, origin, rotation);
 		}
 
@@ -439,8 +432,8 @@ namespace gl2d
 
 	struct ParticleSettings
 	{
-		ParticleSettings *deathRattle = nullptr;
-		ParticleSettings *subemitParticle = nullptr;
+		ParticleSettings* deathRattle = nullptr;
+		ParticleSettings* subemitParticle = nullptr;
 
 		int onCreateCount = 0;
 
@@ -462,7 +455,7 @@ namespace gl2d
 		ParticleApearence createApearence = {};
 		ParticleApearence createEndApearence = {};
 
-		gl2d::Texture *texturePtr = 0;
+		gl2d::Texture* texturePtr = 0;
 
 		int tranzitionType = TRANZITION_TYPES::linear;
 	};
@@ -473,12 +466,12 @@ namespace gl2d
 		void initParticleSystem(int size);
 		void cleanup();
 
-		void emitParticleWave(ParticleSettings *ps, glm::vec2 pos);
+		void emitParticleWave(ParticleSettings* ps, glm::vec2 pos);
 
 
 		void applyMovement(float deltaTime);
 
-		void draw(Renderer2D &r);
+		void draw(Renderer2D& r);
 
 		bool postProcessing = true;
 		float pixelateFactor = 2;
@@ -487,37 +480,37 @@ namespace gl2d
 
 		int size = 0;
 
-		float *posX = 0;
-		float *posY = 0;
+		float* posX = 0;
+		float* posY = 0;
 
-		float *directionX = 0;
-		float *directionY = 0;
+		float* directionX = 0;
+		float* directionY = 0;
 
-		float *rotation = 0;
+		float* rotation = 0;
 
-		float *sizeXY = 0;
+		float* sizeXY = 0;
 
-		float *dragX = 0;
-		float *dragY = 0;
+		float* dragX = 0;
+		float* dragY = 0;
 
-		float *duration = 0;
-		float *durationTotal = 0;
+		float* duration = 0;
+		float* durationTotal = 0;
 
-		glm::vec4 *color = 0;
+		glm::vec4* color = 0;
 
-		float *rotationSpeed = 0;
-		float *rotationDrag = 0;
+		float* rotationSpeed = 0;
+		float* rotationDrag = 0;
 
-		float *emitTime = 0;
+		float* emitTime = 0;
 
-		char *tranzitionType = 0;
-		ParticleSettings **deathRattle = 0;
-		ParticleSettings **thisParticleSettings = 0;
-		ParticleSettings **emitParticle = 0;
+		char* tranzitionType = 0;
+		ParticleSettings** deathRattle = 0;
+		ParticleSettings** thisParticleSettings = 0;
+		ParticleSettings** emitParticle = 0;
 
-		gl2d::Texture **textures = 0;
+		gl2d::Texture** textures = 0;
 
-		std::mt19937 random{std::random_device{}()};
+		std::mt19937 random{ std::random_device{}() };
 
 		gl2d::FrameBuffer fb = {};
 

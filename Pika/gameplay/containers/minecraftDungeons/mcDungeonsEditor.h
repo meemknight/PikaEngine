@@ -676,10 +676,10 @@ struct McDungeonsEditor: public Container
 	void destruct()
 	{
 
-		this->renderer.clearAllRendererResources();
 		this->renderer.skyBox.clearTextures();
 		this->renderer.colorCorrectionTexture().clear();
-		//this->renderer2d.clear();
+		this->renderer.clearAllRendererResources();
+		this->renderer2d.clear();
 
 	}
 

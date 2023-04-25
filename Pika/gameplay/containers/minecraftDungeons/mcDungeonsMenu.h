@@ -25,7 +25,7 @@ struct McDungeonsMenu : public Container
 		info.defaultHeapMemorySize = pika::MB(100);
 
 		info.requestImguiFbo = true; 
-
+		info.openOnApplicationStartup = true;
 		
 		
 
@@ -49,7 +49,6 @@ struct McDungeonsMenu : public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-		//todo keep window on top stuff
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -65,17 +64,18 @@ struct McDungeonsMenu : public Container
 
 			if (ui.Button("Start game", Colors_White, button))
 			{
-
+				requestedInfo.createContainer("McDungeonsGameplay");
+				return 0;
 			}
 
-			ui.BeginMenu("Settings", Colors_White, button);
-			{
-				if (ui.Button("Adaptive rezolution", Colors_White, button))
-				{
-
-				}
-			}
-			ui.EndMenu();
+			//ui.BeginMenu("Settings", Colors_White, button);
+			//{
+			//	if (ui.Button("Adaptive rezolution", Colors_White, button))
+			//	{
+			//
+			//	}
+			//}
+			//ui.EndMenu();
 
 		}
 		ui.End();
@@ -92,17 +92,14 @@ struct McDungeonsMenu : public Container
 		return true;
 	}
 
-	//optional
 	void destruct()
 	{
 
-		//todo
-		//renderer.clear();
-		
+		renderer.clear();
+		font.texture.cleanup();
+		logo.cleanup();
+		button.cleanup();
+
 	}
 
 };
-
-//todo flag to clear screen from engine
-//todo error popup
-//todo error popup disable in release

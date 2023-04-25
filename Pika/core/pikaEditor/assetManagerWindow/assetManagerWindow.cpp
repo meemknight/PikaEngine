@@ -92,6 +92,8 @@ namespace pika
 		//returns 1 if should break
 		auto displayItem = [&](const std::filesystem::directory_entry &p) -> bool
 		{
+
+
 			if (ImGui::BeginChild(p.path().filename().string().c_str(), {size, size + 40}, false,
 				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 			{
@@ -121,8 +123,9 @@ namespace pika
 						auto it = currentDll.containerExtensionsSupport.find(p.path().filename().extension().string());
 						if (it != currentDll.containerExtensionsSupport.end())
 						{
+
 							//todo name						
-							containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
+							containerManager.createContainer(it->second[0], currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
 						}
 					}
 				}
@@ -178,17 +181,40 @@ namespace pika
 							ImGui::CloseCurrentPopup();
 						}
 					}
-					
 				
 					{
 						auto it = currentDll.containerExtensionsSupport.find(p.path().filename().extension().string());
 						if (it != currentDll.containerExtensionsSupport.end())
 						{
-							//todo name						
-							if (ImGui::Button("Open In engine"))
+							if (it->second.size() == 1)
 							{
-								containerManager.createContainer(it->second, currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
+								//todo name						
+								if (ImGui::Button("Open In engine"))
+								{
+									containerManager.createContainer(it->second[0], currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
+									ImGui::CloseCurrentPopup();
+								}
 							}
+							else
+							{
+								if (ImGui::BeginMenu("Open with:"))
+								{
+
+									for (auto &i : it->second)
+									{
+										if(ImGui::MenuItem(i.c_str()))
+										{
+											containerManager.createContainer(i, currentDll, logManager, imguiIDsManager, consoleWindow, p.path().string());
+											ImGui::CloseCurrentPopup();
+										}
+									}
+
+									ImGui::EndMenu();
+								}
+
+							}
+
+							
 						}
 					}
 					

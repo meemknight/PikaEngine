@@ -1,6 +1,8 @@
 #include "mario.h"
 
 
+namespace mario
+{
 
 
 glm::vec2 Transform::getTopLeftCorner()
@@ -93,7 +95,10 @@ void Player::moveVelocityX(float dir)
 
 void Player::jump(float power)
 {
-	velocity.y = -power;
+	if (grounded)
+	{
+		velocity.y = -power;
+	}
 }
 
 const float terminalVelocity = 60;
@@ -360,3 +365,6 @@ end:
 	if (downTouch) { grounded = true; }
 
 }
+
+
+};

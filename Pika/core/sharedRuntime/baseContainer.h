@@ -148,7 +148,19 @@ struct RequestedContainerInfo
 		return 1;
 	}
 
-	bool readEntireFileBinary(const char *name, std::vector<char> &data)
+	bool appendFileBinary(std::string_view name, void *data, size_t s)
+	{
+		std::ofstream f(name, std::ios::binary | std::ios::out | std::ios::app);
+
+		if (!f.is_open()) { return 0; }
+
+		f.write((char *)data, s);
+
+		f.close();
+		return 1;
+	}
+
+	bool readEntireFileBinary(std::string_view name, std::vector<char> &data)
 	{
 		size_t s = 0;
 		data.clear();
@@ -160,7 +172,7 @@ struct RequestedContainerInfo
 		return readEntireFileBinary(name, data.data(), s);
 	}
 
-	bool readEntireFile(const char *name, std::string &data)
+	bool readEntireFile(std::string_view name, std::string &data)
 	{
 		size_t s = 0;
 		data.clear();
@@ -172,7 +184,7 @@ struct RequestedContainerInfo
 		return readEntireFile(name, data.data(), s);
 	}
 
-	bool readEntireFileBinary(const char *name, void *buffer, size_t size)
+	bool readEntireFileBinary(std::string_view name, void *buffer, size_t size, size_t from = 0)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
 		bool success = true;
@@ -187,6 +199,7 @@ struct RequestedContainerInfo
 			}
 			else
 			{
+				f.seekg(from);
 				f.read((char*)buffer, size);
 				f.close();
 			}
@@ -196,7 +209,7 @@ struct RequestedContainerInfo
 		return success;
 	}
 
-	bool readEntireFile(const char *name, void *buffer, size_t size)
+	bool readEntireFile(std::string_view name, void *buffer, size_t size)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
 		bool success = true;
@@ -220,7 +233,7 @@ struct RequestedContainerInfo
 		return success;
 	}
 
-	bool getFileSizeBinary(const char *name, size_t &size)
+	bool getFileSizeBinary(std::string_view name, size_t &size)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(getFileSizePointer, "get file size pointer not assigned");
 
@@ -246,7 +259,7 @@ struct RequestedContainerInfo
 		return size;
 	}
 
-	bool getFileSize(const char *name, size_t &size)
+	bool getFileSize(std::string_view name, size_t &size)
 	{
 		bool success = true;
 		size = 0;
@@ -295,7 +308,7 @@ struct ContainerStaticInfo
 
 	bool andInputWithWindowHasFocus = 1;
 	bool andInputWithWindowHasFocusLastFrame = 1;
-
+	bool openOnApplicationStartup = 0;
 
 	bool _internalNotImplemented = 0;
 
@@ -311,8 +324,8 @@ struct ContainerStaticInfo
 			this->requestImguiIds == other.requestImguiIds &&
 			this->useDefaultAllocator == other.useDefaultAllocator &&
 			this->andInputWithWindowHasFocus == other.andInputWithWindowHasFocus &&
-			this->andInputWithWindowHasFocusLastFrame == other.andInputWithWindowHasFocusLastFrame;
-		;
+			this->andInputWithWindowHasFocusLastFrame == other.andInputWithWindowHasFocusLastFrame &&
+			this->openOnApplicationStartup == other.openOnApplicationStartup;
 	}
 
 	bool operator!=(const ContainerStaticInfo &other)

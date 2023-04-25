@@ -7,19 +7,22 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
+
+
+#set glfw to NOT use dynamic runtime and not build unnecessary stuff, we have to do this before we declare projects
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) #under no circumstance we want this to happen so please cmake DON'T compile my project using shared libs
+
 
 #declare projects
 project(pikaCore)
 project(pikaGameplay)
 project(pikaProduction)
 
-
-#set glfw to NOT use dynamic runtime and not build unnecessary stuff
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 #add third party libraries
 add_subdirectory(thirdparty/glfw-3.3.2)
@@ -32,7 +35,7 @@ add_subdirectory(thirdparty/stb_image)
 add_subdirectory(thirdparty/stb_truetype)
 add_subdirectory(thirdparty/imgui-docking)
 add_subdirectory(thirdparty/safeSafe)
-
+add_subdirectory(thirdparty/profilerLib)
 
 #Define some macros for the project sources
 file(GLOB_RECURSE PIKA_SOURCES_CORE_CONFIG			CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/*.cpp")
@@ -74,7 +77,7 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pik
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
-target_link_libraries(pikaCore PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave)
+target_link_libraries(pikaCore PRIVATE glad glfw gl2d  gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib)
 #################^^^^^^^^#############################
 
 
@@ -90,7 +93,7 @@ target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
-target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave)
+target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib)
 #################^^^^^^^^^^^^^^############################
 
 
@@ -112,7 +115,7 @@ target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ga
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
 target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 
-target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave)
+target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib)
 
 
 

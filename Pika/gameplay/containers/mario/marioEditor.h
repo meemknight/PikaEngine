@@ -24,9 +24,9 @@ struct MarioEditor: public Container
 	int currentBlock = 0;
 	bool flip = 0;
 	
-	Block *map;
+	mario::Block *map;
 
-	Block &getMapBlockUnsafe(int x, int y)
+	mario::Block &getMapBlockUnsafe(int x, int y)
 	{
 		return map[x + y * mapSize.x];
 	}
@@ -59,28 +59,16 @@ struct MarioEditor: public Container
 
 
 		atlas = gl2d::TextureAtlasPadding(8, 10, 8*8, 8*10);
+		
+		bool rez = mario::loadMap(requestedInfo, commandLineArgument.to_string(), &map, mapSize);
 
-
-		map = new Block[mapSize.x * mapSize.y];
-		Block d{27,0};
-		memset(map, *(int *)(&d), mapSize.x * mapSize.y);
-
-		if (commandLineArgument.size() != 0)
+		if (rez)
 		{
-			memcpy(path, commandLineArgument.data(), commandLineArgument.size());
-
-			size_t s = 0;
-			if (requestedInfo.getFileSizeBinary(commandLineArgument.to_string().c_str(), s))
-			{
-				if (s == mapSize.x * mapSize.y)
-				{
-					requestedInfo.readEntireFileBinary(commandLineArgument.to_string().c_str(), map, mapSize.x * mapSize.y);
-				}
-			}
-
+			pika::strlcpy(path, commandLineArgument.data(), commandLineArgument.size()+1);
+			//path = commandLineArgument;
 		}
 
-		return true;
+		return rez;
 	}
 
 	bool update(pika::Input input, pika::WindowState windowState,
@@ -155,7 +143,7 @@ struct MarioEditor: public Container
 				for (int i = minV.x; i < maxV.x; i++)
 				{
 					auto b = getMapBlockUnsafe(i, j);
-					auto uv = getTileUV(atlas, b.type, b.flipped);
+					auto uv = mario::getTileUV(atlas, b.type, b.flipped);
 
 					renderer.renderRectangle({i, j, 1, 1}, {}, {}, tiles, uv);
 
@@ -182,7 +170,7 @@ struct MarioEditor: public Container
 			else
 			{
 			renderer.renderRectangle({blockPosition, 1, 1}, {0.9,0.9,0.9,0.9}, {}, {}, tiles, 
-				getTileUV(atlas, currentBlock, flip));
+				mario::getTileUV(atlas, currentBlock, flip));
 			}
 
 		}
@@ -202,9 +190,8 @@ struct MarioEditor: public Container
 			
 			if (ImGui::Button("save"))
 			{
-				pika::memory::setGlobalAllocatorToStandard();
-				sfs::writeEntireFile((void*)map, mapSize.x * mapSize.y, path);
-				pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
+				requestedInfo.writeEntireFileBinary(path, &mapSize, sizeof(mapSize));
+				requestedInfo.appendFileBinary(path, (void *)map, mapSize.x *mapSize.y);
 			}
 
 			ImGui::Separator();
@@ -218,7 +205,7 @@ struct MarioEditor: public Container
 				unsigned short localCount = 0;
 				while (mCount < 8*10)
 				{
-					auto uv = getTileUV(atlas, mCount);
+					auto uv = mario::getTileUV(atlas, mCount);
 
 					ImGui::PushID(mCount);
 					if (ImGui::ImageButton((void *)(intptr_t)tiles.id,
@@ -245,9 +232,9 @@ struct MarioEditor: public Container
 					unsigned short localCount = 0;
 					while (mCount < 8 * 10)
 					{
-						if (isSolid(mCount))
+						if (mario::isSolid(mCount))
 						{
-							auto uv = getTileUV(atlas, mCount);
+							auto uv = mario::getTileUV(atlas, mCount);
 
 							ImGui::PushID(mCount);
 							if (ImGui::ImageButton((void *)(intptr_t)tiles.id,
@@ -272,9 +259,9 @@ struct MarioEditor: public Container
 					unsigned short localCount = 0;
 					while (mCount < 8*10)
 					{
-						if (!isSolid(mCount))
+						if (!mario::isSolid(mCount))
 						{
-							auto uv = getTileUV(atlas, mCount);
+							auto uv = mario::getTileUV(atlas, mCount);
 
 							ImGui::PushID(mCount);
 							if (ImGui::ImageButton((void *)(intptr_t)tiles.id,
@@ -324,7 +311,6 @@ struct MarioEditor: public Container
 
 
 		renderer.flush();
-
 	
 		return true;
 	}

@@ -47,7 +47,12 @@ void pika::LoadedDll::reloadContainerExtensionsSupport()
 		{
 			for (auto &e : c.containerStaticInfo.extensionsSuported)
 			{
-				containerExtensionsSupport[e.to_string()] = c.containerName;
+				if (containerExtensionsSupport.find(e.to_string()) == containerExtensionsSupport.end())
+				{
+					containerExtensionsSupport[e.to_string()] = {};
+				}
+
+				containerExtensionsSupport[e.to_string()].push_back(c.containerName);
 			}
 		}
 	}

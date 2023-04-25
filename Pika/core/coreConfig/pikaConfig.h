@@ -42,7 +42,6 @@
 
 #define PIKA_REMOVE_OPTIONAL_NOVALUE_CHECKS_IN_PRODUCTION 1
 
-//#define PIKA_REMOVE_EDITOR_IN_PRODUCATION 1 //todo remove this, just keep the console or sthing
 
 #define PIKA_REMOVE_PUSH_NOTIFICATION_IN_PRODUCTION 0
 

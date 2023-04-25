@@ -13,10 +13,12 @@
 #include <stringManipulation/stringManipulation.h>
 #include <engineLibraresSupport/engineGL2DSupport.h>
 #include <glui/glui.h>
+#include <profilerLib.h>
 
 struct McDungeonsGameplay: public Container
 {
 
+	PL::AverageProfiler profiler;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -61,6 +63,8 @@ struct McDungeonsGameplay: public Container
 	{
 		PhysicsComponent physics;
 		gl3d::Entity entity;
+		float life = 1;
+		float attackCulldown = 0.f;
 
 		Zombie() {};
 		Zombie(int x, int z) { physics.position = {x,z}; physics.lastPos = {x,z}; };
@@ -87,6 +91,9 @@ struct McDungeonsGameplay: public Container
 
 	float winTimer = 4;
 	float cameraYoffset = 0;
+	float attackCulldown = 0;
+	float animationCulldown = 0;
+	float health = 1;
 
 	gl2d::Renderer2D renderer2d;
 	gl3d::Renderer3D renderer;
@@ -96,6 +103,7 @@ struct McDungeonsGameplay: public Container
 	gl3d::Model diamondModel;
 
 	gl2d::Texture diamondTexture;
+	gl2d::Texture hearthTexture;
 	gl2d::Font font;
 
 	gl3d::Entity sword;
@@ -411,14 +419,18 @@ struct McDungeonsGameplay: public Container
 
 	std::string currentFile = {};
 
+	int profilerCounter = 0;
+	PL::ProfileRezults rez = {};
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-		playerPhysics.position = {21,32};
-		playerPhysics.lastPos = {21,32};
+		playerPhysics.position = {14,26};
+		playerPhysics.lastPos = {14,26};
 
 		renderer2d.create();
-
+		
 		diamondTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/diamond.png", requestedInfo, true, false);
+		hearthTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/hearth.png", requestedInfo, true, false);
 		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);
 
 
@@ -433,6 +445,7 @@ struct McDungeonsGameplay: public Container
 		
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
 		renderer.colorCorrectionTexture() = renderer.loadColorLookupTextureFromFile(PIKA_RESOURCES_PATH "/mcDungeons/lut.png");
+		renderer.colorCorrection() = false;
 
 		//renderer.skyBox = renderer.loadSkyBox(names);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
@@ -503,6 +516,7 @@ struct McDungeonsGameplay: public Container
 		sword = renderer.createEntity(swordModel, {}, false);
 
 		//enemies
+		if(1)
 		{
 			enemies.push_back(Zombie(18, 46));
 			enemies.push_back(Zombie(16, 46));
@@ -514,6 +528,23 @@ struct McDungeonsGameplay: public Container
 			enemies.push_back(Zombie(71, 63));
 			enemies.push_back(Zombie(56, 72));
 			
+			enemies.push_back(Zombie(38, 68));
+			enemies.push_back(Zombie(30, 63));
+			enemies.push_back(Zombie(27, 55));
+			enemies.push_back(Zombie(82, 65));
+			enemies.push_back(Zombie(83, 56));
+			enemies.push_back(Zombie(94, 49));
+			enemies.push_back(Zombie(102, 49));
+			enemies.push_back(Zombie(112, 61));
+
+			enemies.push_back(Zombie(105, 83));
+			enemies.push_back(Zombie(100, 86));
+			enemies.push_back(Zombie(101, 95));
+			enemies.push_back(Zombie(91, 90));
+			enemies.push_back(Zombie(61, 85));
+			enemies.push_back(Zombie(64, 90));
+			enemies.push_back(Zombie(73, 96));
+
 
 			for (auto &i : enemies)
 			{
@@ -529,7 +560,6 @@ struct McDungeonsGameplay: public Container
 				renderer.setEntityAnimate(i.entity, true);
 				renderer.setEntityAnimationIndex(i.entity, Animations::zombieIdle);
 			}
-
 
 		}
 
@@ -555,12 +585,23 @@ struct McDungeonsGameplay: public Container
 		renderer.setExposure(1.5f);
 		renderer.frustumCulling = false;
 		
+
 		return true;
 	}
 
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+	
+		profiler.end();
+		profiler.start();
+
+		profilerCounter++;
+		if (profilerCounter > 150)
+		{
+			rez = profiler.getAverageAndResetData();
+			profilerCounter = 0;
+		}
 
 		renderer2d.updateWindowMetrics(windowState.w, windowState.h);
 
@@ -569,6 +610,8 @@ struct McDungeonsGameplay: public Container
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
+
+		
 
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -584,9 +627,8 @@ struct McDungeonsGameplay: public Container
 	
 		bool shouldRecreate = 0;
 
-
+		/*
 		ImGui::PushID(requestedInfo.requestedImguiIds);
-
 
 		if (ImGui::Begin("General3DEditor"))
 		{
@@ -604,6 +646,7 @@ struct McDungeonsGameplay: public Container
 		ImGui::End();
 
 		ImGui::PopID();
+		*/
 
 		if (shouldRecreate)
 		{
@@ -624,21 +667,24 @@ struct McDungeonsGameplay: public Container
 			{
 				glm::vec2 dir = {};
 
-				if (input.buttons[pika::Button::A].held() || input.buttons[pika::Button::Left].held())
+				if (animationCulldown <= 0)
 				{
-					dir -= glm::vec2(1,1);
-				}
-				if (input.buttons[pika::Button::D].held() || input.buttons[pika::Button::Right].held())
-				{
-					dir += glm::vec2(1,1);
-				}
-				if (input.buttons[pika::Button::W].held() || input.buttons[pika::Button::Up].held())
-				{
-					dir += glm::vec2(1,-1);
-				}
-				if (input.buttons[pika::Button::S].held() || input.buttons[pika::Button::Down].held())
-				{
-					dir -= glm::vec2(1, -1);
+					if (input.buttons[pika::Button::A].held() || input.buttons[pika::Button::Left].held())
+					{
+						dir -= glm::vec2(1, 1);
+					}
+					if (input.buttons[pika::Button::D].held() || input.buttons[pika::Button::Right].held())
+					{
+						dir += glm::vec2(1, 1);
+					}
+					if (input.buttons[pika::Button::W].held() || input.buttons[pika::Button::Up].held())
+					{
+						dir += glm::vec2(1, -1);
+					}
+					if (input.buttons[pika::Button::S].held() || input.buttons[pika::Button::Down].held())
+					{
+						dir -= glm::vec2(1, -1);
+					}
 				}
 
 				if (dir.x != 0 || dir.y != 0)
@@ -653,16 +699,65 @@ struct McDungeonsGameplay: public Container
 					};
 					
 					playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
+
+					if (animationCulldown <= 0)
 					renderer.setEntityAnimationIndex(player, Animations::run);
 				}
 				else
 				{
+					if (animationCulldown <= 0)
 					renderer.setEntityAnimationIndex(player, Animations::idle);
-				}
+				}  
 
 				float speed = 3;
 				playerPhysics.position += dir * input.deltaTime * speed;
 
+
+				if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
+				{
+					renderer.setEntityAnimationIndex(player, Animations::attack);
+					animationCulldown = 0.45;
+					attackCulldown = 0.8;
+
+					for (int i = 0; i < enemies.size(); i++)
+					{
+						float d = glm::distance(playerPhysics.position, enemies[i].physics.position);
+						if (d < 1.5f)
+						{
+							enemies[i].life -= 0.4;
+
+							if (enemies[i].life <= 0)
+							{
+								renderer.deleteEntity(enemies[i].entity);
+								enemies.erase(enemies.begin() + i);
+								i--;
+								continue;
+							}
+
+							glm::vec2 dir(1, 0);
+
+							if (d != 0)
+							{
+								dir = (enemies[i].physics.position - playerPhysics.position) / d;
+							}
+
+							enemies[i].physics.position += dir * 1.5f;
+						}
+
+					}
+
+				}
+
+			}
+
+			if (animationCulldown > 0)
+			{
+				animationCulldown -= input.deltaTime;
+			}
+
+			if (attackCulldown > 0)
+			{
+				attackCulldown -= input.deltaTime;
 			}
 
 		#pragma endregion
@@ -760,12 +855,22 @@ struct McDungeonsGameplay: public Container
 					{
 						renderer.setEntityAnimationIndex(e.entity, Animations::zombieAttack);
 
+						if (e.attackCulldown <= 0.f)
+						{
+							health -= 0.2;
+							e.attackCulldown = 1.f;
+						}
 						//attack
 					}
 				}
 				else
 				{
 					renderer.setEntityAnimationIndex(e.entity, Animations::zombieIdle);
+				}
+
+				if (e.attackCulldown > 0)
+				{
+					e.attackCulldown -= input.deltaTime;
 				}
 
 				solveRotation(e.physics);
@@ -863,8 +968,23 @@ struct McDungeonsGameplay: public Container
 			winTimer -= input.deltaTime;
 			if (winTimer <= 0.f)
 			{
+				requestedInfo.createContainer("McDungeonsMenu");
 				return 0;
 			}
+		}
+		else
+		{
+			if (health <= 0.f)
+			{
+				requestedInfo.createContainer("McDungeonsMenu");
+				return 0;
+			}
+			else
+			{
+				health += input.deltaTime / 60.f;
+				if (health > 1.f) { health = 1.f; }
+			}
+
 		}
 
 		diamondPeriod += input.deltaTime * 0.2;
@@ -905,7 +1025,7 @@ struct McDungeonsGameplay: public Container
 		glDisable(GL_DEPTH_TEST);
 
 
-
+		if(1)
 		{
 			glui::Frame screen({0,0,windowState.w, windowState.h});
 
@@ -926,8 +1046,21 @@ struct McDungeonsGameplay: public Container
 
 				renderer2d.renderText({glui::Box().xLeftPerc(0.5f).yTopPerc(0.9f)()}, s.c_str(), font,
 					{1,1,1,0.5}, 1.0f, 4, 3, false);
-					
+			}
 
+			{
+				renderer2d.renderRectangle(glui::Box().xRight(-10).yTop(10).xDimensionPixels(100).yAspectRatio(1.f),
+					{1,1,1,health},
+					{}, 0,
+					hearthTexture);
+			}
+
+			{
+				std::string fps = std::to_string(std::max(0, int(1.f / rez.timeSeconds))) + " fps";
+
+
+				renderer2d.renderText(glui::Box().xLeft(10).yBottom(-10)(), fps.c_str(), font,
+					{0.8,0.8,0.8,0.2}, 0.5, 4, 3, false);
 			}
 
 		}
@@ -941,6 +1074,17 @@ struct McDungeonsGameplay: public Container
 
 		return true;
 	}
+
+	void destruct()
+	{
+
+		this->renderer.skyBox.clearTextures();
+		this->renderer.colorCorrectionTexture().clear();
+		this->renderer.clearAllRendererResources();
+		this->renderer2d.clear();
+
+	}
+
 
 };
 

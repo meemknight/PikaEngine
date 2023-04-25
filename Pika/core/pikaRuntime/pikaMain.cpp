@@ -107,7 +107,6 @@ int main()
 #pragma endregion
 
 
-
 #pragma region init global variables stuff
 	pika::initShortcutApi();
 #pragma endregion
@@ -184,13 +183,22 @@ int main()
 #endif
 #pragma endregion
 
-#if !PIKA_SHOULD_REMOVE_EDITOR
-	auto container = containerManager.createContainer
-	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, &editor.consoleWindow, std::string());
-#else
-	auto container = containerManager.createContainer
-	(loadedDll.containerInfo[0], loadedDll, logs, imguiIdsManager, nullptr, std::string());
+#if PIKA_PRODUCTION == 1
+	for (auto &c : loadedDll.containerInfo)
+	{
+		if (c.containerStaticInfo.openOnApplicationStartup)
+		{
+		#if !PIKA_SHOULD_REMOVE_EDITOR
+			auto container = containerManager.createContainer
+			(c, loadedDll, logs, imguiIdsManager, &editor.consoleWindow, std::string());
+		#else
+			auto container = containerManager.createContainer
+			(c, loadedDll, logs, imguiIdsManager, nullptr, std::string());
+		#endif
+		}
+	}
 #endif
+
 
 	while (!shouldClose)
 	{
@@ -248,6 +256,14 @@ int main()
 
 	#else
 		containerManager.update(loadedDll, window, logs, imguiIdsManager, nullptr);
+	#endif
+
+		//close engine if no more containers are open
+	#if PIKA_PRODUCTION == 1
+		if (containerManager.runningContainers.empty())
+		{
+			shouldClose = true;
+		}
 	#endif
 
 

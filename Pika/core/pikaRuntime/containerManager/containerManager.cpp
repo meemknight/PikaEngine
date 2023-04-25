@@ -192,11 +192,14 @@ pika::containerId_t pika::ContainerManager::createContainer
 		return 0;
 	}
 
+	//create imgui fbo just for developement mode
+#ifndef PIKA_PRODUCTION
 	if (containerInformation.containerStaticInfo.requestImguiFbo)
 	{
-		container.requestedContainerInfo.requestedFBO.createFramebuffer(400, 400); //todo resize small or sthing
+		container.requestedContainerInfo.requestedFBO.createFramebuffer(40, 40);
 		container.imguiWindowId = imguiIDsManager.getImguiIds();
 	}
+#endif
 
 	loadedDll.bindAllocatorDllRealm(&container.allocator);
 	
@@ -289,6 +292,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 #pragma endregion
 
 	std::vector<CreateContainerInfo> containersToCreate;
+
+	std::vector<containerId_t> containersToDelete;//delete because they returned 0
 
 #pragma region running containers
 	for (auto &c : runningContainers)
@@ -540,7 +545,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				if (!isOpen)
 				{
 					rez = 1;
-					destroyContainer(c.first, loadedDll, logs);
+					containersToDelete.push_back(c.first);
 				}
 
 			}
@@ -563,7 +568,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			{
 				logs.log(("Terminated container because it returned 0: " + std::string(c.second.baseContainerName)
 					+ " #" + std::to_string(c.first)).c_str());
-				destroyContainer(c.first, loadedDll, logs);
+				containersToDelete.push_back(c.first);
 			}
 
 		}
@@ -573,6 +578,12 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 		}
 
 	}
+
+	for (auto i : containersToDelete)
+	{
+		destroyContainer(i, loadedDll, logs);
+	}
+
 #pragma endregion
 
 

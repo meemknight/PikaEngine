@@ -17,7 +17,7 @@
 
 		delete[] data;
 	}
-	else { return 0; }
+	else { return {}; }
 
 	return t;
 }
@@ -36,7 +36,7 @@
 
 		delete[] data;
 	}
-	else { return 0; }
+	else { return {}; }
 
 	return t;
 }

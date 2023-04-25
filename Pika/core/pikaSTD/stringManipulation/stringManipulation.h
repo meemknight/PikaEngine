@@ -25,8 +25,14 @@ namespace pika
 
 	size_t strlcpy(char *dst, const std::string &src, size_t size);
 
+	//template<size_t N>
+	//inline size_t strlcpy(char *dst, pika::StaticString<N> &s)
+	//{
+	//	return strlcpy(dst, s.data(), s.size());
+	//}
+
 
 	std::vector<std::string> split(const char *source, char c);
-	
 
+	
 }
