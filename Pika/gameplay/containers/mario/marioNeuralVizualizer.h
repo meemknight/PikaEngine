@@ -17,6 +17,10 @@ struct MarioNeuralVizualizer: public Container
 	mario::GameplaySimulation simulator;
 	mario::PlayerSimulation player;
 
+	pika::pikaImgui::FileSelector rezFile;
+
+	bool fixedFramerate = 0;
+
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
@@ -36,6 +40,8 @@ struct MarioNeuralVizualizer: public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
+		rezFile.setInfo("Neural network file", PIKA_RESOURCES_PATH "/mario", {".neural"});
+
 		if (commandLineArgument.size() != 0)
 		{
 			mapFile = commandLineArgument.to_string();
@@ -75,21 +81,43 @@ struct MarioNeuralVizualizer: public Container
 		renderer.followPlayer(player.p, input, windowState);
 		renderer.drawPlayer(player.p);
 
-		if (!mario::performNeuralSimulation(player, input.deltaTime, simulator, network))
+		float deltaTime = input.deltaTime;
+
+		if (fixedFramerate)
 		{
-			return 0;
+			deltaTime = 1.f / 50.f;
+		}
+
+		if (!mario::performNeuralSimulation(player, deltaTime, simulator, network))
+		{
+			player = {};
+			player.p.position.position = {1,1};
+			player.p.lastPos = {1,1};
 		}
 
 		char vision[mario::visionSizeX * mario::visionSizeY] = {};
 		mario::getVision(vision, simulator, player);
 		mario::renderNeuralNetwork(renderer.renderer, vision, 20, network);
 		
-		//simulator.simulator.player.position.position.x;
+
 	
 
 
 		glBindFramebuffer(GL_FRAMEBUFFER, requestedInfo.requestedFBO.fbo);
 		renderer.render();
+
+		ImGui::Begin("Neural trainer");
+		{
+		
+			if (rezFile.run(2))
+			{
+				requestedInfo.readEntireFileBinary(rezFile.file, &network, sizeof(network));
+			}
+
+			ImGui::Checkbox("Fixed framerate", &fixedFramerate);
+
+		}
+		ImGui::End();
 
 
 		return true;

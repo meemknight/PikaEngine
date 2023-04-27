@@ -618,20 +618,6 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 		//to get hold onto the dll 
 
 
-	//pika::LoadedDll newDll;
-	//if (!newDll.tryToloadDllUntillPossible(loadedDll.id + 1, logs, std::chrono::seconds(1)))
-	//{
-	//	logs.log("Dll reload attemp failed", pika::logWarning);
-	//	newDll.unloadDll();
-	//	return;
-	//}
-	//else
-	//{
-	//	newDll.unloadDll();
-	//}
-	//std::this_thread::sleep_for(std::chrono::milliseconds(10)); // make sure that the dll is unloaded
-
-
 	auto oldContainerInfo = loadedDll.containerInfo;
 
 	if (!loadedDll.tryToloadDllUntillPossible(loadedDll.id, logs, std::chrono::seconds(5)))
@@ -639,7 +625,7 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 		logs.log("Couldn't reloaded dll", pika::logWarning);
 		return;
 	}
-	//todo pospone dll reloading
+	//todo pospone dll reloading and make this timer shorter
 
 	std::unordered_map<std::string, pika::ContainerInformation> containerNames;
 	for (auto &c : loadedDll.containerInfo)
@@ -655,8 +641,6 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 	//clear containers that dissapeared
 	{
-
-
 		std::vector<pika::containerId_t> containersToClean;
 		for (auto &i : runningContainers)
 		{
@@ -706,6 +690,70 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 		}
 
 	}
+
+
+	//realocate pointers
+	{
+		std::unordered_map<std::string, size_t> vtable;
+
+		for (auto &i : runningContainers)
+		{
+			auto pos = vtable.find(i.second.baseContainerName);
+			if (pos == vtable.end())
+			{
+				pika::RuntimeContainer container = {};
+				pika::strlcpy(container.baseContainerName, i.second.baseContainerName,
+					sizeof(container.baseContainerName));
+
+				pika::ContainerInformation info;
+				for (auto &l : loadedDll.containerInfo)
+				{
+					if (l.containerName == i.second.baseContainerName)
+					{
+						info = l;
+					}
+				}
+
+				if (!allocateContainerMemory(container, info, 0))
+				{
+					logs.log("Internal error 1", pika::logError);
+				}
+				else
+				{
+					loadedDll.bindAllocatorDllRealm(&container.allocator);
+
+					//this calls the constructors (from the dll realm)
+					if (!loadedDll.constructRuntimeContainer(container, i.second.baseContainerName))
+					{
+						loadedDll.resetAllocatorDllRealm();
+						logs.log("Internal error 2", pika::logError);
+						freeContainerStuff(container);
+						loadedDll.resetAllocatorDllRealm();
+					}
+					else
+					{
+						
+						size_t id = *(size_t *)container.pointer;
+
+						freeContainerStuff(container);
+						loadedDll.resetAllocatorDllRealm();
+
+						vtable[i.second.baseContainerName] = id;
+					}
+
+				
+				}
+			}
+			
+			pos = vtable.find(i.second.baseContainerName);
+			if (pos != vtable.end())
+			{
+				memcpy(i.second.pointer, (void*)&pos->second, sizeof(size_t));
+			}
+		}
+	}
+
+
 
 	loadedDll.gameplayReload_(window.context);
 	

@@ -62,7 +62,7 @@ void pika::LoadedDll::reloadContainerExtensionsSupport()
 bool pika::LoadedDll::constructRuntimeContainer(RuntimeContainer &c, const char *name)
 {
 	PIKA_DEVELOPMENT_ONLY_ASSERT(constructContainer_ != nullptr, "dll not loaded");
-	return constructContainer_(&c.pointer, &c.arena, name);
+	return constructContainer_(&c.pointer, &c.arena, name); //todo c.baseContainerName instead of name param
 }
 
 

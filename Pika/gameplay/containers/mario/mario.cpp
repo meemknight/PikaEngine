@@ -383,17 +383,18 @@ void getVision(char vision[visionSizeX * visionSizeY], mario::GameplaySimulation
 bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::GameplaySimulation &simulator, mario::NeuralNetork
 	&network)
 {
-	if (p.p.position.position.x > p.maxFit)
+	if (p.p.position.position.x - p.maxFit > 0.2)
 	{
+
 		p.maxFit = p.p.position.position.x;
 		p.killTimer = 0;
 	}
 	else
 	{
 		p.killTimer += deltaTime;
-		if (p.killTimer > 3)
+		if (p.killTimer > 4)
 		{
-			//	return 0;
+				return 0;
 		}
 	}
 
@@ -404,6 +405,11 @@ bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::Gamepl
 
 	//input
 	network.compute(simulator.moveDelta, simulator.jump, vision);
+
+	if (simulator.jump && p.p.grounded)
+	{
+		p.jumpCount++;
+	}
 
 	if (!simulator.updateFrame(deltaTime, p.p))
 	{

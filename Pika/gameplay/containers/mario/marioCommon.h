@@ -12,7 +12,7 @@ constexpr const char *collisionMap =
 "--------"
 "-XX--X--"
 "-XX-----"
-"-XX-XXXX"
+"-XX-XXX-"
 "--X-XXX-"
 "XX------"
 "XX--XX--"
@@ -299,6 +299,33 @@ static constexpr int visionSizeY = 9;
 
 static constexpr int visionTotal = visionSizeX * visionSizeY;
 
+inline float getRandomFloat(std::mt19937 &rng, float min, float max)
+{
+	std::uniform_real_distribution<float> dist(min, max);
+	return dist(rng);
+}
+
+inline int getRandomInt(std::mt19937 &rng, int min, int max)
+{
+	std::uniform_int_distribution<int> dist(min, max);
+	return dist(rng);
+}
+
+inline bool getRandomChance(std::mt19937 &rng, float chance)
+{
+	int chanceI = glm::clamp(chance, 0.f, 1.f) * 100000;
+	int pick = getRandomInt(rng, 0, 100000);
+
+	if (pick > chanceI)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
 struct NeuralNetork
 {
 	float weights[3][visionTotal] = {};
@@ -310,12 +337,19 @@ struct NeuralNetork
 		{
 			for (int j = 0; j < visionTotal; j++)
 			{
-				rezult[i] += input[j] * weights[i][j];
+				if (input[j])
+				{
+					rezult[i] += weights[i][j];
+				}
+				else
+				{
+					rezult[i] -= weights[i][j];
+				}
 			}
 		}
 
 		float dir = rezult[2] - rezult[1];
-		if (std::abs(dir) < 1) { moveDirection = 0; }
+		if (std::abs(dir) < 0.2) { moveDirection = 0; }
 		else if(dir > 0)
 		{
 			moveDirection = 1;
@@ -336,18 +370,6 @@ struct NeuralNetork
 
 	}
 
-	float getRandomFloat(std::mt19937 &rng, float min, float max)
-	{
-		std::uniform_real_distribution<float> dist(min, max);
-		return dist(rng);
-	}
-
-	int getRandomInt(std::mt19937 &rng, int min, int max)
-	{
-		std::uniform_int_distribution<int> dist(min, max);
-		return dist(rng);
-	}
-
 	void addRandomNeuron(std::mt19937 &rng)
 	{
 		std::vector<glm::ivec2> positions;
@@ -366,7 +388,85 @@ struct NeuralNetork
 			auto index = getRandomInt(rng, 0, positions.size() - 1);
 			weights[positions[index].x][positions[index].y] = getRandomFloat(rng, -1.5, 1.5);
 		}
+	}
+	
+	void removeRandomNeuron(std::mt19937 &rng)
+	{
+		std::vector<glm::ivec2> positions;
+		positions.reserve(visionTotal * 3);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < visionTotal; j++)
+			{
+				if (weights[i][j] != 0)
+				{
+					positions.push_back({i,j});
+				}
+			}
 
+		if (!positions.empty())
+		{
+			auto index = getRandomInt(rng, 0, positions.size() - 1);
+			weights[positions[index].x][positions[index].y] = 0;
+		}
+	}
+
+	void changeRandomNeuron(std::mt19937 &rng)
+	{
+		std::vector<glm::ivec2> positions;
+		positions.reserve(visionTotal * 3);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < visionTotal; j++)
+			{
+				if (weights[i][j] != 0)
+				{
+					positions.push_back({i,j});
+				}
+			}
+
+		if (!positions.empty())
+		{
+			auto index = getRandomInt(rng, 0, positions.size() - 1);
+			weights[positions[index].x][positions[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+	}
+
+	void combine(std::mt19937 &rng, NeuralNetork &other)
+	{
+		std::vector<glm::ivec2> positions;
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < visionTotal; j++)
+			{
+				if (weights[i][j] != other.weights[i][j])
+				{
+					positions.push_back({i,j});
+				}
+			}
+		
+		float chance = getRandomFloat(rng, 0, 1);
+
+		for (auto p : positions)
+		{
+			bool combine = getRandomInt(rng, 0, 5) == 1;
+			int i = p.x;
+			int j = p.y;
+
+			if (combine)
+			{
+				weights[i][j] = (weights[i][j] + other.weights[i][j]) / 2.f;
+			}
+			else
+			{
+				bool keeper = getRandomChance(rng, chance);
+				if (keeper)
+				{
+					weights[i][j] = other.weights[i][j];
+				}
+				else
+				{
+					//keep
+				}
+			}
+		}
 	}
 
 };
@@ -376,6 +476,7 @@ struct PlayerSimulation
 	mario::Player p;
 	float maxFit = 0;
 	float killTimer = 0;
+	int jumpCount = 0;
 };
 
 bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::GameplaySimulation &simulator, mario::NeuralNetork
