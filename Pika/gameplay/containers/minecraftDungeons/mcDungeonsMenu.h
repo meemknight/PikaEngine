@@ -54,7 +54,7 @@ struct McDungeonsMenu : public Container
 
 
 
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 
 		
 		ui.Begin(69);

@@ -89,7 +89,7 @@ struct Gameplay : public Container
 		}
 
 		gl2d::enableNecessaryGLFeatures();
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 
 		*r += input.deltaTime * 4.f;
 

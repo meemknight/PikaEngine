@@ -1,1 +1,18 @@
-#2023-04-27 18:19:59: Reloaded dll
+#2023-05-22 12:13:38: Created container: ImmageViewer
+#2023-05-22 12:13:42: Terminated container because it returned 0: ImmageViewer #1
+#2023-05-22 12:13:42: Destroyed continer: ImmageViewer #1
+#2023-05-22 12:13:45: Created container: PikaTextEditor
+#2023-05-22 12:13:49: Terminated container because it returned 0: PikaTextEditor #2
+#2023-05-22 12:13:49: Destroyed continer: PikaTextEditor #2
+#2023-05-22 12:13:54: Created container: ImmageViewer
+#2023-05-22 12:13:58: Terminated container because it returned 0: ImmageViewer #3
+#2023-05-22 12:13:58: Destroyed continer: ImmageViewer #3
+#2023-05-22 12:13:58: Created container: ImmageViewer
+#2023-05-22 12:14:00: Terminated container because it returned 0: ImmageViewer #4
+#2023-05-22 12:14:00: Destroyed continer: ImmageViewer #4
+#2023-05-22 12:14:01: Created container: ImmageViewer
+#2023-05-22 12:14:18: Terminated container because it returned 0: ImmageViewer #5
+#2023-05-22 12:14:18: Destroyed continer: ImmageViewer #5
+#2023-05-22 12:14:22: Created container: ImmageViewer
+#2023-05-22 12:14:39: Terminated container because it returned 0: ImmageViewer #6
+#2023-05-22 12:14:39: Destroyed continer: ImmageViewer #6

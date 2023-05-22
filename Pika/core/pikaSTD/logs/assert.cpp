@@ -11,7 +11,7 @@ namespace pika
 
 	namespace assert
 	{
-		//todo noreturn
+		[[noreturn]]
 		inline void terminate(...)
 		{
 			std::abort();

@@ -94,11 +94,11 @@ struct ThreeDEditor: public Container
 
 		
 
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
-		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
 			
-		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.w,windowState.h});
+		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
 
 
 		renderer.render(input.deltaTime);

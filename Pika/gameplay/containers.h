@@ -22,9 +22,9 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "pluggins/immageviewer.h"
 #include "pluggins/threeDEditor.h"
 #include "pluggins/pikatextEditor.h"
-//#include "containers/minecraftDungeons/mcDungeonsEditor.h"
-//#include "containers/minecraftDungeons/mcDungeonsgameplay.h"
-//#include "containers/minecraftDungeons/mcDungeonsMenu.h"
+#include "containers/minecraftDungeons/mcDungeonsEditor.h"
+#include "containers/minecraftDungeons/mcDungeonsgameplay.h"
+#include "containers/minecraftDungeons/mcDungeonsMenu.h"
 
 #if PIKA_PRODUCTION == 1
 
@@ -43,9 +43,9 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(Mario) \
 	PIKA_DECLARE_CONTAINER(MarioEditor) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
-	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer)// \
-	//PIKA_DECLARE_CONTAINER(McDungeonsEditor) \
-	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
-	//PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
+	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) \
+	PIKA_DECLARE_CONTAINER(McDungeonsEditor) \
+	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
+	PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
 
 #endif

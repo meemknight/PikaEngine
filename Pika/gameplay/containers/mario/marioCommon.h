@@ -216,11 +216,10 @@ struct GameplayRenderer
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
 			gl2d::enableNecessaryGLFeatures();
-			renderer.updateWindowMetrics(windowState.w, windowState.h);
+			renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		}
 
 		float wheel = ImGui::GetIO().MouseWheel;
-		//todo standard out
 
 		if ((ImGui::GetIO().KeysData[ImGuiKey_LeftCtrl].Down || ImGui::GetIO().KeysData[ImGuiKey_RightCtrl].Down) && input.hasFocus)
 		{
@@ -265,7 +264,7 @@ struct GameplayRenderer
 	void followPlayer(mario::Player &p, pika::Input &input, pika::WindowState &windowState)
 	{
 		//todo update gl2d this function
-		renderer.currentCamera.follow(p.position.getCenter(), input.deltaTime * 3, 0.0001, 0.2, windowState.w, windowState.h);
+		renderer.currentCamera.follow(p.position.getCenter(), input.deltaTime * 3, 0.0001, 0.2, windowState.windowW, windowState.windowH);
 
 
 	}

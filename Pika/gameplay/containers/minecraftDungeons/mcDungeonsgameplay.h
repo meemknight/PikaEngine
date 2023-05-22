@@ -20,7 +20,6 @@ struct McDungeonsGameplay: public Container
 
 	PL::AverageProfiler profiler;
 
-	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -603,7 +602,7 @@ struct McDungeonsGameplay: public Container
 			profilerCounter = 0;
 		}
 
-		renderer2d.updateWindowMetrics(windowState.w, windowState.h);
+		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -620,8 +619,8 @@ struct McDungeonsGameplay: public Container
 		glDisable(GL_MULTISAMPLE);
 
 
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
-		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
 
 	
@@ -956,7 +955,7 @@ struct McDungeonsGameplay: public Container
 			}
 			else
 			{
-				editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.w,windowState.h});
+				editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
 			}
 			
 
@@ -1027,7 +1026,7 @@ struct McDungeonsGameplay: public Container
 
 		if(1)
 		{
-			glui::Frame screen({0,0,windowState.w, windowState.h});
+			glui::Frame screen({0,0,windowState.windowW, windowState.windowH});
 
 			{
 				glui::Frame diamondBox(glui::Box().xLeft(10).yTop(20).xDimensionPercentage(0.2).yAspectRatio(0.5)());

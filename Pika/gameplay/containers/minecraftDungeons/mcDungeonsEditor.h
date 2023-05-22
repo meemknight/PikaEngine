@@ -489,7 +489,7 @@ struct McDungeonsEditor: public Container
 		RequestedContainerInfo &requestedInfo)
 	{
 
-		renderer2d.updateWindowMetrics(windowState.w, windowState.h);
+		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -504,11 +504,11 @@ struct McDungeonsEditor: public Container
 		glDisable(GL_MULTISAMPLE);
 
 
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
-		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
 
-		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.w,windowState.h});
+		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
 	
 		bool shouldRecreate = 0;
 
@@ -661,7 +661,7 @@ struct McDungeonsEditor: public Container
 		glDisable(GL_DEPTH_TEST);
 
 
-		renderer2d.renderRectangle({windowState.w / 2 - 5, windowState.h / 2 - 5,10,10}, Colors_Orange);
+		renderer2d.renderRectangle({windowState.windowW / 2 - 5, windowState.windowH / 2 - 5,10,10}, Colors_Orange);
 
 
 		renderer2d.flush();

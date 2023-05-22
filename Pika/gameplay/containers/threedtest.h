@@ -19,7 +19,7 @@ struct ThreeDTest: public Container
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(20);
+		info.defaultHeapMemorySize = pika::MB(100);
 
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
@@ -48,23 +48,33 @@ struct ThreeDTest: public Container
 
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
 
+		renderer.adaptiveResolution.useAdaptiveResolution = false;
+
 		//renderer.skyBox = renderer.atmosfericScattering({0.2,1,0.3}, {0.9,0.1,0.1}, {0.4, 0.4, 0.8}, 0.8f); //todo a documentation
 		//todo api for skybox stuff
 		//renderer.skyBox.color = {0.2,0.3,0.9};
 
-		const char *names[6] =
-		{	PIKA_RESOURCES_PATH "/skyBoxes/ocean/right.jpg",
-			PIKA_RESOURCES_PATH "/skyBoxes/ocean/left.jpg",
-			PIKA_RESOURCES_PATH "/skyBoxes/ocean/top.jpg",
-			PIKA_RESOURCES_PATH "/skyBoxes/ocean/bottom.jpg",
-			PIKA_RESOURCES_PATH "/skyBoxes/ocean/front.jpg",
-			PIKA_RESOURCES_PATH "/skyBoxes/ocean/back.jpg"};
-
-		renderer.skyBox = renderer.loadSkyBox(names);
+		//const char *names[6] =
+		//{	PIKA_RESOURCES_PATH "/skyBoxes/ocean/right.jpg",
+		//	PIKA_RESOURCES_PATH "/skyBoxes/ocean/left.jpg",
+		//	PIKA_RESOURCES_PATH "/skyBoxes/ocean/top.jpg",
+		//	PIKA_RESOURCES_PATH "/skyBoxes/ocean/bottom.jpg",
+		//	PIKA_RESOURCES_PATH "/skyBoxes/ocean/front.jpg",
+		//	PIKA_RESOURCES_PATH "/skyBoxes/ocean/back.jpg"};
+		//
+		//renderer.skyBox = renderer.loadSkyBox(names);
 		//renderer.skyBox.color = {0.2,0.3,0.8};
+
+		renderer.skyBox = renderer.loadHDRSkyBox(PIKA_RESOURCES_PATH "/skyBoxes/canary_wharf_2k.hdr");
+		renderer.skyBox.color = {0.4,0.4,0.4};
+
 
 		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", gl3d::TextureLoadQuality::maxQuality, 1.f);
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf", 1.f);
+
+		
+		renderer.createDirectionalLight({-1,-0.5,-0.2});
+
 
 		gl3d::Transform t;
 		t.position = {0, 0, -3};
@@ -90,8 +100,8 @@ struct ThreeDTest: public Container
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		renderer.updateWindowMetrics(windowState.w, windowState.h);
-		renderer.camera.aspectRatio = (float)windowState.w / windowState.h; //todo do this in update
+		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 		
 		{
 			static glm::dvec2 lastMousePos = {};

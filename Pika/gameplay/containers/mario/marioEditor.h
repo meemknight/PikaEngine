@@ -43,7 +43,7 @@ struct MarioEditor: public Container
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
 		info.pushAnImguiIdForMe = true;
-
+		
 		info.extensionsSuported = {".mario"};
 
 		return info;
@@ -82,7 +82,7 @@ struct MarioEditor: public Container
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
 			gl2d::enableNecessaryGLFeatures();
-			renderer.updateWindowMetrics(windowState.w, windowState.h);
+			renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		}
 		
 		{
@@ -128,7 +128,7 @@ struct MarioEditor: public Container
 
 			//todo update gl2d this function
 
-			renderer.currentCamera.follow(pos, input.deltaTime * speed * 0.9f, 0.0001, 0.2, windowState.w, windowState.h);
+			renderer.currentCamera.follow(pos, input.deltaTime * speed * 0.9f, 0.0001, 0.2, windowState.windowW, windowState.windowH);
 
 		}
 		auto viewRect = renderer.getViewRect();
@@ -166,7 +166,7 @@ struct MarioEditor: public Container
 			};
 
 			blockPosition = lerp(glm::vec2(viewRect.x, viewRect.y),
-				glm::vec2(viewRect.x + viewRect.z, viewRect.y + viewRect.w), glm::vec2(mousePos) / glm::vec2(windowState.w, windowState.h));
+				glm::vec2(viewRect.x + viewRect.z, viewRect.y + viewRect.w), glm::vec2(mousePos) / glm::vec2(windowState.windowW, windowState.windowH));
 
 			if (blockPosition.x >= maxV.x || blockPosition.y >= maxV.y || blockPosition.x < minV.x || blockPosition.y < minV.y)
 			{

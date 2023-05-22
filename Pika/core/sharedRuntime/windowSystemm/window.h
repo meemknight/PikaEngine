@@ -11,9 +11,13 @@ namespace pika
 	
 	struct WindowState
 	{
-		int w = 0;
-		int h = 0;
+		//might differ from framebuffer w, h
+		int windowW = 0;
+		int windowH = 0;
 
+		//you should probably use this one
+		int frameBufferW = 0;
+		int frameBufferH = 0;
 
 	};
 	

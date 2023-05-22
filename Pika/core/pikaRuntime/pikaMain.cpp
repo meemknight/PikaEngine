@@ -143,7 +143,7 @@ int main()
 	pika::PikaWindow window = {};
 	window.create();
 
-	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad");
+	PIKA_PERMA_ASSERT(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Problem initializing glad");
 
 	//logs.log((const char*)glGetString(GL_VERSION));
 

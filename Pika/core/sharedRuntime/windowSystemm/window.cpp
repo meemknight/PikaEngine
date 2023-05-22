@@ -93,8 +93,8 @@ void pika::PikaWindow::saveWindowPositions()
 
 	glfwGetWindowPos(context.wind, &wr.x, &wr.y);
 
-	wr.z = windowState.w;
-	wr.w = windowState.h;
+	wr.z = windowState.windowW;
+	wr.w = windowState.windowH;
 
 	sfs::safeSave(&wr, sizeof(wr), PIKA_ENGINE_SAVES_PATH "windowPos", false);
 
@@ -148,8 +148,8 @@ void pika::PikaWindow::update()
 		int h = 0;
 		glfwGetWindowSize(context.wind, &w, &h);
 
-		windowState.w = w;
-		windowState.h = h;
+		windowState.windowW = w;
+		windowState.windowH = h;
 
 	}
 

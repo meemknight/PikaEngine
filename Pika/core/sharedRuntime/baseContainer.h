@@ -48,10 +48,8 @@ struct RequestedContainerInfo
 
 	pika::ConsoleWindow *consoleWindow = nullptr;
 
+	pika::LogManager *logManager = nullptr;
 
-	//todo add logs here
-
-	//todo probably remove
 	void setMousePositionRelevantToWindow(int x, int y) 
 	{
 		if (internal.mainWindow)
@@ -112,6 +110,15 @@ struct RequestedContainerInfo
 		internal.containersToCreate->push_back(info);
 		pika::memory::setGlobalAllocator(mainAllocator);
 
+	}
+
+	bool log(const char* l, int type)
+	{
+		//do not allocate memory here!
+		//log is from core realm
+
+		if (!logManager) { return false; }
+		logManager->log(l, type);
 	}
 
 	//returns true if succeded (can return false if console is disabeled)

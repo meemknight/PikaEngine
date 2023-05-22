@@ -231,6 +231,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.pushImguiIdForMe = imguiIDsManager.getImguiIds(containerInformation.containerStaticInfo.pushAnImguiIdForMe);
 
 	container.requestedContainerInfo.consoleWindow = consoleWindow;
+	container.requestedContainerInfo.logManager = &logManager;
 #pragma endregion
 
 	pika::StaticString<256> cmdArgs = {}; //todo magic number
@@ -301,6 +302,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 	{
 
 		c.second.requestedContainerInfo.consoleWindow = consoleWindow;
+		c.second.requestedContainerInfo.logManager = &logs;
 		c.second.requestedContainerInfo.internal.containersToCreate = &containersToCreate;
 
 
@@ -474,7 +476,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 			bool rez = 0;
 
-			if (c.second.imguiWindowId && !isProduction)
+			if (c.second.imguiWindowId && !isProduction) //todo remove is in production here and replace with remove imgui option
 			{
 
 			#pragma region imguiwindow
@@ -525,6 +527,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				auto s = ImGui::GetContentRegionMax();
 
+				//todo try set borders here at 0,0, easiest thing to do probably
 				ImGui::Image((void *)c.second.requestedContainerInfo.requestedFBO.texture, s, {0, 1}, {1, 0},
 					{1,1,1,1}, {0,0,0,1});
 
@@ -536,9 +539,11 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 			#pragma endregion
 
 				auto windowState = window.windowState;
-				windowState.w = s.x;
-				windowState.h = s.y;
-				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.w, windowState.h);
+				windowState.windowW = s.x;
+				windowState.windowH = s.y;
+				windowState.frameBufferW = s.x;
+				windowState.frameBufferH = s.y;
+				c.second.requestedContainerInfo.requestedFBO.resizeFramebuffer(windowState.windowW, windowState.windowH);
 
 				c.second.requestedContainerInfo.internal.mainWindow = 0;
 				c.second.requestedContainerInfo.internal.window = window.context.wind;

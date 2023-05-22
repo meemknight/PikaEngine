@@ -56,6 +56,10 @@ PIKA_API void dissableAllocators()
 	pika::memory::dissableAllocators();
 }
 
+void gl2dErrorFuncStub(const char *msg) //todo
+{
+}
+
 //used to initialize libraries 
 PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 {
@@ -70,6 +74,7 @@ PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 #endif
 
 	gl2d::init();
+	gl2d::setErrorFuncCallback(gl2dErrorFuncStub);
 
 #pragma endregion
 }
@@ -88,7 +93,7 @@ PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 	pika::pikaImgui::setImguiContext(pikaContext);
 
 	gl2d::init();
-
+	gl2d::setErrorFuncCallback(gl2dErrorFuncStub);
 #endif
 }
 

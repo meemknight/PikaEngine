@@ -31,39 +31,42 @@ struct ImmageViewer: public Container
 		return info;
 	}
 
+	std::string file;
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument) override
 	{
+
 		//todo logs from containers
 		//requestedInfo.
 
-		std::string file = commandLineArgument.to_string();
+		file = commandLineArgument.to_string();
 
-		//pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::setGlobalAllocatorToStandard();
+		{
+			texture.loadFromFile(file.c_str(), true, true);
+		}
+		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
+
+		//size_t size = 0;
+		//if (!requestedInfo.getFileSizeBinary(file.c_str(), size))
 		//{
-		//	texture.loadFromFile(PIKA_RESOURCES_PATH "map.png", true, true);
+		//	return 0; //todo
 		//}
-		//pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
-
-		size_t size = 0;
-		if (!requestedInfo.getFileSizeBinary(file.c_str(), size))
-		{
-			return 0; //todo
-		}
+		//
+		//unsigned char *buffer = new unsigned char[size];
+		//
+		//if (!requestedInfo.readEntireFileBinary(file.c_str(), buffer, size))
+		//{
+		//	delete[] buffer;
+		//	return 0; //todo
+		//}
 		
-		unsigned char *buffer = new unsigned char[size];
-		
-		if (!requestedInfo.readEntireFileBinary(file.c_str(), buffer, size))
-		{
-			delete[] buffer;
-			return 0; //todo
-		}
-		
-		texture.createFromFileData(buffer, size, true, true);
+		//texture.createFromFileData(buffer, size, true, true);
 		
 		immageSize = texture.GetSize();
+		if (immageSize == glm::ivec2{0, 0}) { return 0; }
 
-
-		delete[] buffer;
+		//delete[] buffer;
 
 		return true;
 	}
@@ -99,7 +102,7 @@ struct ImmageViewer: public Container
 		}
 
 
-		ImGui::Text("Immage title; %d, %d", 100, 100);
+		ImGui::Text("%s; %d, %d",file.c_str(), immageSize.x, immageSize.y);
 
 		auto s = ImGui::GetContentRegionMax();
 		
@@ -137,4 +140,8 @@ struct ImmageViewer: public Container
 		return true;
 	}
 
+	void destruct() override
+	{
+		texture.cleanup();
+	}
 };
