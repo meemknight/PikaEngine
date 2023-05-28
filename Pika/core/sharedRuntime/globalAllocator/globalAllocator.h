@@ -12,5 +12,9 @@ namespace memory
 
 	void dissableAllocators();
 
+	void pushCustomAllocatorsToStandard();
+
+	void popCustomAllocatorsToStandard();
+
 }
 }

@@ -106,9 +106,9 @@ struct RequestedContainerInfo
 		info.containerName = {containerName.c_str()};
 		info.cmdArgs = {cmdArgs.c_str()};
 
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		internal.containersToCreate->push_back(info);
-		pika::memory::setGlobalAllocator(mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 	}
 
@@ -192,12 +192,40 @@ struct RequestedContainerInfo
 		return readEntireFile(name, data.data(), s);
 	}
 
+	std::string readEntireFileBinaryAsAString(std::string_view name)
+	{
+		std::string rez;
+		size_t s = 0;
+		bool succeed = getFileSizeBinary(name, s);
+		if (!succeed) { return rez; }
+
+		rez.resize(s + 1);
+
+		pika::memory::pushCustomAllocatorsToStandard();
+		{
+			std::ifstream f(name, std::ios::binary);
+			if (!f.is_open())
+			{
+				succeed = false;
+			}
+			else
+			{
+				f.read((char *)rez.data(), s);
+				f.close();
+			}
+		}
+		pika::memory::popCustomAllocatorsToStandard();
+
+		if (!succeed) { return ""; }
+		return rez;
+	}
+
 	bool readEntireFileBinary(std::string_view name, void *buffer, size_t size, size_t from = 0)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
 		bool success = true;
 
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		{
 			std::ifstream f(name, std::ios::binary);
 
@@ -212,7 +240,7 @@ struct RequestedContainerInfo
 				f.close();
 			}
 		}
-		pika::memory::setGlobalAllocator(mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 		return success;
 	}
@@ -222,7 +250,7 @@ struct RequestedContainerInfo
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(readEntireFilePointer, "read entire file pointer not assigned");
 		bool success = true;
 
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		{
 			std::ifstream f(name);
 
@@ -236,7 +264,7 @@ struct RequestedContainerInfo
 				f.close();
 			}
 		}
-		pika::memory::setGlobalAllocator(mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 		return success;
 	}
@@ -249,7 +277,7 @@ struct RequestedContainerInfo
 		size = 0;
 
 		//todo push pop allocator or use that pointer thing (and don't forget to only use explicit allocators calls or sthing)
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		{
 			std::ifstream f(name, std::ifstream::ate | std::ifstream::binary);
 			if (!f.is_open())
@@ -262,7 +290,7 @@ struct RequestedContainerInfo
 				f.close();
 			}
 		}
-		pika::memory::setGlobalAllocator(mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 		return size;
 	}
@@ -271,7 +299,7 @@ struct RequestedContainerInfo
 	{
 		bool success = true;
 		size = 0;
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		{
 			std::ifstream f(name, std::ifstream::ate);
 			if (!f.is_open())
@@ -284,7 +312,7 @@ struct RequestedContainerInfo
 				f.close();
 			}
 		}
-		pika::memory::setGlobalAllocator(mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 		return success;
 	}

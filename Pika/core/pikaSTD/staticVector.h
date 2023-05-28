@@ -120,6 +120,11 @@ namespace pika
 			return true;
 		}
 
+		bool operator!=(const StaticVector &other)
+		{
+			return !(*this == other);
+		}
+
 		T &operator[] (size_t index)
 		{
 			PIKA_PERMA_ASSERT(index < size_, "buffer overflow on acces");

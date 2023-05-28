@@ -163,7 +163,7 @@ int main()
 
 #pragma region init dll reaml
 
-	loadedDll.gameplayStart_(window.context);
+	loadedDll.gameplayStart_(window.context, logs);
 
 	
 #pragma endregion

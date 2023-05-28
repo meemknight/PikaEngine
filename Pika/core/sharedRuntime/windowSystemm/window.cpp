@@ -150,7 +150,10 @@ void pika::PikaWindow::update()
 
 		windowState.windowW = w;
 		windowState.windowH = h;
-
+		
+		glfwGetFramebufferSize(context.wind, &w, &h);
+		windowState.frameBufferW = w;
+		windowState.frameBufferH = h;
 	}
 
 #pragma endregion

@@ -1,6 +1,6 @@
 #include "engineGL2DSupport.h"
 
-
+//todo use global allocator and test.
 ::gl2d::Texture pika::gl2d::loadTextureWithPixelPadding(const char *path, RequestedContainerInfo &info, int blockSize,
 	bool pixelated, bool useMipMaps)
 {

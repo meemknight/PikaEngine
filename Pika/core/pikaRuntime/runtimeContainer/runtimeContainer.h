@@ -38,6 +38,9 @@ struct RuntimeContainer
 	unsigned int frameCounter = 0;
 	float frameTimer = 0;
 	float currentMs = 0;
+	size_t availableMemory = 0;
+	size_t biggestBlock = 0;
+	int freeBlocks = 0;
 
 	bool lastFrameFocus = 0;
 

@@ -177,7 +177,7 @@ struct GameplayRenderer
 
 	bool init(RequestedContainerInfo &requestedInfo)
 	{
-		renderer.create();
+		renderer.create(requestedInfo.requestedFBO.fbo);
 		//gl2d::setErrorFuncCallback() //tood
 		//pika::initShortcutApi();
 
@@ -336,7 +336,7 @@ struct NeuralNetork
 		{
 			for (int j = 0; j < visionTotal; j++)
 			{
-				if (input[j])
+				if (input[j] > 0)
 				{
 					rezult[i] += weights[i][j];
 				}

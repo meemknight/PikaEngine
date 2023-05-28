@@ -400,6 +400,18 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 							ImGui::Separator();
 
+							if (ImGui::Button("Calculate memory usage"))
+							{
+								c.allocator.calculateMemoryMetrics(c.availableMemory, c.biggestBlock, c.freeBlocks);
+							}
+
+							ImGui::Text("Available memory: %" IM_PRIu64, c.availableMemory);
+							ImGui::Text("Biggest block: %" IM_PRIu64,	c.biggestBlock);
+							ImGui::Text("Free blocks: %d",				c.freeBlocks);
+
+							ImGui::Separator();
+
+
 							if (ImGui::BeginTabBar("##Tabs for play and record", ImGuiTabBarFlags_Reorderable))
 							{
 								if (ImGui::BeginTabItem(ICON_FK_CAMERA " Snapshot"))
@@ -627,17 +639,7 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 								ImGui::EndTabBar();
 							}
-
-							
-
-
-							
-
-							
-
-
-
-						
+					
 
 						}
 					}

@@ -100,8 +100,6 @@ struct MarioNeuralVizualizer: public Container
 		mario::renderNeuralNetwork(renderer.renderer, vision, 20, network);
 		
 
-	
-
 
 		glBindFramebuffer(GL_FRAMEBUFFER, requestedInfo.requestedFBO.fbo);
 		renderer.render();

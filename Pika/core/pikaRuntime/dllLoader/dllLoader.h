@@ -13,11 +13,11 @@
 #include <unordered_map>
 #include <string>
 
-#define GAMEPLAYSTART(x) void x(pika::PikaContext &pikaContext)
+#define GAMEPLAYSTART(x) void x(pika::PikaContext &pikaContext, pika::LogManager &logs)
 typedef GAMEPLAYSTART(gameplayStart_t);
 #undef GAMEPLAYSTART
 
-#define GAMEPLAYRELOAD(x) void x(pika::PikaContext &pikaContext)
+#define GAMEPLAYRELOAD(x) void x(pika::PikaContext &pikaContext, pika::LogManager &logs)
 typedef GAMEPLAYRELOAD(gameplayReload_t);
 #undef GAMEPLAYRELOAD
 

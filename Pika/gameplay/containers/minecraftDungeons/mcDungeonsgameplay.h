@@ -433,9 +433,9 @@ struct McDungeonsGameplay: public Container
 		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);
 
 
-		//todo close function for containers
 		//todo check out why mouse don't work in outside window
-
+		
+		//todo add a utulity for setting all this
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;

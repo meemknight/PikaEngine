@@ -56,12 +56,20 @@ PIKA_API void dissableAllocators()
 	pika::memory::dissableAllocators();
 }
 
-void gl2dErrorFuncStub(const char *msg) //todo
+void gl2dErrorFunc(const char *msg, void* userData) //todo
 {
+	pika::LogManager *logManager = (pika::LogManager *)userData;
+
+	pika::memory::pushCustomAllocatorsToStandard();
+
+	if (logManager)
+		logManager->log(msg, pika::logError);
+
+	pika::memory::popCustomAllocatorsToStandard();
 }
 
 //used to initialize libraries 
-PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
+PIKA_API void gameplayStart(pika::PikaContext &pikaContext, pika::LogManager &logs)
 {
 	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator);
 	//pika::initShortcutApi(); //todo
@@ -74,14 +82,15 @@ PIKA_API void gameplayStart(pika::PikaContext &pikaContext)
 #endif
 
 	gl2d::init();
-	gl2d::setErrorFuncCallback(gl2dErrorFuncStub);
+	gl2d::setUserDefinedData(&logs);
+	gl2d::setErrorFuncCallback(gl2dErrorFunc);
 
 #pragma endregion
 }
 
 
 //this won't be ever called in production so we can remove the code
-PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
+PIKA_API void gameplayReload(pika::PikaContext &pikaContext, pika::LogManager &logs)
 {
 #ifdef PIKA_DEVELOPMENT	
 
@@ -93,7 +102,8 @@ PIKA_API void gameplayReload(pika::PikaContext &pikaContext)
 	pika::pikaImgui::setImguiContext(pikaContext);
 
 	gl2d::init();
-	gl2d::setErrorFuncCallback(gl2dErrorFuncStub);
+	gl2d::setUserDefinedData(&logs);
+	gl2d::setErrorFuncCallback(gl2dErrorFunc);
 #endif
 }
 

@@ -44,7 +44,6 @@ namespace memory
 	#endif
 	
 	
-	
 	struct FreeListAllocator
 	{
 		char* baseMemory = 0;
@@ -77,6 +76,34 @@ namespace memory
 		//I rocommand leaving this to false
 		bool returnZeroIfNoMoreMemory = false;
 	
+
+		bool operator==(const FreeListAllocator &other)
+		{
+			if (this == &other) { return true; }
+
+			char *baseMemory = 0;
+			void *originalBaseMemory = 0;
+			size_t heapSize = 0;
+			void *end = 0;
+
+			if(
+				baseMemory == other.baseMemory &&
+				originalBaseMemory == other.originalBaseMemory &&
+				heapSize == other.heapSize &&
+				end == other.end
+				)
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		bool operator!=(const FreeListAllocator &other)
+		{
+			return !(*this == other);
+		}
+
 	private:
 	
 		void* end = 0;

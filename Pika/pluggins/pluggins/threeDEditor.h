@@ -47,6 +47,7 @@ struct ThreeDEditor: public Container
 		
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
 		
+
 		const char *names[6] =
 		{PIKA_RESOURCES_PATH "/skyBoxes/ocean/right.jpg",
 			PIKA_RESOURCES_PATH "/skyBoxes/ocean/left.jpg",

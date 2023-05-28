@@ -9,7 +9,6 @@
 #include <fileChanged.h>
 
 
-
 struct Mario: public Container
 {
 
@@ -18,6 +17,11 @@ struct Mario: public Container
 	mario::Player player;
 	
 	pika::FileChanged fileChanged;
+	gl2d::FrameBuffer fbo;
+	gl2d::ShaderProgram postProcessShader;
+	pika::FileChanged vertexChanged;
+	pika::FileChanged fragmentChanged;
+
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -33,6 +37,16 @@ struct Mario: public Container
 	}
 
 	std::string mapFile = PIKA_RESOURCES_PATH "/mario/map1.mario";
+
+	void loadShader(RequestedContainerInfo &requestedInfo)
+	{
+
+		auto vertData = requestedInfo.readEntireFileBinaryAsAString(PIKA_RESOURCES_PATH "mario/postProcess.vert");
+		auto fragmeData = requestedInfo.readEntireFileBinaryAsAString(PIKA_RESOURCES_PATH "mario/postProcess.frag");
+
+		postProcessShader = gl2d::createShaderProgram(vertData.c_str(), fragmeData.c_str());
+
+	}
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
@@ -50,16 +64,32 @@ struct Mario: public Container
 
 		fileChanged.setFile(mapFile.c_str());
 
+		fbo.create(1, 1);
+
+		loadShader(requestedInfo);
+		vertexChanged.setFile(PIKA_RESOURCES_PATH "mario/postProcess.vert");
+		fragmentChanged.setFile(PIKA_RESOURCES_PATH "mario/postProcess.frag");
+
 		return rez;
 	}
 
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+		fbo.clear();
+		fbo.resize(windowState.frameBufferW, windowState.frameBufferH);
+		//glBindFramebuffer(GL_FRAMEBUFFER, requestedInfo.requestedFBO.fbo);
+		renderer.renderer.clearScreen();
 
 		if (fileChanged.changed())
 		{
 			mario::loadMap(requestedInfo, mapFile, &simulator.map, simulator.mapSize);
+		}
+
+		if (vertexChanged.changed() || fragmentChanged.changed())
+		{
+			glDeleteShader(postProcessShader.id);
+			loadShader(requestedInfo);
 		}
 
 		{
@@ -101,7 +131,15 @@ struct Mario: public Container
 		renderer.update(input, windowState, simulator);
 		renderer.followPlayer(player, input, windowState);
 		renderer.drawPlayer(player);
-		renderer.render();
+		//renderer.render();
+
+		renderer.renderer.flushFBO(fbo);
+		renderer.renderer.pushCamera();
+		renderer.renderer.pushShader(postProcessShader);
+		renderer.renderer.renderRectangle({0,0, windowState.frameBufferW, windowState.frameBufferH}, {}, 0, fbo.texture);
+		renderer.renderer.flush();
+		renderer.renderer.popShader();
+		renderer.renderer.popCamera();
 
 		return true;
 	}
@@ -110,6 +148,8 @@ struct Mario: public Container
 	{
 		renderer.cleanup();
 		simulator.cleanup();
+		fbo.cleanup();
+		glDeleteShader(postProcessShader.id);
 	}
 
 };
