@@ -428,7 +428,7 @@ struct McDungeonsGameplay: public Container
 		playerPhysics.position = {14,26};
 		playerPhysics.lastPos = {14,26};
 
-		renderer2d.create();
+		renderer2d.create(requestedInfo.requestedFBO.fbo);
 		
 		diamondTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/diamond.png", requestedInfo, true, false);
 		hearthTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "mcDungeons/hearth.png", requestedInfo, true, false);

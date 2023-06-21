@@ -57,7 +57,7 @@ namespace pika
 			pika::pikaImgui::ImGuiIdsManager &imguiIdManager,
 			pika::ConsoleWindow *consoleWindow);
 
-		void reloadDll(pika::LoadedDll &loadedDll,
+		bool reloadDll(pika::LoadedDll &loadedDll,
 			pika::PikaWindow &window,
 			pika::LogManager &logs);
 

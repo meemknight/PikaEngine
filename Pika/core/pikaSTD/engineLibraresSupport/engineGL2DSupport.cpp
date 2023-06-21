@@ -14,10 +14,18 @@
 			t.createFromFileDataWithPixelPadding((unsigned char *)data, s, blockSize, pixelated, useMipMaps);
 
 		}
+		else
+		{
+			info.consoleWrite(std::string("error loading texture: ") + path);
+		}
 
 		delete[] data;
 	}
-	else { return {}; }
+	else 
+	{
+		info.consoleWrite(std::string("error loading texture: ") + path);
+		return {}; 
+	}
 
 	return t;
 }
@@ -33,10 +41,18 @@
 		{
 			t.createFromFileData((unsigned char *)data, s, pixelated, useMipMaps);
 		}
+		else
+		{
+			info.consoleWrite(std::string("error loading texture: ") + path);
+		}
 
 		delete[] data;
 	}
-	else { return {}; }
+	else
+	{
+		info.consoleWrite(std::string("error loading texture: ") + path);
+		return {}; 
+	}
 
 	return t;
 }
@@ -52,10 +68,18 @@
 		{
 			f.createFromTTF((unsigned char *)data, s);
 		}
+		else
+		{
+			info.consoleWrite(std::string("error loading font: ") + path);
+		}
 
 		delete[] data;
 	}
-	else { return f; }
+	else
+	{
+		info.consoleWrite(std::string("error loading font: ") + path);
+		return {};
+	}
 
 	return f;
 }

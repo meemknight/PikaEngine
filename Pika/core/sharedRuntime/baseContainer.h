@@ -132,6 +132,11 @@ struct RequestedContainerInfo
 		return true;
 	}
 
+	bool consoleWrite(std::string &s)
+	{
+		return consoleWrite(s.c_str());
+	}
+
 	bool writeEntireFile(const char *name, const std::string &content)
 	{
 		std::ofstream f(name);

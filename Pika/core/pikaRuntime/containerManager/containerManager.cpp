@@ -86,7 +86,7 @@ bool pika::ContainerManager::setRecordingToContainer(pika::containerId_t contain
 			pika::logError);
 		return false;
 	}
-	//todo not reset imgui id on input recording
+	
 	if (!setSnapshotToContainer(containerId, recordingName, logManager, imguiIdManager))
 	{
 		return false;
@@ -234,7 +234,7 @@ pika::containerId_t pika::ContainerManager::createContainer
 	container.requestedContainerInfo.logManager = &logManager;
 #pragma endregion
 
-	pika::StaticString<256> cmdArgs = {}; //todo magic number
+	pika::StaticString<256> cmdArgs = {};
 	
 	if (cmd.size() > cmdArgs.MAX_SIZE)
 	{
@@ -284,9 +284,9 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 	if (loadedDll.shouldReloadDll())
 	{
-		reloadDll(loadedDll, window, logs); //todo return 0 on fail
+		reloadDll(loadedDll, window, logs);
 
-		//todo mark shouldCallReaload or just call reload
+		//todo mark that it failed so it doesn't repeat on a loop
 		
 	}
 
@@ -616,7 +616,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 }
 
-void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
+bool pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWindow &window, pika::LogManager &logs)
 {
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(200)); // make sure that the compiler had enough time 
@@ -625,10 +625,10 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 	auto oldContainerInfo = loadedDll.containerInfo;
 
-	if (!loadedDll.tryToloadDllUntillPossible(loadedDll.id, logs, std::chrono::seconds(5)))
+	if (!loadedDll.tryToloadDllUntillPossible(loadedDll.id, logs, std::chrono::seconds(2)))
 	{
 		logs.log("Couldn't reloaded dll", pika::logWarning);
-		return;
+		return 0;
 	}
 	//todo pospone dll reloading and make this timer shorter
 
@@ -765,6 +765,7 @@ void pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 	logs.log("Reloaded dll");
 
+	return 1;
 }
 
 //not verbose flag

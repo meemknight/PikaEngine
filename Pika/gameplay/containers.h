@@ -29,8 +29,8 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #if PIKA_PRODUCTION == 1
 
 #define PIKA_ALL_CONTAINERS() \
-	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
-	//PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
+	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
+	PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
 
 #else
 

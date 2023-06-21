@@ -35,7 +35,7 @@ struct McDungeonsMenu : public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-		renderer.create();
+		renderer.create(requestedInfo.requestedFBO.fbo);
 		//pika::initShortcutApi(); //todo do this in dll load
 
 		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);

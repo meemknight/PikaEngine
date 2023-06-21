@@ -1,3 +1,6 @@
+#define PIKA_DECLARE_CONTAINER(x) info.push_back( pika::ContainerInformation(sizeof(x), #x, x::containerInfo()) );
+
+
 #include "dllMain.h"
 
 #include <gl2d/gl2d.h>
@@ -15,7 +18,6 @@
 
 //todo use a global static array that can be accessed from other cpps and the macro will create an instance of a struct 
 //that will push that container
-#define PIKA_DECLARE_CONTAINER(x) info.push_back( pika::ContainerInformation(sizeof(x), #x, x::containerInfo()) );
 
 PIKA_API void getContainersInfo(std::vector<pika::ContainerInformation> &info)
 {
