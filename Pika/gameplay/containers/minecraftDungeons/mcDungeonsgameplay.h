@@ -28,6 +28,8 @@ struct McDungeonsGameplay: public Container
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
 
+		//info.openOnApplicationStartup = true;
+
 		return info;
 	}
 

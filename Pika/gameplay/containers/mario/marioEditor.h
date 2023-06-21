@@ -53,7 +53,7 @@ struct MarioEditor: public Container
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 
-		renderer.create();
+		renderer.create(requestedInfo.requestedFBO.fbo);
 		//gl2d::setErrorFuncCallback() //tood
 		//pika::initShortcutApi();
 
@@ -137,7 +137,6 @@ struct MarioEditor: public Container
 		glm::ivec2 maxV;
 		//render
 		{
-
 			minV = {viewRect.x-1, viewRect.y-1};
 			maxV = minV + glm::ivec2{viewRect.z+2, viewRect.w+2};
 			minV = glm::max(minV, {0,0});

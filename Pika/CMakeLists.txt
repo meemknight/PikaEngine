@@ -21,7 +21,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) #under no circumstance we want th
 #declare projects
 project(pikaCore)
 project(pikaGameplay)
-#project(pikaProduction)
+project(pikaProduction)
 
 
 #add third party libraries
@@ -97,9 +97,9 @@ target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_imag
 #################^^^^^^^^^^^^^^############################
 
 
-#
-#
-##pikaProduction ###########################################
+
+
+#pikaProduction ###########################################
 #add_executable(pikaProduction)
 #
 #target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
@@ -117,8 +117,8 @@ target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_imag
 #target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 #
 #target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib)
-#
-#
+
+
 
 #################^^^^^^^^^^^^^^############################
 

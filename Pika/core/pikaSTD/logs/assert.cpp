@@ -60,7 +60,7 @@ namespace pika
 				#ifdef _MSC_VER
 					__debugbreak();
 				#endif
-					terminate();
+					//terminate();
 
 					return;
 				}

@@ -22,7 +22,7 @@ typedef READENTIREFILE(readEntireFile_t);
 typedef GETFILESIZE(getFileSize_t);
 #undef GETFILESIZE
 
-static constexpr size_t MaxAllocatorsCount = 128;
+static constexpr size_t MaxAllocatorsCount = 64;
 
 struct CreateContainerInfo
 {

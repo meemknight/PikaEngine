@@ -136,7 +136,6 @@ int main()
 #endif
 #pragma endregion
 
-
 #pragma region init window opengl imgui and context
 	PIKA_PERMA_ASSERT(glfwInit(), "Problem initializing glfw");
 	//glfwSetErrorCallback(error_callback); todo
@@ -167,7 +166,6 @@ int main()
 
 	
 #pragma endregion
-
 
 
 #pragma region shortcuts

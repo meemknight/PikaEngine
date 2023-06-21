@@ -50,7 +50,7 @@
 #define GL2D_OPNEGL_SHADER_PRECISION "precision highp float;"
 
 //this is the default capacity of the renderer
-#define GL2D_Renderer2D_Max_Triangle_Capacity 4200
+#define GL2D_Renderer2D_Max_Triangle_Capacity 420000
 #define GL2D_DefaultTextureCoords (glm::vec4{ 0, 1, 1, 0 })
 
 #include <glad/glad.h>

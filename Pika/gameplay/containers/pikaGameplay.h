@@ -49,7 +49,7 @@ struct Gameplay : public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-		renderer.create();
+		renderer.create(requestedInfo.requestedFBO.fbo);
 		//pika::initShortcutApi();
 		r = new float;
 

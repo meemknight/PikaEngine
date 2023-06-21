@@ -16,6 +16,8 @@ struct Mario: public Container
 	mario::GameplayRenderer renderer;
 	mario::Player player;
 	
+	int data[100];
+
 	pika::FileChanged fileChanged;
 	gl2d::FrameBuffer fbo;
 	gl2d::ShaderProgram postProcessShader;
@@ -91,6 +93,8 @@ struct Mario: public Container
 			glDeleteShader(postProcessShader.id);
 			loadShader(requestedInfo);
 		}
+		//requestedInfo.readEntireFile
+
 
 		{
 			int delta = 0;

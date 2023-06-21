@@ -1223,9 +1223,8 @@ bool pika::checkIfSnapshotIsCompatible(pika::RuntimeContainer &info, const char 
 		return false;
 	}
 
-	//todo fix this
-	//todo remake this function probably 
-	if (loadedInfo.requestedContainerInfo.bonusAllocators != info.requestedContainerInfo.bonusAllocators)
+	
+	if (loadedInfo.bonusAllocators != info.bonusAllocators)
 	{
 		return false;
 	}
