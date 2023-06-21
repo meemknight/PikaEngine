@@ -1,6 +1,7 @@
 #include "window.h"
 #include <logs/assert.h>
 #include "callbacks.h"
+#include <filesystem>
 
 #ifdef PIKA_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -95,6 +96,16 @@ void pika::PikaWindow::saveWindowPositions()
 
 	wr.z = windowState.windowW;
 	wr.w = windowState.windowH;
+
+	if (!std::filesystem::is_directory(PIKA_ENGINE_RESOURCES_PATH))
+	{
+		std::filesystem::create_directory(PIKA_ENGINE_RESOURCES_PATH);
+	}
+
+	if (!std::filesystem::is_directory(PIKA_ENGINE_SAVES_PATH))
+	{
+		std::filesystem::create_directory(PIKA_ENGINE_SAVES_PATH);
+	}
 
 	sfs::safeSave(&wr, sizeof(wr), PIKA_ENGINE_SAVES_PATH "windowPos", false);
 

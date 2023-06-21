@@ -1136,6 +1136,12 @@ std::vector<std::string> pika::getAvailableSnapshotsAnyMemoryPosition(pika::Cont
 {
 	std::vector<std::string> files;
 
+
+	if (!std::filesystem::is_directory(PIKA_ENGINE_RESOURCES_PATH))
+	{ 
+		std::filesystem::create_directory(PIKA_ENGINE_RESOURCES_PATH);
+	}
+
 	auto curDir = std::filesystem::directory_iterator(PIKA_ENGINE_RESOURCES_PATH);
 
 	for (const auto &iter : curDir)
