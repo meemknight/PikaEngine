@@ -149,7 +149,7 @@ struct MarioEditor: public Container
 					auto b = getMapBlockUnsafe(i, j);
 					auto uv = mario::getTileUV(atlas, b.type, b.flipped);
 
-					renderer.renderRectangle({i, j, 1, 1}, {}, {}, tiles, uv);
+					renderer.renderRectangle({i, j, 1, 1}, tiles, Colors_White, {}, 0, uv);
 
 				}
 		}
@@ -173,7 +173,7 @@ struct MarioEditor: public Container
 			}
 			else
 			{
-			renderer.renderRectangle({blockPosition, 1, 1}, {0.9,0.9,0.9,0.9}, {}, {}, tiles, 
+				renderer.renderRectangle({blockPosition, 1, 1}, tiles, {0.9,0.9,0.9,0.9}, {}, 0,
 				mario::getTileUV(atlas, currentBlock, flip));
 			}
 
@@ -348,7 +348,7 @@ struct MarioEditor: public Container
 	void destruct() override
 	{
 		tiles.cleanup();
-		renderer.clear();
+		renderer.cleanup();
 		delete[] map;
 	}
 

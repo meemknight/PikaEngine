@@ -95,7 +95,7 @@ struct McDungeonsMenu : public Container
 	void destruct()
 	{
 
-		renderer.clear();
+		renderer.cleanup();
 		font.texture.cleanup();
 		logo.cleanup();
 		button.cleanup();

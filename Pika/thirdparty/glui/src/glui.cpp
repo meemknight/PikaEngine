@@ -181,6 +181,7 @@ namespace glui
 	}
 
 	//just z and w components of transform used
+	//todo: move into gl2d a function to render text of a size
 	float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform, bool minimize = true)
 	{
 		auto newStr = getString(str);
@@ -307,8 +308,7 @@ namespace glui
 	{
 		auto newPos = computeTextureNewPosition(transform, t);
 
-		renderer.renderRectangle(newPos, c,
-			{}, 0.f, t);
+		renderer.renderRectangle(newPos, t, c);
 	}
 
 	void renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, 
@@ -1617,5 +1617,6 @@ namespace glui
 			p.y >= box.y && p.y <= box.y + box.w
 			);
 	}
+
 
 };

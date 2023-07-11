@@ -679,7 +679,7 @@ struct McDungeonsEditor: public Container
 		this->renderer.skyBox.clearTextures();
 		this->renderer.colorCorrectionTexture().clear();
 		this->renderer.clearAllRendererResources();
-		this->renderer2d.clear();
+		this->renderer2d.cleanup();
 
 	}
 

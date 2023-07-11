@@ -140,7 +140,7 @@ struct Mario: public Container
 		renderer.renderer.flushFBO(fbo);
 		renderer.renderer.pushCamera();
 		renderer.renderer.pushShader(postProcessShader);
-		renderer.renderer.renderRectangle({0,0, windowState.frameBufferW, windowState.frameBufferH}, {}, 0, fbo.texture);
+		renderer.renderer.renderRectangle({0,0, windowState.frameBufferW, windowState.frameBufferH}, fbo.texture);
 		renderer.renderer.flush();
 		renderer.renderer.popShader();
 		renderer.renderer.popCamera();

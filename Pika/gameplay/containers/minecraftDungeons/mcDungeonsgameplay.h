@@ -1036,10 +1036,8 @@ struct McDungeonsGameplay: public Container
 				//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)(),
 				//	{1,0.5,0,0.5});
 
-				renderer2d.renderRectangle(glui::Box().xLeft(5).yTop(5).xDimensionPercentage(0.45).yAspectRatio(1.f), 
-					{1,1,1,0.5},
-					{}, 0,
-					diamondTexture);
+				renderer2d.renderRectangle(glui::Box().xLeft(5).yTop(5).xDimensionPercentage(0.45).yAspectRatio(1.f), diamondTexture,
+					{1,1,1,0.5});
 
 				std::string s;
 				s += std::to_string(5 - diamonds.size());
@@ -1051,9 +1049,7 @@ struct McDungeonsGameplay: public Container
 
 			{
 				renderer2d.renderRectangle(glui::Box().xRight(-10).yTop(10).xDimensionPixels(100).yAspectRatio(1.f),
-					{1,1,1,health},
-					{}, 0,
-					hearthTexture);
+					hearthTexture, {1,1,1,health});
 			}
 
 			{
@@ -1082,7 +1078,7 @@ struct McDungeonsGameplay: public Container
 		this->renderer.skyBox.clearTextures();
 		this->renderer.colorCorrectionTexture().clear();
 		this->renderer.clearAllRendererResources();
-		this->renderer2d.clear();
+		this->renderer2d.cleanup();
 
 	}
 

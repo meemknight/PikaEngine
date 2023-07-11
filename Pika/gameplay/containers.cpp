@@ -16,6 +16,7 @@ Container *getContainer(const char *name, pika::memory::MemoryArena *memoryArena
 
 	///vvVVVVVVVVVVVVVVVVVVVVvv
 	///errors here? make sure that you inherited corectly from the base class (all overloads are done properly)
+	/// it is also possible that you used a class that doesn't have a default constructor or something
 	PIKA_ALL_CONTAINERS()
 	{
 		//"invalid container name: "

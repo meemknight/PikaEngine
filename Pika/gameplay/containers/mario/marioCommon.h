@@ -249,12 +249,10 @@ struct GameplayRenderer
 					auto b = simulator.getMapBlockUnsafe(i, j);
 					auto uv = getTileUV(atlas, b.type, b.flipped);
 
-					renderer.renderRectangle({i, j, 1, 1}, {}, {}, tiles, uv);
+					renderer.renderRectangle({i, j, 1, 1}, tiles, Colors_White, {}, 0, uv);
 
 				}
 		}
-
-		
 
 		
 
@@ -274,7 +272,7 @@ struct GameplayRenderer
 		glm::vec4 pos(p.position.position, 1, 1);
 		//pos.y -= 1 / 8.f;
 		pos.x -= 1 / 8.f;
-		renderer.renderRectangle(pos, {}, {}, marioTexture,
+		renderer.renderRectangle(pos, marioTexture,
 			p.movingRight ? glm::vec4(0, 1, 1, 0) : glm::vec4(1, 1, 0, 0));
 	}
 
@@ -286,7 +284,7 @@ struct GameplayRenderer
 
 	void cleanup()
 	{
-		renderer.clear();
+		renderer.cleanup();
 		marioTexture.cleanup();
 		tiles.cleanup();
 	}

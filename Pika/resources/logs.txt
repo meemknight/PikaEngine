@@ -1,5 +1,7 @@
-#2023-06-21 16:40:42: Created container: McDungeonsMenu
-#2023-06-21 16:40:51: Terminated container because it returned 0: McDungeonsMenu #1
-#2023-06-21 16:40:51: Destroyed continer: McDungeonsMenu #1
-#2023-06-21 16:40:53: Created container: McDungeonsGameplay
-#2023-06-21 16:41:22: Destroyed continer: McDungeonsGameplay #2
+#2023-07-11 23:36:25: Created container: Holloknight
+#2023-07-11 23:37:20: Destroyed continer: Holloknight #1
+#2023-07-11 23:37:28[warning]: Couldn't reloaded dll
+#2023-07-11 23:37:30[warning]: Couldn't reloaded dll
+#2023-07-11 23:37:32: Reloaded dll
+#2023-07-11 23:38:29: Created container: Holloknight
+#2023-07-11 23:39:03: Destroyed continer: Holloknight #2

@@ -666,7 +666,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 	}
 
 
-
 	//todo container profiler will have an instance per container with imgui id and stuff.
 
 
