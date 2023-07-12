@@ -60,6 +60,7 @@ struct Holloknight: public Container
 			dynamicBody->CreateFixture(&boxFixtureDef);
 		}
 
+		//remove
 		void updateMetrics(b2World &world) 
 		{
 			auto pos = dynamicBody->GetPosition();
@@ -78,7 +79,9 @@ struct Holloknight: public Container
 
 	Block floor;
 	Block blocks[10];
+	b2Body *currentBodySelected = 0;
 
+	glm::vec2 draggedStart = {};
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
@@ -105,8 +108,15 @@ struct Holloknight: public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
+	#pragma region clear stuff
 		glClear(GL_COLOR_BUFFER_BIT);
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+	#pragma endregion
+
+	#pragma region input
+		::pika::gl2d::cameraController(renderer.currentCamera, input, 200);
+	#pragma endregion
+
 		int32 velocityIterations = 6;
 		int32 positionIterations = 2;
 		world.Step(input.deltaTime, velocityIterations, positionIterations);
@@ -118,13 +128,111 @@ struct Holloknight: public Container
 			blocks[i].updateMetrics(world);
 		}
 
-
 		floor.render(renderer, Colors_White);
 
 		for (int i = 0; i < 10; i++)
 		{
 			blocks[i].render(renderer, Colors_Orange);
 		}
+
+		glm::vec2 mouseWorldpos(input.mouseX, input.mouseY);
+		{
+			auto viewRect = renderer.getViewRect();
+
+			glm::vec2 mousePosNormalized = mouseWorldpos / glm::vec2(windowState.frameBufferW, windowState.frameBufferH);
+			
+			mouseWorldpos = glm::vec2(viewRect) + mousePosNormalized * glm::vec2(viewRect.z, viewRect.w);
+		}
+
+	#pragma region body render
+
+		for (b2Body *b = world.GetBodyList(); b; b = b->GetNext())
+		{
+
+			glm::vec4 color = Colors_Red;
+			float thickness = 1;
+
+			if (currentBodySelected == b) 
+			{
+				color = Colors_Blue;
+				thickness = 2;
+			}
+
+			auto centerOfMass = b->GetWorldCenter();
+			auto angleDegrees = glm::degrees(b->GetAngle());
+			auto shapePos = b->GetTransform();
+
+			renderer.renderRectangle({centerOfMass.x - thickness,centerOfMass.y - thickness,2* thickness,2* thickness}, 
+				color, {}, angleDegrees);
+
+			for (b2Fixture *f = b->GetFixtureList(); f; f = f->GetNext()) 
+			{
+				auto shape = f->GetShape();
+
+				if (shape->TestPoint(shapePos, {mouseWorldpos.x,mouseWorldpos.y}) && input.lMouse.held())
+				{
+					currentBodySelected = b;
+				}
+
+				//the shape doesn't know anything about position so we have to move it from 0 0 
+				if (shape->GetType() == b2Shape::Type::e_polygon) 
+				{
+					b2PolygonShape *poligon = dynamic_cast<b2PolygonShape*>(shape);
+				
+					if (poligon)
+					{
+						for (int i = 0; i < poligon->m_count; i++)
+						{
+							int j = (i + 1) % poligon->m_count;
+
+							glm::vec2 p1 = {poligon->m_vertices[i].x,poligon->m_vertices[i].y};
+							glm::vec2 p2 = {poligon->m_vertices[j].x,poligon->m_vertices[j].y};
+
+							p1 += glm::vec2{centerOfMass.x, centerOfMass.y};
+							p2 += glm::vec2{centerOfMass.x, centerOfMass.y};
+
+							p1 = gl2d::rotateAroundPoint(p1, {centerOfMass.x,-centerOfMass.y}, angleDegrees);
+							p2 = gl2d::rotateAroundPoint(p2, {centerOfMass.x,-centerOfMass.y}, angleDegrees);
+
+							renderer.renderLine(p1, p2, color, thickness*2);
+						}
+
+					}
+
+				}
+			
+			}
+
+
+		}
+
+	#pragma endregion
+
+	#pragma region drag
+
+		{
+
+			if (input.rMouse.pressed())
+			{
+				draggedStart = glm::vec2(input.mouseX, input.mouseY);
+			}
+
+			if (input.rMouse.released())
+			{
+				glm::vec2 dragEnd(input.mouseX, input.mouseY);
+
+				glm::vec2 movement = dragEnd - draggedStart;
+
+				if (currentBodySelected)
+				{
+					currentBodySelected->SetLinearVelocity({movement.x,movement.y});
+				}
+			}
+			
+		}
+
+
+	#pragma endregion
 
 
 		renderer.flush();

@@ -434,6 +434,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 				}
 
+				windowInput.deltaTime *= c.second.simulationSpeed;
+				windowInput.deltaTime *= !c.second.deltaTimePaused;
 
 				c.second.requestedContainerInfo.mainAllocator = &c.second.allocator; //reset this
 				c.second.requestedContainerInfo.bonusAllocators = &c.second.bonusAllocators;

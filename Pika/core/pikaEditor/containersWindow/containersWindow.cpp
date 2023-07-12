@@ -391,6 +391,13 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 					#pragma endregion
 
+						ImGui::Separator();
+						ImGui::Checkbox("Pause", &c.deltaTimePaused);
+						ImGui::SameLine();
+						ImGui::DragFloat("Simulation speed", &c.simulationSpeed, 0.01, 0, 100);
+
+						ImGui::Separator();
+
 						if(!stopped)
 						{
 
@@ -398,7 +405,6 @@ void pika::ContainersWindow::update(pika::LogManager &logManager, bool &open, pi
 
 							ImGui::Text("Time (ms): %f", c.currentMs);
 
-							ImGui::Separator();
 
 							if (ImGui::Button("Calculate memory usage"))
 							{

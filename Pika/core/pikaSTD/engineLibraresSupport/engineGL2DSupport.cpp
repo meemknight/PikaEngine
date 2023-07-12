@@ -83,3 +83,33 @@
 
 	return f;
 }
+
+void pika::gl2d::cameraController(::gl2d::Camera &c, Input &input, float speed)
+{
+	if (input.buttons[pika::Button::W].held())
+	{
+		c.position.y -= speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::S].held())
+	{
+		c.position.y += speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::A].held())
+	{
+		c.position.x -= speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::D].held())
+	{
+		c.position.x += speed * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::Q].held())
+	{
+		c.zoom -= 1 * input.deltaTime;
+	}
+	if (input.buttons[pika::Button::E].held())
+	{
+		c.zoom += 1 * input.deltaTime;
+	}
+
+	c.zoom = glm::clamp(c.zoom, 0.0001f, 1000.f);
+}

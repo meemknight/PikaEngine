@@ -41,12 +41,16 @@ struct RuntimeContainer
 	size_t availableMemory = 0;
 	size_t biggestBlock = 0;
 	int freeBlocks = 0;
+	float simulationSpeed = 1;
+	bool deltaTimePaused = 0;
 
 	bool lastFrameFocus = 0;
 
 	//passed from container static info
 	bool andInputWithWindowHasFocus = 0;
 	bool andInputWithWindowHasFocusLastFrame = 0;
+
+	
 
 	struct FLAGS
 	{
