@@ -145,12 +145,18 @@ void pika::PikaWindow::update()
 
 	memset(input.typedInput, 0, sizeof(input.typedInput));
 
-#pragma endregion
+	for (int i = 0; i < Input::MAX_CONTROLLERS_COUNT; i++)
+	{
+		for (int j = 0; j < Controller::Buttons::ButtonsCount; j++)
+		{
+			processInputBefore(input.controllers[i].buttons[j]);
+		}
+	}
 
+#pragma endregion
 
 	glfwPollEvents();
 	glfwSwapBuffers(context.wind);
-
 
 #pragma region window state
 
@@ -171,6 +177,44 @@ void pika::PikaWindow::update()
 
 
 #pragma region input
+
+	#pragma region controller
+	for (int i = 0; i <= Input::MAX_CONTROLLERS_COUNT; i++)
+	{
+		if (glfwJoystickPresent(i) && glfwJoystickIsGamepad(i))
+		{
+			input.controllers[i].connected = true;
+
+			GLFWgamepadstate state;
+
+			if (glfwGetGamepadState(i, &state))
+			{
+				for (int b = 0; b <= GLFW_GAMEPAD_BUTTON_LAST; b++)
+				{
+					pika::processAButton(input.controllers[i].buttons[b], state.buttons[b]);
+
+					//updateButton(controllerButtons.buttons[i], deltaTime); //todo implement double epressed
+				}
+
+				input.controllers[i].LT = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER];
+				input.controllers[i].RT = state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER];
+
+				input.controllers[i].LStick.x = state.axes[GLFW_GAMEPAD_AXIS_LEFT_X];
+				input.controllers[i].LStick.y = state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y];
+
+				input.controllers[i].RStick.x = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X];
+				input.controllers[i].RStick.y = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y];
+			}
+		}
+		else
+		{
+			input.controllers[i].resetAllButtons();
+		}
+
+	}
+
+	#pragma endregion
+
 
 	double mouseX = 0;
 	double mouseY = 0;
@@ -211,6 +255,44 @@ void pika::PikaWindow::update()
 	{
 		processInput(input.buttons[i]);
 	}
+
+	#pragma region controller
+	for (int i = 0; i < Input::MAX_CONTROLLERS_COUNT; i++)
+	{
+		if(input.controllers[i].connected)
+		for (int b = 0; b <= GLFW_GAMEPAD_BUTTON_LAST; b++)
+		{
+			processInput(input.controllers[i].buttons[b]);
+		}
+	}
+
+	input.anyController.resetAllButtons();
+	for (int i = 0; i <= Input::MAX_CONTROLLERS_COUNT; i++)
+	{
+		input.controllers[i].connected = true;
+
+		if (input.controllers[i].connected)
+		{
+			input.anyController.connected = true;
+
+			for (int b = 0; b <= GLFW_GAMEPAD_BUTTON_LAST; b++)
+			{
+				input.anyController.buttons[b].flags
+					|= input.controllers[i].buttons[b].flags;
+			}
+
+			if (!input.anyController.LT) input.anyController.LT = input.controllers[i].LT;
+			if (!input.anyController.RT) input.anyController.RT = input.controllers[i].RT;
+
+			if (!input.anyController.LStick.x) input.anyController.LStick.x = input.controllers[i].LStick.x;
+			if (!input.anyController.LStick.y) input.anyController.LStick.y = input.controllers[i].LStick.y;
+
+			if (!input.anyController.RStick.x)  input.anyController.RStick.x = input.controllers[i].RStick.x;
+			if (!input.anyController.RStick.y) input.anyController.RStick.y = input.controllers[i].RStick.y;
+		}
+
+	}
+	#pragma endregion
 
 
 #pragma endregion

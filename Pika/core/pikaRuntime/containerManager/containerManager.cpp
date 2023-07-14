@@ -430,6 +430,13 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 						{
 							windowInput.buttons[i] = {};
 						}
+
+						for (int i = 0; i < Input::MAX_CONTROLLERS_COUNT; i++)
+						{
+							windowInput.controllers[i].resetAllButtons();
+						}
+
+						windowInput.anyController.resetAllButtons();
 					}
 
 				}
@@ -488,7 +495,7 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.0f));
 				ImGui::SetNextWindowSize({200,200}, ImGuiCond_Once);
 				ImGui::Begin( (std::string("gameplay window id: ") + std::to_string(c.first)).c_str(),
-					&isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+					&isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNav);
 				
 				//mouse pos and focus
 				auto windowPos = ImGui::GetWindowPos();

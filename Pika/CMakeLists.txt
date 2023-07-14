@@ -78,7 +78,7 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pik
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
-target_link_libraries(pikaCore PRIVATE glad glfw gl2d  gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib box2d)
+target_link_libraries(pikaCore PRIVATE glad glfw gl2d  gl3d glui glm stb_image stb_truetype imgui safeSave profilerLib)
 #################^^^^^^^^#############################
 
 

@@ -1,12 +1,2 @@
-#2023-07-12 12:14:18: Created container: Holloknight
-#2023-07-12 12:18:41[error]: Killed container because its static container info
-has changed: Holloknight #1
-#2023-07-12 12:18:41: Force terminated continer: Holloknight #1
-#2023-07-12 12:18:42: Reloaded dll
-#2023-07-12 12:18:47: Created container: Holloknight
-#2023-07-12 12:25:47[error]: Killed container because its static container info
-has changed: Holloknight #2
-#2023-07-12 12:25:47: Force terminated continer: Holloknight #2
-#2023-07-12 12:25:47: Reloaded dll
-#2023-07-12 12:25:52: Created container: Holloknight
-#2023-07-12 12:27:11: Reloaded dll
+#2023-07-14 18:32:01: Created container: Holloknight
+#2023-07-14 18:41:00: Destroyed continer: Holloknight #1

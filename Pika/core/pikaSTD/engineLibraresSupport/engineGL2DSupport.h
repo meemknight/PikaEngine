@@ -20,7 +20,7 @@ namespace pika
 		::gl2d::Font loadFont(const char *path, RequestedContainerInfo &info);
 
 		//speed without delta time
-		void cameraController(::gl2d::Camera &c, Input &input, float speed);
+		void cameraController(::gl2d::Camera &c, Input &input, float speed, float zoomSpeed);
 
 	}
 

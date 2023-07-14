@@ -84,7 +84,7 @@
 	return f;
 }
 
-void pika::gl2d::cameraController(::gl2d::Camera &c, Input &input, float speed)
+void pika::gl2d::cameraController(::gl2d::Camera &c, Input &input, float speed, float zoomSpeed)
 {
 	if (input.buttons[pika::Button::W].held())
 	{
@@ -104,12 +104,12 @@ void pika::gl2d::cameraController(::gl2d::Camera &c, Input &input, float speed)
 	}
 	if (input.buttons[pika::Button::Q].held())
 	{
-		c.zoom -= 1 * input.deltaTime;
+		c.zoom -= zoomSpeed * input.deltaTime;
 	}
 	if (input.buttons[pika::Button::E].held())
 	{
-		c.zoom += 1 * input.deltaTime;
+		c.zoom += zoomSpeed * input.deltaTime;
 	}
 
-	c.zoom = glm::clamp(c.zoom, 0.0001f, 1000.f);
+	c.zoom = glm::clamp(c.zoom, 0.001f, 1000.f);
 }

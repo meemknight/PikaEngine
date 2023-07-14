@@ -38,7 +38,7 @@ void windowFocusCallback(GLFWwindow *window, int focused)
 	}
 }
 
-static void processAButton(pika::Button &b, int action)
+void pika::processAButton(pika::Button &b, int action)
 {
 	if (action == GLFW_PRESS)
 	{

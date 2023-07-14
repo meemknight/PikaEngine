@@ -32,7 +32,6 @@ namespace pika
 		//on live code editing this will be recorded every frame
 		Input input = {};
 
-
 		WindowState windowState = {};
 
 		//this doesn't return error codes because it will do the asserts for you

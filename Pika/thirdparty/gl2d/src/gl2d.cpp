@@ -1870,8 +1870,6 @@ namespace gl2d
 			else
 			{
 				position += delta * speed;
-
-
 			}
 
 			glm::vec2 delta2 = pos - position;
