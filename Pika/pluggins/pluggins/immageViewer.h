@@ -16,17 +16,18 @@ struct ImmageViewer: public Container
 	gl2d::Texture texture;
 	float zoom = 1.f;
 	glm::ivec2 immageSize;
+	bool uvEditor = 0;
+	glm::vec4 uv = {0,1,1,0};
 
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(30);
+		info.defaultHeapMemorySize = pika::MB(10);
 
 		//todo to lower
 		info.extensionsSuported = {".png", ".bmp", ".psd", ".tga", ".gif", ".hdr", ".pic", ".ppm", ".pgm", ".jpg", ".jpeg"};
 
 		info.requestImguiIds = 1;
-
 
 		return info;
 	}
@@ -47,26 +48,10 @@ struct ImmageViewer: public Container
 		}
 		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
 
-		//size_t size = 0;
-		//if (!requestedInfo.getFileSizeBinary(file.c_str(), size))
-		//{
-		//	return 0; //todo
-		//}
-		//
-		//unsigned char *buffer = new unsigned char[size];
-		//
-		//if (!requestedInfo.readEntireFileBinary(file.c_str(), buffer, size))
-		//{
-		//	delete[] buffer;
-		//	return 0; //todo
-		//}
-		
-		//texture.createFromFileData(buffer, size, true, true);
 		
 		immageSize = texture.GetSize();
 		if (immageSize == glm::ivec2{0, 0}) { return 0; }
 
-		//delete[] buffer;
 
 		return true;
 	}
@@ -103,6 +88,8 @@ struct ImmageViewer: public Container
 
 
 		ImGui::Text("%s; %d, %d",file.c_str(), immageSize.x, immageSize.y);
+		ImGui::Checkbox("UV editor", &uvEditor);
+
 
 		auto s = ImGui::GetContentRegionMax();
 		
@@ -121,26 +108,52 @@ struct ImmageViewer: public Container
 		zoom = std::min(zoom, 10.f);
 		zoom = std::max(zoom, 0.2f);
 
-		if (ImGui::BeginChild(6996, {}, false, ImGuiWindowFlags_HorizontalScrollbar))
+		if (uvEditor)
 		{
+			
+			ImGui::Separator();
 
-			float xsize = std::max((int)(s.x*zoom) - 10, (int)(100*zoom));
-			float aspect = 1.f; //todo
+			if (ImGui::BeginChild(6996, {}, false, ImGuiWindowFlags_HorizontalScrollbar))
+			{
 
-			ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
-				{0, 1}, {1, 0});
+				float xsize = std::max((int)(s.x * zoom) - 10, (int)(100 * zoom));
+				float aspect = 1.f; //todo
 
-			ImGui::EndChild();
+				ImGui::DragFloat4("UV", &uv[0], 0.01, 0.f, 1.f);
+
+				ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
+					{uv.x, uv.y}, {uv.z, uv.w}, {1,1,1,1}, {0.2,0.2,0.2,0.9});
+
+				ImGui::EndChild();
+			}
+
 		}
+		else
+		{
+			ImGui::Separator();
 
+			if (ImGui::BeginChild(6996, {}, false, ImGuiWindowFlags_HorizontalScrollbar))
+			{
 
+				float xsize = std::max((int)(s.x * zoom) - 10, (int)(100 * zoom));
+				float aspect = 1.f; //todo
+
+				ImGui::Image((void *)texture.id, {xsize,xsize / aspect},
+					{0, 1}, {1, 0}, {1,1,1,1}, {0.2,0.2,0.2,0.9});
+
+				ImGui::EndChild();
+			}
+		}
+		
+
+	
 		ImGui::End();
 		ImGui::PopID();
 
 		return true;
 	}
 
-	void destruct() override
+	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		texture.cleanup();
 	}

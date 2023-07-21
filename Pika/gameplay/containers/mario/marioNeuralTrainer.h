@@ -269,7 +269,7 @@ struct MarioNeuralTrainer: public Container
 		return true;
 	}
 
-	void destruct() override
+	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		renderer.cleanup();
 		simulator.cleanup();

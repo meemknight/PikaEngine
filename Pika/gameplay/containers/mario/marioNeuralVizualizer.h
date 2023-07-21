@@ -21,7 +21,6 @@ struct MarioNeuralVizualizer: public Container
 
 	bool fixedFramerate = 0;
 
-	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -121,13 +120,9 @@ struct MarioNeuralVizualizer: public Container
 		return true;
 	}
 
-	void destruct() override
+	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		renderer.cleanup();
 		simulator.cleanup();
 	}
 };
-
-//todo flag to clear screen from engine
-//todo error popup
-//todo error popup disable in release

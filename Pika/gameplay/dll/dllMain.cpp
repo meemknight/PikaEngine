@@ -74,7 +74,7 @@ void gl2dErrorFunc(const char *msg, void* userData) //todo
 PIKA_API void gameplayStart(pika::PikaContext &pikaContext, pika::LogManager &logs)
 {
 	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator);
-	//pika::initShortcutApi(); //todo
+	pika::initShortcutApi(); //todo
 
 	//todo user should have functions to specify this
 #pragma region init stuff
@@ -97,7 +97,7 @@ PIKA_API void gameplayReload(pika::PikaContext &pikaContext, pika::LogManager &l
 #ifdef PIKA_DEVELOPMENT	
 
 	pika::pikaImgui::setImguiAllocator(pikaContext.imguiAllocator); //todo check if really needed
-	//pika::initShortcutApi();
+	pika::initShortcutApi();
 
 
 	PIKA_PERMA_ASSERT(gladLoadGL(), "Problem initializing glad from dll");

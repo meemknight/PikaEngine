@@ -1072,7 +1072,7 @@ struct McDungeonsGameplay: public Container
 		return true;
 	}
 
-	void destruct()
+	void destruct(RequestedContainerInfo &requestedInfo)
 	{
 
 		this->renderer.skyBox.clearTextures();
@@ -1084,7 +1084,3 @@ struct McDungeonsGameplay: public Container
 
 
 };
-
-//todo flag to clear screen from engine
-//todo error popup
-//todo error popup disable in release

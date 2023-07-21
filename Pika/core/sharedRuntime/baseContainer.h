@@ -281,7 +281,6 @@ struct RequestedContainerInfo
 		bool success = true;
 		size = 0;
 
-		//todo push pop allocator or use that pointer thing (and don't forget to only use explicit allocators calls or sthing)
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
 			std::ifstream f(name, std::ifstream::ate | std::ifstream::binary);
@@ -397,7 +396,7 @@ struct Container
 		pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) = 0;
 
-	virtual void destruct() {};
+	virtual void destruct(RequestedContainerInfo &requestedInfo) {};
 
 	virtual ~Container() {};
 

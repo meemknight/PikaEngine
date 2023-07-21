@@ -34,7 +34,6 @@ struct MarioEditor: public Container
 		return map[x + y * mapSize.x];
 	}
 
-	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -345,7 +344,7 @@ struct MarioEditor: public Container
 		return true;
 	}
 
-	void destruct() override
+	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		tiles.cleanup();
 		renderer.cleanup();
@@ -353,7 +352,3 @@ struct MarioEditor: public Container
 	}
 
 };
-
-//todo flag to clear screen from engine
-//todo error popup
-//todo error popup disable in release

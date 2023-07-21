@@ -9,6 +9,9 @@
 #include <box2d/box2d.h>
 #include <engineLibraresSupport/engineGL2DSupport.h>
 #include <pikaImgui/pikaImgui.h>
+#include <safeSave/safeSave.h>
+#include <engineLibraresSupport/engineSafeSaveSupport.h>
+#include "imguiComboSearch.h"
 
 struct Holloknight: public Container
 {
@@ -19,10 +22,36 @@ struct Holloknight: public Container
 
 	b2World world{{0, 10}};
 
+	constexpr static int ASSETS_COUNT = 18;
+
+	std::vector<const char*> assetsNames=
+	{
+		"bush.png",
+		"grass.png",
+		"mushroom1.png",
+		"mushroom2.png",
+		"mushroom3.png",
+		"mushroom4.png",
+		"mushroom5.png",
+		"mushroom6.png",
+		"vines1.png",
+		"vines2.png",
+		"vines3.png",
+		"background.jpg",
+		"grass2.png",
+		"grass3.png",
+		"block1.png",
+		"block2.png",
+		"block3.png",
+		"block4.png",
+	};
+
+	gl2d::Texture assets[ASSETS_COUNT];
+
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(10);
+		info.defaultHeapMemorySize = pika::MB(100);
 
 		info.requestImguiFbo = true; 
 		info.pushAnImguiIdForMe = true;
@@ -86,17 +115,16 @@ struct Holloknight: public Container
 			return dynamicBody->GetAngle();
 		}
 
-		void create(b2World &world, glm::vec4 dimensions, bool dynamic)
+		void create(b2World &world, glm::vec4 dimensions, float rotation, int type)
 		{
 			b2BodyDef myBodyDef;
-			if (dynamic)
-				myBodyDef.type = b2_dynamicBody; //this will be a dynamic body
+			myBodyDef.type = (b2BodyType)type; //this will be a dynamic body
 
 			dimensions.x += dimensions.z / 2.f;
-			dimensions.y += dimensions.y / 2.f;
+			dimensions.y += dimensions.w / 2.f;
 
 			myBodyDef.position.Set(dimensions.x, dimensions.y); //set the starting position
-			myBodyDef.angle = 0; //set the starting angle
+			myBodyDef.angle = rotation; //set the starting angle
 
 			dynamicBody = world.CreateBody(&myBodyDef);
 
@@ -147,6 +175,13 @@ struct Holloknight: public Container
 		}
 	};
 
+	struct SavedBlock
+	{
+		glm::vec4 dimensions = {};
+		float rotation = 0;
+		int type = 0;
+	};
+
 	struct Entity
 	{
 		Block physicalBody;
@@ -165,9 +200,9 @@ struct Holloknight: public Container
 		}
 	};
 
-	Block floor;
 	Block blocks[10];
 	b2Body *currentBodySelected = 0;
+	int currentSelectedSprite = 0;
 
 	Entity character;
 	b2Fixture *characterJumpSensor;
@@ -175,19 +210,34 @@ struct Holloknight: public Container
 	glm::vec2 draggedStart = {};
 
 	bool followPlayer = true;
+	bool dragGeometry = false;
+	bool renderGeometry = true;
+	int selectType = 0;
 
 	struct InputMetrict
 	{
 		float speed = 20;
-		float jump = 7;
+		float jump = 8;
 		float stopSpeed = 7;
-		float jumpTimer = 1.5;
-		float initialJumpImpulse = 1;
+		float jumpTimer = 1;
+		float initialJumpImpulse = 4;
 	} inputMetrics = {};
+
+	struct GameSprite
+	{
+		glm::vec2 pos = {};
+		float scale = 1;
+		int type = 0;
+		float rotation = 0;
+		bool flip = 0;
+		int layer = 0; //0 is background than 1 is objects than 2 is decoration than player than 3
+	};
+
+	std::vector<GameSprite> gameSprites;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-
+		
 		renderer.create(requestedInfo.requestedFBO.fbo);
 		renderer.currentCamera.zoom = 80.f;
 		renderer.currentCamera.position.x = -440;
@@ -199,26 +249,71 @@ struct Holloknight: public Container
 			inputMetrics = {};
 		}
 
+		for (int i = 0; i < ASSETS_COUNT; i++)
+		{
+			assets[i]
+				= pika::gl2d::loadTexture
+				((std::string(PIKA_RESOURCES_PATH "hollowknight/") + std::string(assetsNames[i])).c_str()
+				, requestedInfo);
+		}
+
+
+
 		sprites = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "hollowknight/sprites.png", requestedInfo, 80);
 		atlas = gl2d::TextureAtlasPadding(12, 12, sprites.GetSize().x, sprites.GetSize().y);
 
 		world.SetAllowSleeping(true);
 		world.SetContinuousPhysics(true);
 
-		floor.create(world, {-50, 10, 100, 1}, false);
-		
-		for (int i = 0; i < 10; i++) 
 		{
-			blocks[i].create(world, {1+ sin(i)*5, -1.5*i, 1,1}, true);
+			sfs::SafeSafeKeyValueData data;
+
+			pika::sfs::safeLoad(data, PIKA_RESOURCES_PATH "hollowknight/map", false);
+
+			void *geometry = 0;
+			size_t s = 0;
+			if (data.getRawDataPointer("geometry", geometry, s) == sfs::noError)
+			{
+				SavedBlock *b = (SavedBlock*)geometry;
+
+				for (int i = 0; i < s / sizeof(SavedBlock); i++)
+				{
+					blocks[i].create(world, b[i].dimensions, b[i].rotation, b[i].type);
+				}
+			}
+			else
+			{
+				requestedInfo.log("Error reading map file", pika::logError);
+			}
+
+			void *loadedSprites = 0;
+			s = 0;
+			if (data.getRawDataPointer("sprites", loadedSprites, s) == sfs::noError)
+			{
+				GameSprite *loagedGameSprites = (GameSprite *)loadedSprites;
+
+				for (int i = 0; i < s / sizeof(SavedBlock); i++)
+				{
+					gameSprites.push_back(loagedGameSprites[i]);
+				}
+			}
+
 		}
 
-		character.physicalBody.create(world, {10, 2, 0.6f,1}, true);
+		//for (int i = 0; i < 10; i++)
+		//{
+		//	blocks[i].create(world, {1 + sin(i) * 5, -1.5 * i, 1,1}, 0, b2BodyType::b2_dynamicBody);
+		//}
+
+		character.physicalBody.create(world, {10, 2, 0.6f,1}, 0, b2BodyType::b2_dynamicBody);
 		character.spriteDimensions = glm::vec4{0,0,1,1};
 		character.physicalBody.dynamicBody->SetFixedRotation(true);
 		characterJumpSensor = character.physicalBody.addSensor({0, 0.5, 0.55f, 0.1f});
 
 		return true;
 	}
+
+	bool movingLeft = 0;
 
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
@@ -233,16 +328,17 @@ struct Holloknight: public Container
 		::pika::gl2d::cameraController(renderer.currentCamera, input, 60 * (!followPlayer), 4);
 
 		int direction = 0;
+		
 
 		if (input.buttons[pika::Button::Left].held() 
 			|| input.anyController.buttons[pika::Controller::Left].held() 
 			|| input.anyController.LStick.left()
-			) { direction--; }
+			) { direction--; movingLeft = true; }
 
 		if (input.buttons[pika::Button::Right].held() 
 			|| input.anyController.buttons[pika::Controller::Right].held()
 			|| input.anyController.LStick.right()
-			) { direction++; }
+			) { direction++; movingLeft = false; }
 
 		{
 			b2Vec2 vel = character.physicalBody.dynamicBody->GetLinearVelocity();
@@ -340,26 +436,42 @@ struct Holloknight: public Container
 		}
 	#pragma endregion
 
+	#pragma region render
 
-		floor.render(renderer, Colors_White);
-
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			if (blocks[i].dynamicBody->GetType() == b2_dynamicBody)
+			//player
+			if (i == 3)
 			{
-				blocks[i].render(renderer, Colors_Orange);
+				renderer.renderRectangle(character.getRenderPos(), sprites, Colors_White, {}, 0, 
+					atlas.get(0, 0, movingLeft));
 			}
-			else if (blocks[i].dynamicBody->GetType() == b2_kinematicBody)
+
+			int index = 0;
+			for (auto &s : gameSprites)
 			{
-				blocks[i].render(renderer, {0.5,0.7,0.1,1});
-			}
-			else
-			{
-				blocks[i].render(renderer, Colors_White);
+				if (s.layer == i)
+				{
+
+					if (currentSelectedSprite == index && selectType == 2)
+					{
+						renderer.renderRectangle({s.pos, glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
+							assets[s.type], {1,0.5,0.5,1.0}, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0));
+					}
+					else
+					{
+						renderer.renderRectangle({s.pos, glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
+							assets[s.type], Colors_White, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0));
+					}
+				}
+
+				index++;
 			}
 		}
 
-		renderer.renderRectangle(character.getRenderPos(), sprites, Colors_White, {}, 0, atlas.get(0, 0));
+
+	#pragma endregion
+
 
 		glm::vec2 mouseWorldpos(input.mouseX, input.mouseY);
 		{
@@ -372,13 +484,14 @@ struct Holloknight: public Container
 
 	#pragma region body render
 
+		if(renderGeometry)
 		for (b2Body *b = world.GetBodyList(); b; b = b->GetNext())
 		{
 
 			glm::vec4 color = Colors_Red;
 			float thickness = 0.01;
 
-			if (currentBodySelected == b) 
+			if (currentBodySelected == b && selectType == 1)
 			{
 				color = Colors_Blue;
 				thickness = 0.02;
@@ -395,7 +508,9 @@ struct Holloknight: public Container
 			{
 				auto shape = f->GetShape();
 
-				if (shape->TestPoint(shapePos, {mouseWorldpos.x,mouseWorldpos.y}) && input.lMouse.held())
+				if (shape->TestPoint(shapePos, {mouseWorldpos.x,mouseWorldpos.y}) && input.lMouse.held()
+					&& selectType == 1
+					)
 				{
 					currentBodySelected = b;
 				}
@@ -442,6 +557,7 @@ struct Holloknight: public Container
 
 	#pragma region drag
 
+		if(dragGeometry)
 		{
 
 			if (input.rMouse.pressed())
@@ -465,7 +581,6 @@ struct Holloknight: public Container
 			
 		}
 
-
 	#pragma endregion
 
 
@@ -479,6 +594,10 @@ struct Holloknight: public Container
 			ImGui::DragFloat("Camera zoom", &renderer.currentCamera.zoom, 0.5, 10, 1000);
 		
 			ImGui::Checkbox("Follow player", &followPlayer);
+			ImGui::Checkbox("Drag geometry", &dragGeometry);
+			ImGui::Checkbox("Render geometry", &renderGeometry);
+
+			ImGui::Combo("Editor type: ", &selectType, "none\0geometry\0sprites\0");
 
 			ImGui::Separator();
 
@@ -503,12 +622,12 @@ struct Holloknight: public Container
 
 			ImGui::PopStyleColor();
 
-
+			if(selectType == 1)
 			if (currentBodySelected)
 			{
 				ImGui::NewLine();
 				ImGui::Separator();
-				ImGui::Text("World editor");
+				ImGui::Text("Geometry editor");
 				ImGui::NewLine();
 
 
@@ -582,6 +701,75 @@ struct Holloknight: public Container
 
 			}
 
+			if (selectType == 2)
+			{
+				ImGui::NewLine();
+				ImGui::Separator();
+				ImGui::Text("Sprites editor");
+				ImGui::NewLine();
+
+				if (ImGui::Button("Add sprite"))
+				{
+					gameSprites.push_back({});
+					currentSelectedSprite = gameSprites.size() - 1;
+				}
+				
+				ImGui::InputInt("Sprite", &currentSelectedSprite);
+
+				currentSelectedSprite = glm::clamp(currentSelectedSprite, 0, (int)gameSprites.size() - 1);
+
+				if (gameSprites.size())
+				{
+
+					auto &s = gameSprites[currentSelectedSprite];
+
+					ImGui::ComboWithFilter("Type", &s.type, assetsNames);
+					s.type = glm::clamp(s.type, 0, ASSETS_COUNT);
+
+					ImGui::Combo("Layer: ", &s.layer, "background\0geometry\0geometry2\0on top of player\0");
+
+					ImGui::DragFloat2("Pos", &s.pos[0], 0.01);
+
+					ImGui::Checkbox("Flip", &s.flip);
+
+					ImGui::SliderAngle("Angle", &s.rotation);
+
+					ImGui::DragFloat("Scale", &s.scale, 0.01, 0.001, 100);
+
+
+				}
+
+			}
+
+
+			ImGui::NewLine();
+			ImGui::Separator();
+
+			if (ImGui::Button("Save map"))
+			{
+				SavedBlock b[10];
+
+				for (int i = 0; i < 10; i++)
+				{
+					b[i].dimensions = glm::vec4(blocks[i].getPosTopLeft(), blocks[i].getSize());
+					b[i].rotation = blocks[i].getRotation();
+					b[i].type = blocks[i].dynamicBody->GetType();
+				}
+
+				sfs::SafeSafeKeyValueData data;
+
+				data.setRawData("geometry", b, sizeof(b));
+
+				data.setRawData("sprites", gameSprites.data(), sizeof(GameSprite) *gameSprites.size());
+
+
+				pika::memory::pushCustomAllocatorsToStandard();
+				sfs::safeSave(data, PIKA_RESOURCES_PATH "hollowknight/map", false);
+				pika::memory::popCustomAllocatorsToStandard();
+
+			}
+
+
 			ImGui::End();
 		}
 
@@ -596,7 +784,7 @@ struct Holloknight: public Container
 	}
 
 	//optional
-	void destruct()
+	void destruct(RequestedContainerInfo &requestedInfo)
 	{
 	}
 

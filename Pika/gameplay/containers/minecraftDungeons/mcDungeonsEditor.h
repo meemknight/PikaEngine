@@ -673,7 +673,7 @@ struct McDungeonsEditor: public Container
 		return true;
 	}
 
-	void destruct()
+	void destruct(RequestedContainerInfo &requestedInfo)
 	{
 
 		this->renderer.skyBox.clearTextures();

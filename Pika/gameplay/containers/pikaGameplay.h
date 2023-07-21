@@ -64,10 +64,10 @@ struct Gameplay : public Container
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//if (pika::shortcut(input, "Ctrl + S"))
-		//{
-		//	requestedInfo.consoleWrite("save\n");
-		//}
+		if (pika::shortcut(input, "Ctrl + S"))
+		{
+			requestedInfo.consoleWrite("save\n");
+		}
 		
 		//if (input.buttons[pika::Button::S].released())
 		//{
@@ -80,7 +80,6 @@ struct Gameplay : public Container
 		}
 
 		requestedInfo.consoleWrite(input.typedInput);
-
 
 
 		if (input.buttons[pika::Button::P].held())
@@ -149,7 +148,7 @@ struct Gameplay : public Container
 	}
 
 	//optional
-	void destruct()
+	void destruct(RequestedContainerInfo &requestedInfo)
 	{
 
 	}

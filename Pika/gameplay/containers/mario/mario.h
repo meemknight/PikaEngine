@@ -24,8 +24,6 @@ struct Mario: public Container
 	pika::FileChanged vertexChanged;
 	pika::FileChanged fragmentChanged;
 
-
-	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -148,7 +146,7 @@ struct Mario: public Container
 		return true;
 	}
 
-	void destruct() override
+	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		renderer.cleanup();
 		simulator.cleanup();
@@ -157,7 +155,3 @@ struct Mario: public Container
 	}
 
 };
-
-//todo flag to clear screen from engine
-//todo error popup
-//todo error popup disable in release

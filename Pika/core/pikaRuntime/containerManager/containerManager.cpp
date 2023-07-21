@@ -466,7 +466,6 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 					ImGui::PopID();
 				}
 
-
 				auto milliseconds = (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1)).count()/1000.f;
 
 				c.second.frameTimer += milliseconds;
@@ -777,7 +776,7 @@ bool pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 	return 1;
 }
 
-//not verbose flag
+//todo not verbose flag
 bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll &loadedDll,
 	pika::LogManager &logManager)
 {
@@ -794,7 +793,11 @@ bool pika::ContainerManager::destroyContainer(containerId_t id, pika::LoadedDll 
 	auto name = c->second.baseContainerName;
 
 	loadedDll.bindAllocatorDllRealm(&c->second.allocator);
-	c->second.pointer->destruct();
+
+	c->second.requestedContainerInfo.mainAllocator = &c->second.allocator; //reset this
+	c->second.requestedContainerInfo.bonusAllocators = &c->second.bonusAllocators;
+	c->second.pointer->destruct(c->second.requestedContainerInfo);
+
 	loadedDll.destructContainer_(&(c->second.pointer), &c->second.arena);
 	loadedDll.resetAllocatorDllRealm();
 

@@ -18,7 +18,6 @@ struct McDungeonsMenu : public Container
 	gl2d::Texture button;
 	glui::RendererUi ui;
 
-	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -92,7 +91,7 @@ struct McDungeonsMenu : public Container
 		return true;
 	}
 
-	void destruct()
+	void destruct(RequestedContainerInfo &requestedInfo)
 	{
 
 		renderer.cleanup();
