@@ -21,7 +21,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) #under no circumstance we want th
 #declare projects
 project(pikaCore)
 project(pikaGameplay)
-project(pikaProduction)
+#project(pikaProduction)
 
 
 #add third party libraries
@@ -104,26 +104,26 @@ target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_imag
 
 
 #pikaProduction ###########################################
-add_executable(pikaProduction)
-
-target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
-set_property(TARGET pikaProduction PROPERTY CXX_STANDARD 17)
-
-target_sources(pikaProduction PRIVATE 
-	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" "${PIKA_SOURCES_PLUGGINS}"
-	"${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_SHARED_RUNTIME}")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
-target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
-
-target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image 
-	stb_truetype imgui safeSave profilerLib box2d sushi)
-
-
+#add_executable(pikaProduction)
+#
+#target_compile_definitions(pikaProduction PUBLIC PIKA_PRODUCTION)
+#set_property(TARGET pikaProduction PROPERTY CXX_STANDARD 17)
+#
+#target_sources(pikaProduction PRIVATE 
+#	"${PIKA_SOURCES_CORE_CONFIG}" "${PIKA_SOURCES_CORE_EDITOR}" "${PIKA_SOURCES_PLUGGINS}"
+#	"${PIKA_SOURCES_CORE_RUNTIME}" "${PIKA_SOURCES_CORE_STD}" "${PIKA_SOURCES_GAMEPLAY}" "${PIKA_SOURCES_CORE_SHARED_RUNTIME}")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaEditor/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaRuntime/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/gameplay/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
+#target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
+#
+#target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image 
+#	stb_truetype imgui safeSave profilerLib box2d sushi)
+#
+#
 
 #################^^^^^^^^^^^^^^############################
 

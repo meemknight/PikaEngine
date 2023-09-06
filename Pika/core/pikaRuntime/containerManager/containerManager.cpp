@@ -536,8 +536,23 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 				auto s = ImGui::GetContentRegionMax();
 
 				//todo try set borders here at 0,0, easiest thing to do probably
-				ImGui::Image((void *)c.second.requestedContainerInfo.requestedFBO.texture, s, {0, 1}, {1, 0},
-					{1,1,1,1}, {0,0,0,1});
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+				//ImGui::Image((void *)c.second.requestedContainerInfo.requestedFBO.texture, s, {0, 1}, {1, 0},
+				//	{1,1,1,1}, {0,0,0,0});
+
+				ImVec2 pos = ImGui::GetCursorScreenPos();
+				ImVec2 maxPos = {ImGui::GetWindowPos().x + ImGui::GetWindowSize().x,
+					ImGui::GetWindowPos().y + ImGui::GetWindowSize().y};
+				unsigned texId = c.second.requestedContainerInfo.requestedFBO.texture;
+
+				ImGui::GetWindowDrawList()->AddImage(
+					(void *)texId,
+					ImVec2(pos.x, pos.y),
+					ImVec2(maxPos),
+					ImVec2(0, 1), ImVec2(1, 0)
+				);
+
+				ImGui::PopStyleVar();
 
 				ImGui::End();
 

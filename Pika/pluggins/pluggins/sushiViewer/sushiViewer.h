@@ -24,5 +24,11 @@ struct SushiViewer: public Container
 
 	void destruct(RequestedContainerInfo &requestedInfo);
 
+	struct ImGuiStuff
+	{
+		unsigned int elementId = 0;
+
+	}img;
+
 };
 

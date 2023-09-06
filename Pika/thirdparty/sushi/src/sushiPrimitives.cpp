@@ -2,6 +2,22 @@
 
 namespace sushi
 {
+	bool pointInBox(glm::vec2 p, glm::vec4 box)
+	{
+		if 
+			(
+				(p.x >= box.x && p.x <= (box.x + box.z)) &&
+				(p.y >= box.y && p.y <= (box.y + box.w))
+			)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	void Transform::absoluteTransformPixelSize(glm::vec4 dimensions)
 	{
 		this->dimensions = dimensions;
@@ -14,6 +30,13 @@ namespace sushi
 		this->dimensions = dimensions;
 		placementType = RelativeTransform;
 		dimensionsType = DimensionsPixelsAbsolute;
+	}
+	
+	void Transform::relativeTransformDimensionsPercentage(glm::vec4 dimensions)
+	{
+		this->dimensions = dimensions;
+		placementType = RelativeTransform;
+		dimensionsType = DimensionsPercentage;
 	}
 
 	glm::vec4 Transform::applyTransform(glm::vec4 parent)
@@ -69,6 +92,15 @@ namespace sushi
 		return {pos, size};
 	}
 
+	void Background::render(::gl2d::Renderer2D &renderer, glm::vec4 pos)
+	{
+		renderer.renderRectangle(pos, color);
+	}
 
-
+	Transform defaultTransform()
+	{
+		Transform t;
+		t.relativeTransformDimensionsPercentage({0,0,1,1});
+		return Transform();
+	}
 };
