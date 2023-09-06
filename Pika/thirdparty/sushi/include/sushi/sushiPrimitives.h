@@ -11,13 +11,13 @@ namespace sushi
 	{
 		enum
 		{
-			RelativeTransform,
+			RelativeTransform = 0,
 			AbsoluteTransform,
 		};
 
 		enum
 		{
-			DimensionsPercentage,
+			DimensionsPercentage = 0,
 			DimensionsPixelsAbsolute,
 		};
 
@@ -39,6 +39,13 @@ namespace sushi
 		void relativeTransformDimensionsPercentage(glm::vec4 dimensions);
 
 		glm::vec4 applyTransform(glm::vec4 parent);
+
+		void changeSettings(Transform t, glm::vec4 parent)
+		{
+			//todo
+			this->placementType = t.placementType;
+			this->dimensionsType = t.dimensionsType;
+		}
 	};
 
 	Transform defaultTransform();

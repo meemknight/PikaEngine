@@ -48,6 +48,7 @@ namespace sushi
 		
 		OutData outData;
 
+
 	};
 
 	//this is a sushi context. Holds all the windows and manages stuff
@@ -62,6 +63,18 @@ namespace sushi
 		//draw regions are like this: x, y, w, h
 		void update(gl2d::Renderer2D &renderer, 
 			sushi::SushiInput &input);
+
+		void addElement(
+			SushiParent &parent,
+			const char *name,
+			Transform &transform,
+			Background &background);
+
+		void addParent(
+			SushiParent &parent,
+			const char *name,
+			Transform &transform,
+			Background &background);
 
 	};
 

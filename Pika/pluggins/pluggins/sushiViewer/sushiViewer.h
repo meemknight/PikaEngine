@@ -30,5 +30,12 @@ struct SushiViewer: public Container
 
 	}img;
 
+	void displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent);
+
+	void displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent, int id);
+
+	void displaySushiTransformImgui(::sushi::Transform &e, glm::vec4 parent, int id);
+
+	void displaySushiBackgroundImgui(::sushi::Background &e, int id);
 };
 

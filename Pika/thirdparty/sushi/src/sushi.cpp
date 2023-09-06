@@ -3,13 +3,44 @@
 namespace sushi
 {
 
+	void SushyContext::addElement(
+		SushiParent &parent,
+		const char *name,
+		Transform &transform,
+		Background &background)
+	{
+
+		sushi::SushiUiElement element;
+		element.id = currentIdCounter++;
+		element.background = background;
+		element.transform = transform;
+		std::strncpy(element.name, name, sizeof(element.name) - 1);
+		
+		parent.allUiElements.push_back(element);
+	}
+
+	void SushyContext::addParent(
+		SushiParent &parent,
+		const char *name,
+		Transform &transform,
+		Background &background)
+	{
+
+		sushi::SushiParent newParent;
+		newParent.id = currentIdCounter++;
+		newParent.background = background;
+		newParent.transform = transform;
+		std::strncpy(newParent.name, name, sizeof(newParent.name) - 1);
+
+		parent.subElements.push_back(newParent);
+	}
+
 	void SushyContext::createBasicSchene(int baseId, const char *name)
 	{
 		*this = {};
 		root.id = baseId;
 		currentIdCounter = baseId + 1;
 		std::strncpy(root.name, name, sizeof(root.name)-1);
-
 	
 	}
 
@@ -38,7 +69,6 @@ namespace sushi
 
 		glm::vec4 drawRegion = transform.applyTransform(parentTransform);
 		outData.set(drawRegion);
-
 
 		//backgrouund
 		background.render(renderer, drawRegion);
