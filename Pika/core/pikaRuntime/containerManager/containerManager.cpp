@@ -616,7 +616,8 @@ void pika::ContainerManager::update(pika::LoadedDll &loadedDll, pika::PikaWindow
 
 	for (auto &i : containersToCreate)
 	{
-		createContainer(i.containerName.to_string(), loadedDll, logs, imguiIdManager, consoleWindow, i.cmdArgs.to_string());
+		auto s = i.cmdArgs.to_string();
+		createContainer(i.containerName.to_string(), loadedDll, logs, imguiIdManager, consoleWindow, s);
 	}
 
 #pragma endregion

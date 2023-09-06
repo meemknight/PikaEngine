@@ -28,6 +28,8 @@ struct Gameplay : public Container
 
 		info.requestImguiFbo = true; //todo this should not affect the compatibility of input recording
 
+		//info.openOnApplicationStartup = true;
+
 		//info.bonusAllocators.push_back(100);
 		//info.bonusAllocators.push_back(200);
 		//info.bonusAllocators.push_back(300);

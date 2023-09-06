@@ -126,7 +126,6 @@ struct Mario: public Container
 				player.position.position = {1,1};
 				player.lastPos = {1,1};
 			}
-
 		
 		}
 		

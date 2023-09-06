@@ -196,10 +196,9 @@ struct GameplayRenderer
 		}
 		else { return 0; }
 
-		//todo push pop or sthing
-		pika::memory::setGlobalAllocatorToStandard();
+		pika::memory::pushCustomAllocatorsToStandard();
 		marioTexture.loadFromFile(PIKA_RESOURCES_PATH "/mario/mario.png", true, false);
-		pika::memory::setGlobalAllocator(requestedInfo.mainAllocator);
+		pika::memory::popCustomAllocatorsToStandard();
 
 
 		atlas = gl2d::TextureAtlasPadding(8, 10, 8 * 8, 8 * 10);

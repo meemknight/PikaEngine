@@ -14,6 +14,7 @@
 #include <engineLibraresSupport/engineGL2DSupport.h>
 #include <glui/glui.h>
 #include <profilerLib.h>
+static int diamondsCollected = 0;
 
 struct McDungeonsGameplay: public Container
 {
@@ -28,7 +29,7 @@ struct McDungeonsGameplay: public Container
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
 
-		//info.openOnApplicationStartup = true;
+		info.openOnApplicationStartup = true;
 
 		return info;
 	}
@@ -74,7 +75,6 @@ struct McDungeonsGameplay: public Container
 	std::vector<Zombie> enemies;
 
 	std::vector<gl3d::Entity> diamonds;
-
 
 	gl3d::Entity player;
 
@@ -425,6 +425,10 @@ struct McDungeonsGameplay: public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
+		char format[100] = {};
+		sprintf(format, "%p\n", &diamondsCollected);
+		requestedInfo.consoleWrite(format);
+
 		playerPhysics.position = {14,26};
 		playerPhysics.lastPos = {14,26};
 
@@ -1004,6 +1008,7 @@ struct McDungeonsGameplay: public Container
 				renderer.deleteEntity(diamonds[i]);
 				diamonds.erase(diamonds.begin() + i);
 				i--;
+				diamondsCollected++;
 				continue;
 			}
 			
@@ -1040,7 +1045,8 @@ struct McDungeonsGameplay: public Container
 					{1,1,1,0.5});
 
 				std::string s;
-				s += std::to_string(5 - diamonds.size());
+				//s += std::to_string(5 - diamonds.size());
+				s += std::to_string(diamondsCollected);
 				s += "/5";
 
 				renderer2d.renderText({glui::Box().xLeftPerc(0.5f).yTopPerc(0.9f)()}, s.c_str(), font,

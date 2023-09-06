@@ -24,7 +24,7 @@ struct McDungeonsMenu : public Container
 		info.defaultHeapMemorySize = pika::MB(100);
 
 		info.requestImguiFbo = true; 
-		info.openOnApplicationStartup = true;
+		//info.openOnApplicationStartup = true;
 		
 		
 
