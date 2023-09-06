@@ -9,16 +9,9 @@ namespace sushi
 		Transform &transform,
 		Background &background)
 	{
-
-		sushi::SushiUiElement element;
-		element.id = currentIdCounter++;
-		element.background = background;
-		element.transform = transform;
-		std::strncpy(element.name, name, sizeof(element.name) - 1);
-		
-		parent.allUiElements.push_back(element);
-
-		return currentIdCounter - 1;
+		unsigned int id = currentIdCounter++;
+		parent.addElement(name, transform, background, id);
+		return id;
 	}
 
 	unsigned int SushyContext::addParent(
@@ -27,16 +20,9 @@ namespace sushi
 		Transform &transform,
 		Background &background)
 	{
-
-		sushi::SushiParent newParent;
-		newParent.id = currentIdCounter++;
-		newParent.background = background;
-		newParent.transform = transform;
-		std::strncpy(newParent.name, name, sizeof(newParent.name) - 1);
-
-		parent.subElements.push_back(newParent);
-
-		return currentIdCounter - 1;
+		unsigned int id = currentIdCounter++;
+		parent.addParent(name, transform, background, id);
+		return id;
 	}
 
 	void SushyContext::createBasicSchene(int baseId, const char *name)
@@ -76,18 +62,106 @@ namespace sushi
 
 		//backgrouund
 		background.render(renderer, drawRegion);
-
 		auto uiElSize = allUiElements.size();
-		for (int i = 0; i < uiElSize; i++)
+		auto subUiElSize = parents.size();
+		auto ordererElementsSize = orderedElementsIds.size();
+
+		std::vector<sushi::SushiElement> toDraw;
+		toDraw.reserve(ordererElementsSize);
+
+		for (int i = 0; i < ordererElementsSize; i++)
 		{
-			allUiElements[i].update(renderer, input, drawRegion);
+			int id = orderedElementsIds[i];
+
+			for (int i = 0; i < uiElSize; i++)
+			{
+				if(allUiElements[i].id == id)
+				{
+					toDraw.push_back(sushi::SushiElement(&allUiElements[i]));
+					//allUiElements[i].update(renderer, input, drawRegion);
+					goto end;
+				}
+			}
+
+			for (int i = 0; i < subUiElSize; i++)
+			{
+				if (parents[i].id == id)
+				{
+					toDraw.push_back(sushi::SushiElement(&parents[i]));
+					//parents[i].update(renderer, input, drawRegion);
+					goto end;
+				}
+			}
+
+			end:
+			;
 		}
 
-		auto subUiElSize = subElements.size();
-		for (int i = 0; i < subUiElSize; i++)
+		auto toDrawSize = toDraw.size();
+
+		switch (layoutType)
 		{
-			subElements[i].update(renderer, input, drawRegion);
+		case layoutFree:
+		{
+			for (int i = 0; i < toDrawSize; i++)
+			{
+				if (toDraw[i].getParent())
+				{
+					toDraw[i].getParent()->update(renderer, input, drawRegion);
+				}
+				else if (toDraw[i].getUiElement())
+				{
+					toDraw[i].getUiElement()->update(renderer, input, drawRegion);
+				}
+			}
 		}
+		break;
+
+		case layourVertical:
+		{
+			for (int i = 0; i < toDrawSize; i++)
+			{
+				glm::vec4 newPos = drawRegion;
+				newPos.w /= toDrawSize;
+				newPos.y += newPos.w * i;
+
+				if (toDraw[i].getParent())
+				{
+					toDraw[i].getParent()->update(renderer, input, newPos);
+				}
+				else if (toDraw[i].getUiElement())
+				{
+					toDraw[i].getUiElement()->update(renderer, input, newPos);
+				}
+			}
+		}
+		break;
+
+		case layoutHorizontal:
+		{
+			for (int i = 0; i < toDrawSize; i++)
+			{
+				glm::vec4 newPos = drawRegion;
+				newPos.z /= toDrawSize;
+				newPos.x += newPos.z * i;
+
+				if (toDraw[i].getParent())
+				{
+					toDraw[i].getParent()->update(renderer, input, newPos);
+				}
+				else if (toDraw[i].getUiElement())
+				{
+					toDraw[i].getUiElement()->update(renderer, input, newPos);
+				}
+			}
+		}
+		break;
+
+		default:
+		assert(0);
+		break;
+		}
+
 
 	}
 
@@ -98,6 +172,74 @@ namespace sushi
 		outData.set(rectRez);
 
 		background.render(renderer, rectRez);
+	}
+
+	bool SushiParent::deleteById(unsigned int id)
+	{
+		for (int i = 0; i < orderedElementsIds.size(); i++)
+		{
+			if (orderedElementsIds[i] == id)
+			{
+				orderedElementsIds.erase(orderedElementsIds.begin() + i);
+			}
+		}
+
+		for (int i = 0; i < allUiElements.size(); i++)
+		{
+			if (allUiElements[i].id == id)
+			{
+				allUiElements.erase(allUiElements.begin() + i);
+				return 1;
+			}
+		}
+
+		for (int i = 0; i < parents.size(); i++)
+		{
+			if (parents[i].id == id)
+			{
+				parents.erase(parents.begin() + i);
+				return 1;
+			}
+
+			if (parents[i].deleteById(id))
+			{
+				return 1;
+			};
+		}
+
+		return 0;
+	}
+
+	void SushiParent::addElement(
+		const char *name,
+		Transform &transform,
+		Background &background,
+		unsigned int id)
+	{
+		sushi::SushiUiElement element;
+		element.id = id;
+		element.background = background;
+		element.transform = transform;
+		std::strncpy(element.name, name, sizeof(element.name) - 1);
+
+		allUiElements.push_back(element);
+		orderedElementsIds.push_back(id);
+	}
+
+	void SushiParent::addParent(
+		const char *name,
+		Transform &transform,
+		Background &background,
+		unsigned int id)
+	{
+		sushi::SushiParent newParent;
+		newParent.id = id;
+		newParent.background = background;
+		newParent.transform = transform;
+		std::strncpy(newParent.name, name, sizeof(newParent.name) - 1);
+
+		parents.push_back(newParent);
+		orderedElementsIds.push_back(id);
 	}
 
 };

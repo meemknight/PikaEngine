@@ -94,7 +94,7 @@ namespace sushi
 			}
 			break;
 
-			case toRight:
+			case topRight:
 			{
 				rightAlign();
 				topAlign();

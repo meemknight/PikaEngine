@@ -66,6 +66,8 @@ namespace pika
 			}
 		};
 
+		bool redButton(const char *label, const ImVec2 &size_arg = {});
+
 		void addErrorSymbol();
 		void addWarningSymbol();
 

@@ -141,6 +141,14 @@ void pika::pikaImgui::imguiEndFrame(PikaContext pikaContext)
 	}
 }
 
+bool pika::pikaImgui::redButton(const char *label, const ImVec2 &size_arg)
+{
+	::ImGui::PushStyleColor(ImGuiCol_Button, {1,0,0,1});
+	auto rez = ::ImGui::Button(label, size_arg);
+	::ImGui::PopStyleColor();
+	return rez;
+}
+
 void pika::pikaImgui::addErrorSymbol()
 {
 	::ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));

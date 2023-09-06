@@ -6,17 +6,65 @@
 namespace sushi
 {
 
-	struct SushiUiElement;
-
-	struct OutData
+	//this can also be a window or a button or whatever you want
+	struct SushiUiElement
 	{
-		glm::vec4 absTransform = {};
-
-		void set(glm::vec4 absTransform)
+		SushiUiElement() {};
+		SushiUiElement(const char *name, int id)
 		{
-			this->absTransform = absTransform;
+			this->id = id;
+			std::strncpy(this->name, name, sizeof(name) - 1);
+		};
 
+		char name[16] = {};
+		unsigned int id = 0;
+		Transform transform;
+		Background background;
+
+		void update(gl2d::Renderer2D &renderer,
+			sushi::SushiInput &input, glm::vec4 parentTransform);
+
+		OutData outData;
+
+	};
+
+	struct SushiParent;
+
+	//parent or ui
+	struct SushiElement
+	{
+		SushiElement() {};
+		SushiElement(void *ptr, int type):ptr(ptr), type(type) {};
+		SushiElement(SushiUiElement *ptr):ptr(ptr), type(TypeUiElement) {};
+		SushiElement(SushiParent *ptr):ptr(ptr), type(TypeParent) {};
+
+		void *ptr = 0;
+		int type = 0;
+
+		enum Type
+		{
+			TypeUiElement = 1,
+			TypeParent = 2,
+		};
+
+		SushiUiElement *getUiElement()
+		{
+			if (type == TypeUiElement)
+			{
+				return (SushiUiElement *)ptr;
+			}
+			else { return 0; }
 		}
+
+		SushiParent *getParent()
+		{
+			if (type == TypeParent)
+			{
+				return (SushiParent *)ptr;
+			}
+			else { return 0; }
+		}
+
 	};
 
 	struct SushiParent
@@ -39,16 +87,39 @@ namespace sushi
 		char name[16] = {};
 		unsigned int id = 0;
 
+		enum
+		{
+			layoutFree = 0,
+			layoutHorizontal,
+			layourVertical,
+		};
+
+		int layoutType = 0;
+
 		std::vector<SushiUiElement> allUiElements;
 
-		std::vector<SushiParent> subElements;
+		std::vector<SushiParent> parents;
+
+		std::vector<unsigned int> orderedElementsIds;
 
 		void update(gl2d::Renderer2D &renderer,
 			sushi::SushiInput &input, glm::vec4 parentTransform);
 		
 		OutData outData;
 
+		bool deleteById(unsigned int id);
 
+		void addElement(
+			const char *name,
+			Transform &transform,
+			Background &background,
+			unsigned int id);
+
+		void addParent(
+			const char *name,
+			Transform &transform,
+			Background &background,
+			unsigned int id);
 	};
 
 	//this is a sushi context. Holds all the windows and manages stuff
@@ -79,26 +150,7 @@ namespace sushi
 	};
 
 	
-	//this can also be a window or a button or whatever you want
-	struct SushiUiElement
-	{
-		SushiUiElement() {};
-		SushiUiElement(const char *name, int id) 
-		{
-			this->id = id;
-			std::strncpy(this->name, name, sizeof(name)-1);
-		};
-
-		char name[16] = {};
-		unsigned int id = 0;
-		Transform transform;
-		Background background;
-
-		void update(gl2d::Renderer2D &renderer,
-			sushi::SushiInput &input, glm::vec4 parentTransform);
-
-		OutData outData;
-	};
+	
 
 
 

@@ -7,6 +7,17 @@ namespace sushi
 
 	bool pointInBox(glm::vec2 p, glm::vec4 box);
 
+	struct OutData
+	{
+		glm::vec4 absTransform = {};
+
+		void set(glm::vec4 absTransform)
+		{
+			this->absTransform = absTransform;
+
+		}
+	};
+
 	struct Transform
 	{
 		//enum
@@ -44,7 +55,7 @@ namespace sushi
 		{
 			topLeft = 0,
 			topMiddle,
-			toRight,
+			topRight,
 			middleLeft,
 			center,
 			middleRight,

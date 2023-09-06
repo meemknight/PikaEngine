@@ -1,6 +1,6 @@
 #include <pluggins/sushiViewer/sushiViewer.h>
 #include <engineLibraresSupport/sushi/engineSushiSupport.h>
-
+#include <pikaImgui/pikaImgui.h>
 
 //todo user can request imgui ids; shortcut manager context; allocators
 
@@ -66,16 +66,24 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 	ImGui::EndChildFrame();
 }
 
-void SushiViewer::displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent, int id)
+void SushiViewer::displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent)
 {
-	if (ImGui::BeginChildFrame(id, {0, 500}, true))
+	if (ImGui::BeginChildFrame(e.id, {0, 500}, true))
 	{
+		ImGui::PushID(e.id);
 		ImGui::Text("Ui element editor: %s, id: %u", e.name, e.id);
 
-		displaySushiTransformImgui(e.transform, parent, id + 1000);
 		ImGui::Separator();
-		displaySushiBackgroundImgui(e.background, id + 500);
+		if (pika::pikaImgui::redButton("Delete"))
+		{
+			toDelete.push_back(e.id);
+		}
+		ImGui::Separator();
 
+		displaySushiTransformImgui(e.transform, parent, e.id + 20000);
+		ImGui::Separator();
+		displaySushiBackgroundImgui(e.background, e.id + 10000);
+		ImGui::PopID();
 	}
 	ImGui::EndChildFrame();
 }
@@ -84,11 +92,24 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 {
 	if (ImGui::BeginChildFrame(2, {0, 700}, true))
 	{
+		ImGui::PushID(e.id);
+
 		ImGui::Text("Parent editor: %s, id: %u", e.name, e.id);
 
-		displaySushiTransformImgui(e.transform, parent, 3);
 		ImGui::Separator();
-		displaySushiBackgroundImgui(e.background, 4);
+		if (pika::pikaImgui::redButton("Delete"))
+		{
+			toDelete.push_back(e.id);
+		}
+		ImGui::Separator();
+
+		ImGui::NewLine();
+
+		ImGui::Combo("Layout type", &e.layoutType, "Free\0Horizonta\0Vertical\0");
+
+		displaySushiTransformImgui(e.transform, parent, e.id + 20000);
+		ImGui::Separator();
+		displaySushiBackgroundImgui(e.background, e.id + 10000);
 		ImGui::Separator();
 
 		sushi::Transform transform;
@@ -106,14 +127,17 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 		}
 
 		ImGui::Separator();
+		if(!e.allUiElements.empty())
+			{ImGui::Text("Ui Elements:");}
 		int id = 30;
 		for (auto &i : e.allUiElements)
 		{
 			ImGui::PushID(id++);
-			displaySushiUiElementImgui(i, e.outData.absTransform, id+500);
+			displaySushiUiElementImgui(i, e.outData.absTransform);
 			ImGui::PopID();
 		}
 
+		ImGui::PopID();
 	}
 	ImGui::EndChildFrame();
 }
@@ -122,7 +146,7 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 sushi::SushiParent *findParentOfParent(sushi::SushiParent &parent, unsigned int id)
 {
 
-	for (auto &i : parent.subElements)
+	for (auto &i : parent.parents)
 	{
 		if (i.id == id)
 		{
@@ -130,7 +154,7 @@ sushi::SushiParent *findParentOfParent(sushi::SushiParent &parent, unsigned int 
 		}
 	}
 
-	for (auto &i : parent.subElements)
+	for (auto &i : parent.parents)
 	{
 		auto rez = findParentOfParent(i, id);
 		if (rez) { return rez; }
@@ -159,7 +183,7 @@ sushi::SushiParent* &selectedParent
 		}
 	}
 
-	for (auto &i : parent.subElements)
+	for (auto &i : parent.parents)
 	{
 		visit(i, id, selectedElement, selectedParent);
 		if (selectedElement || selectedParent) { break; }
@@ -196,7 +220,7 @@ void visitSelect(sushi::SushiParent &parent, unsigned int &id, sushi::SushiUiEle
 		}
 	}
 
-	for (auto &i : parent.subElements)
+	for (auto &i : parent.parents)
 	{
 		visitSelect(i, id, selectedElement, selectedParent, mousePos);
 		if (selectedElement || selectedParent) { break; }
@@ -204,7 +228,6 @@ void visitSelect(sushi::SushiParent &parent, unsigned int &id, sushi::SushiUiEle
 
 	return;
 };
-
 
 bool SushiViewer::update(pika::Input input, pika::WindowState windowState, RequestedContainerInfo &requestedInfo)
 {
@@ -228,9 +251,17 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 	//}
 #pragma endregion
 
+	while (!toDelete.empty())
+	{
+		auto id = toDelete.back();
+		toDelete.pop_back();
+		sushiContext.root.deleteById(id);
+	}
+
 
 	sushi::SushiUiElement *selectedElement = 0;
 	sushi::SushiParent *selectedParent = 0;
+	sushi::SushiParent *parentOfParent = 0;
 
 	ImGui::Begin("Sushi editor");
 	{
@@ -244,7 +275,7 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 			img.elementId = c.root.id;
 		}
 		
-		if (input.lMouse.held())
+		if (input.lMouse.held() && !img.dragging)
 		{		
 			visitSelect(sushiContext.root, img.elementId, selectedElement, selectedParent,
 				{input.mouseX, input.mouseY});
@@ -268,16 +299,16 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 				img.elementId = selectedParent->id;
 			}
 
-			displaySushiUiElementImgui(*selectedElement, selectedParent->outData.absTransform, 100);
+			displaySushiUiElementImgui(*selectedElement, selectedParent->outData.absTransform);
 		}else
 		if (selectedParent)
 		{
-			auto parentOfParentId = findParentOfParent(sushiContext.root, img.elementId);
+			parentOfParent = findParentOfParent(sushiContext.root, img.elementId);
 			glm::vec4 parentRect = {0, 0, renderer.windowW, renderer.windowH};
 
-			if (parentOfParentId)
+			if (parentOfParent)
 			{
-				parentRect = parentOfParentId->outData.absTransform;
+				parentRect = parentOfParent->outData.absTransform;
 			}
 
 			displaySushiParentElementImgui(*selectedParent, parentRect);
@@ -288,122 +319,142 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 	}
 	ImGui::End();
 
-	auto drawDisplacement = [&](glm::vec4 from, glm::vec4 to, glm::vec4 color)
+	auto drawDisplacement = [&](glm::vec2 from2, glm::vec2 to2, glm::vec4 color)
 	{
+		float thickness = 10;
+
+		glm::vec4 from = {from2 - glm::vec2(thickness,thickness), thickness, thickness};
+		glm::vec4 to = {to2 - glm::vec2(thickness,thickness), thickness, thickness};
+
 		if (to.x != from.x || to.y != from.y)
 		{
 			renderer.renderRectangle(to, color);
 
-			renderer.renderLine(to, from, color);
+			renderer.renderLine(glm::vec2(to) + glm::vec2(to.z,to.w)/2.f,
+				glm::vec2(from) + glm::vec2(from.z, from.w) / 2.f, color, 3);
 		}
 		
-		renderer.renderRectangleOutline(from, color, 2.f);
+		renderer.renderRectangleOutline(from, color, 3.f);
 	};
 
-	auto drawGyzmos = [&](glm::vec4 pos, sushi::Transform &t, glm::vec4 parentPos)
+	auto drawGyzmos = [&](glm::vec4 pos, sushi::Transform &t, glm::vec4 parentPos, float opacity = 0.5)
 	{
 		//todo add alias render box
 		renderer.renderRectangleOutline(pos,
 			{0,1,0,0.5}, 4.0f);
 
-		glm::vec4 center = {glm::vec2(pos) + glm::vec2(pos.z, pos.w) / 2.f - glm::vec2(3,3), 
-			6.f,6.f};
-	
-		glm::vec4 originalCenter = center;
-		originalCenter.x -= t.positionPixels.x;
-		originalCenter.y -= t.positionPixels.y;
-
-		if (t.anchorPoint != sushi::Transform::anchor::absolute &&
-			(t.positionPixels.x != 0 || t.positionPixels.y != 0))
-		{
-			drawDisplacement(originalCenter, center, {0,1,0,0.5});
-		}
-		else
-		{
-			renderer.renderRectangleOutline(originalCenter, {0,1,0,0.5}, 2.f);
-		}
-				
-		glm::vec4 newCenter = {};
+		glm::vec2 anchorPoiont = {};
+		glm::vec2 anchorPoiontMoved = {};
 
 		switch (t.anchorPoint)
 		{
 
 			case ::sushi::Transform::topLeft:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)};
+				anchorPoiontMoved = {glm::vec2(pos)};
 			}
 			break;
 
 			case ::sushi::Transform::topMiddle:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z / 2.f, 0)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z / 2.f, 0)};
 			}
 			break;
 
-			case ::sushi::Transform::toRight:
+			case ::sushi::Transform::topRight:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z, 0)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z, 0)};
 			}
 			break;
 
 			case ::sushi::Transform::middleLeft:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(0, parentPos.w/2.f)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(0, pos.w / 2.f)};
 			}
 			break;
 
 			case ::sushi::Transform::center:
 			{
-				newCenter = {glm::vec2(parentPos)
-					+ glm::vec2(parentPos.z, parentPos.w) / 2.f - glm::vec2(3, 3), 6.f, 6.f};
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z, parentPos.w) / 2.f};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z, pos.w) / 2.f};
 			}
 			break;
 
 			case ::sushi::Transform::middleRight:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z, parentPos.w/2.f)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z, pos.w / 2.f)};
 			}
 			break;
 
 			case ::sushi::Transform::bottomLeft:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(0, parentPos.w)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(0, pos.w)};
 			}
 			break;
 
 			case ::sushi::Transform::bottomMiddle:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z / 2.f , parentPos.w)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z / 2.f , pos.w)};
 			}
 			break;
 
 			case ::sushi::Transform::bottomRight:
 			{
-				
+				anchorPoiont = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z, parentPos.w)};
+				anchorPoiontMoved = {glm::vec2(pos)
+					+ glm::vec2(pos.z, pos.w)};
 			}
 			break;
 
 			case ::sushi::Transform::absolute:
 			{
-
-				
+				anchorPoiont = {};
+				anchorPoiontMoved = {glm::vec2(pos)};
 			}
 			break;
 		
 		}
 
-		drawDisplacement(newCenter, originalCenter, {0.8,0.5,0,0.5});
+		glm::vec2 anchorPoiontMovedFinal = anchorPoiontMoved;
+		anchorPoiontMoved -= t.positionPixels;
 
+		drawDisplacement(anchorPoiont, anchorPoiontMoved, {0.8,0.5,0,opacity}); //percentage move
 
+		drawDisplacement(anchorPoiontMoved, anchorPoiontMovedFinal, {0,1,0,opacity}); //pixel move
 	};
 
+	sushi::Transform *selectedTransform = 0;
+
+	//render element
 	if (selectedElement)
 	{
 		glm::vec4 parentTransform = {0,0,renderer.windowW, renderer.windowH};
-
 		if (selectedParent) { parentTransform = selectedParent->outData.absTransform; }
 
-		drawGyzmos(selectedElement->outData.absTransform, selectedElement->transform, parentTransform);
+		drawGyzmos(selectedElement->outData.absTransform, selectedElement->transform, 
+			parentTransform);
 
 		if (selectedParent)
 		{
@@ -412,11 +463,53 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 				{0.5,0.5,0,0.5}, 4.0f);
 		}
 
+		selectedTransform = &selectedElement->transform;
 	}else
-	if (selectedParent)
+	if (selectedParent) //rende
 	{
-		//todo add alias render box
-		drawGyzmos(selectedParent->outData.absTransform, selectedParent->transform, selectedParent->outData.absTransform);
+
+		for (auto &i : selectedParent->allUiElements)
+		{
+			drawGyzmos(i.outData.absTransform, i.transform,
+				selectedParent->outData.absTransform, 0.2);
+		}
+
+		for (auto &i : selectedParent->parents)
+		{
+			drawGyzmos(i.outData.absTransform, i.transform,
+				selectedParent->outData.absTransform, 0.2);
+		}
+
+		selectedTransform = &selectedParent->transform;
+
+		glm::vec4 parentTransform = {0,0,renderer.windowW, renderer.windowH};
+		if (parentOfParent) { parentTransform = parentOfParent->outData.absTransform; }
+
+		drawGyzmos(selectedParent->outData.absTransform, 
+			selectedParent->transform, parentTransform);
+	}
+
+	if (leftCtrlHeld && input.lMouse.held() && selectedTransform)
+	{
+		if (!img.dragging)
+		{
+			img.dragging = true;
+			img.dragBegin = {input.mouseX, input.mouseY};
+			img.originalPos = selectedTransform->positionPixels;
+		}
+		else
+		{
+			glm::vec2 newPos = {input.mouseX, input.mouseY};
+			glm::vec2 delta = newPos - img.dragBegin;
+
+			selectedTransform->positionPixels = img.originalPos + delta;
+		}
+
+	}
+	else
+	{
+		img.dragging = 0;
+		img.dragBegin = {};
 	}
 
 

@@ -24,15 +24,22 @@ struct SushiViewer: public Container
 
 	void destruct(RequestedContainerInfo &requestedInfo);
 
+	std::vector<unsigned int> toDelete;
+
 	struct ImGuiStuff
 	{
 		unsigned int elementId = 0;
 
+
+		bool dragging = 0;
+		glm::vec2 dragBegin = {};
+		glm::vec2 originalPos = {};
+		
 	}img;
 
 	void displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent);
 
-	void displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent, int id);
+	void displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent);
 
 	void displaySushiTransformImgui(::sushi::Transform &e, glm::vec4 parent, int id);
 
