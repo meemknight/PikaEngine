@@ -43,11 +43,22 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 
 		ImGui::Text("Transform element editor");
 
-		ImGui::Combo("Pos type", &copy.placementType, "Relative\0Absolute\0");
-		ImGui::Combo("Size type", &copy.dimensionsType, "Percentage\0Absolute\0");
+		ImGui::Combo("Anchor", &copy.anchorPoint, "topLeft"
+			"\0top Middle"
+			"\0top Right"
+			"\0middle Left"
+			"\0center"
+			"\0middle Right"
+			"\0bottom Left"
+			"\0bottom Middle"
+			"\0bottom Right"
+			"\0absolute\0");
 
-		ImGui::DragFloat2("Pos", &e.pos[0]);
-		ImGui::DragFloat2("Size", &e.size[0]);
+		ImGui::DragFloat2("Pos pixels", &e.positionPixels[0]);
+		ImGui::DragFloat2("Pos percentage", &e.positionPercentage[0], 0.01);
+
+		ImGui::DragFloat2("Size pixels", &e.sizePixels[0]);
+		ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
 
 		e.changeSettings(copy, parent);
 
@@ -81,16 +92,17 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 		ImGui::Separator();
 
 		sushi::Transform transform;
-		transform.relativeTransformPixelSize({10, 10, 100, 100});
+		transform.anchorPoint = sushi::Transform::center; 
+		transform.sizePercentage = glm::vec2(0.5f);
 
 		if (ImGui::Button("Add element"))
 		{
-			sushiContext.addElement(e, "New Element", transform, sushi::Background());
+			img.elementId = sushiContext.addElement(e, "New Element", transform, sushi::Background());
 		}
 
 		if (ImGui::Button("Add parent"))
 		{
-			sushiContext.addParent(e, "New Parent", transform, sushi::Background({0.5,0.2,0.2,1.f}));
+			img.elementId = sushiContext.addParent(e, "New Parent", transform, sushi::Background({0.5,0.2,0.2,1.f}));
 		}
 
 		ImGui::Separator();
@@ -197,22 +209,23 @@ void visitSelect(sushi::SushiParent &parent, unsigned int &id, sushi::SushiUiEle
 bool SushiViewer::update(pika::Input input, pika::WindowState windowState, RequestedContainerInfo &requestedInfo)
 {
 	bool leftCtrlHeld = input.buttons[pika::Button::LeftCtrl].held();
+	//bool shiftHeld = input.buttons[pika::Button::Shift].held();
 
 #pragma region update stuff
 	glClear(GL_COLOR_BUFFER_BIT);
 	renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 
-	if (leftCtrlHeld)
+	//if (leftCtrlHeld)
 	{
 		sushi::SushiInput in;
 		in.mouseX = input.mouseX;
 		in.mouseY = input.mouseY;
 		sushiContext.update(renderer, in);
 	}
-	else
-	{
-		sushiContext.update(renderer, pika::toSushi(input));
-	}
+	//else
+	//{
+	//	sushiContext.update(renderer, pika::toSushi(input));
+	//}
 #pragma endregion
 
 
@@ -231,7 +244,7 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 			img.elementId = c.root.id;
 		}
 		
-		if (leftCtrlHeld && input.lMouse.held())
+		if (input.lMouse.held())
 		{		
 			visitSelect(sushiContext.root, img.elementId, selectedElement, selectedParent,
 				{input.mouseX, input.mouseY});
@@ -275,17 +288,135 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 	}
 	ImGui::End();
 
+	auto drawDisplacement = [&](glm::vec4 from, glm::vec4 to, glm::vec4 color)
+	{
+		if (to.x != from.x || to.y != from.y)
+		{
+			renderer.renderRectangle(to, color);
+
+			renderer.renderLine(to, from, color);
+		}
+		
+		renderer.renderRectangleOutline(from, color, 2.f);
+	};
+
+	auto drawGyzmos = [&](glm::vec4 pos, sushi::Transform &t, glm::vec4 parentPos)
+	{
+		//todo add alias render box
+		renderer.renderRectangleOutline(pos,
+			{0,1,0,0.5}, 4.0f);
+
+		glm::vec4 center = {glm::vec2(pos) + glm::vec2(pos.z, pos.w) / 2.f - glm::vec2(3,3), 
+			6.f,6.f};
+	
+		glm::vec4 originalCenter = center;
+		originalCenter.x -= t.positionPixels.x;
+		originalCenter.y -= t.positionPixels.y;
+
+		if (t.anchorPoint != sushi::Transform::anchor::absolute &&
+			(t.positionPixels.x != 0 || t.positionPixels.y != 0))
+		{
+			drawDisplacement(originalCenter, center, {0,1,0,0.5});
+		}
+		else
+		{
+			renderer.renderRectangleOutline(originalCenter, {0,1,0,0.5}, 2.f);
+		}
+				
+		glm::vec4 newCenter = {};
+
+		switch (t.anchorPoint)
+		{
+
+			case ::sushi::Transform::topLeft:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::topMiddle:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::toRight:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::middleLeft:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::center:
+			{
+				newCenter = {glm::vec2(parentPos)
+					+ glm::vec2(parentPos.z, parentPos.w) / 2.f - glm::vec2(3, 3), 6.f, 6.f};
+			}
+			break;
+
+			case ::sushi::Transform::middleRight:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::bottomLeft:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::bottomMiddle:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::bottomRight:
+			{
+				
+			}
+			break;
+
+			case ::sushi::Transform::absolute:
+			{
+
+				
+			}
+			break;
+		
+		}
+
+		drawDisplacement(newCenter, originalCenter, {0.8,0.5,0,0.5});
+
+
+	};
 
 	if (selectedElement)
 	{
-		renderer.renderRectangleOutline(selectedElement->outData.absTransform,
-			{1,0,0,0.5}, 4.0f);
+		glm::vec4 parentTransform = {0,0,renderer.windowW, renderer.windowH};
+
+		if (selectedParent) { parentTransform = selectedParent->outData.absTransform; }
+
+		drawGyzmos(selectedElement->outData.absTransform, selectedElement->transform, parentTransform);
+
+		if (selectedParent)
+		{
+			//todo add alias render box
+			renderer.renderRectangleOutline(selectedParent->outData.absTransform,
+				{0.5,0.5,0,0.5}, 4.0f);
+		}
+
 	}else
 	if (selectedParent)
 	{
 		//todo add alias render box
-		renderer.renderRectangleOutline(selectedParent->outData.absTransform, 
-			{1,0,0,0.5}, 4.0f);
+		drawGyzmos(selectedParent->outData.absTransform, selectedParent->transform, selectedParent->outData.absTransform);
 	}
 
 

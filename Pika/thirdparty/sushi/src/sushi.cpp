@@ -3,7 +3,7 @@
 namespace sushi
 {
 
-	void SushyContext::addElement(
+	unsigned int SushyContext::addElement(
 		SushiParent &parent,
 		const char *name,
 		Transform &transform,
@@ -17,9 +17,11 @@ namespace sushi
 		std::strncpy(element.name, name, sizeof(element.name) - 1);
 		
 		parent.allUiElements.push_back(element);
+
+		return currentIdCounter - 1;
 	}
 
-	void SushyContext::addParent(
+	unsigned int SushyContext::addParent(
 		SushiParent &parent,
 		const char *name,
 		Transform &transform,
@@ -33,6 +35,8 @@ namespace sushi
 		std::strncpy(newParent.name, name, sizeof(newParent.name) - 1);
 
 		parent.subElements.push_back(newParent);
+
+		return currentIdCounter - 1;
 	}
 
 	void SushyContext::createBasicSchene(int baseId, const char *name)

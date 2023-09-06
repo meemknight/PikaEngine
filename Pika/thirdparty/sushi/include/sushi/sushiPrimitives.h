@@ -9,46 +9,68 @@ namespace sushi
 
 	struct Transform
 	{
-		enum
+		//enum
+		//{
+		//	RelativeTransform = 0,
+		//	AbsoluteTransform,
+		//};
+		//
+		//enum
+		//{
+		//	DimensionsPercentage = 0,
+		//	DimensionsPixelsAbsolute,
+		//};
+		//
+		//union
+		//{
+		//	glm::vec4 dimensions = {0,0,1,1};
+		//	struct
+		//	{
+		//		glm::vec2 pos;
+		//		glm::vec2 size;
+		//	};
+		//};
+		//
+		//int placementType = RelativeTransform;
+		//int dimensionsType = DimensionsPercentage;
+
+		glm::vec2 sizePixels = {0,0};
+		glm::vec2 sizePercentage = {1,1};
+
+		glm::vec2 positionPixels = {};
+		glm::vec2 positionPercentage = {};
+
+		enum anchor
 		{
-			RelativeTransform = 0,
-			AbsoluteTransform,
+			topLeft = 0,
+			topMiddle,
+			toRight,
+			middleLeft,
+			center,
+			middleRight,
+			bottomLeft,
+			bottomMiddle,
+			bottomRight,
+			absolute,
 		};
 
-		enum
-		{
-			DimensionsPercentage = 0,
-			DimensionsPixelsAbsolute,
-		};
+		int anchorPoint = topLeft;
 
-		union
-		{
-			glm::vec4 dimensions = {0,0,1,1};
-			struct
-			{
-				glm::vec2 pos;
-				glm::vec2 size;
-			};
-		};
-
-		int placementType = RelativeTransform;
-		int dimensionsType = DimensionsPercentage;
-
-		void absoluteTransformPixelSize(glm::vec4 dimensions);
-		void relativeTransformPixelSize(glm::vec4 dimensions);
-		void relativeTransformDimensionsPercentage(glm::vec4 dimensions);
+		//void absoluteTransformPixelSize(glm::vec4 dimensions);
+		//void relativeTransformPixelSize(glm::vec4 dimensions);
+		//void relativeTransformDimensionsPercentage(glm::vec4 dimensions);
 
 		glm::vec4 applyTransform(glm::vec4 parent);
 
 		void changeSettings(Transform t, glm::vec4 parent)
 		{
 			//todo
-			this->placementType = t.placementType;
-			this->dimensionsType = t.dimensionsType;
+			//this->placementType = t.placementType;
+			//this->dimensionsType = t.dimensionsType;
+
+			anchorPoint = t.anchorPoint;
 		}
 	};
-
-	Transform defaultTransform();
 
 	struct Background
 	{

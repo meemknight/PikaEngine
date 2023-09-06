@@ -64,13 +64,13 @@ namespace sushi
 		void update(gl2d::Renderer2D &renderer, 
 			sushi::SushiInput &input);
 
-		void addElement(
+		unsigned int addElement(
 			SushiParent &parent,
 			const char *name,
 			Transform &transform,
 			Background &background);
 
-		void addParent(
+		unsigned int addParent(
 			SushiParent &parent,
 			const char *name,
 			Transform &transform,
