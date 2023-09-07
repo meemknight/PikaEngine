@@ -1,7 +1,72 @@
 #include <sushi/sushi.h>
+#include <cstring>
 
 namespace sushi
 {
+	void SushyContext::signalElementToCacheInternl(SushiElement el)
+	{
+		if (!el.hasValue())return;
+		cachedData.insert({el.getName(), el});
+	}
+
+	void SushyContext::signalElementToCacheToRemoveInternal(SushiElement el)
+	{
+		if (!el.hasValue())return;
+
+		auto range = cachedData.equal_range(el.getName());
+		for (auto it = range.first; it != range.second; ++it)
+		{
+			if (it->second.ptr == el.ptr)
+			{
+				cachedData.erase(it);
+				break;
+			}
+		}
+	}
+
+	SushiElement SushyContext::genUniqueElement(std::string name)
+	{
+		auto range = cachedData.equal_range(name);
+
+		if (range.first == cachedData.end()) { return {}; }
+
+		auto pos2 = range.first;
+		pos2++;
+		if (pos2 == range.second)
+		{
+			return range.first->second;
+		}
+		else
+		{
+			return {};
+		}
+	}
+
+	std::pair<std::unordered_multimap<std::string, SushiElement>::iterator,
+		std::unordered_multimap<std::string, SushiElement>::iterator> SushyContext::getElements(std::string name)
+	{
+		auto range = cachedData.equal_range(name);
+		return range;
+	}
+
+	void SushyContext::rename(SushiElement el, char *newName)
+	{
+		if (!el.hasValue()) { return; }
+
+		signalElementToCacheToRemoveInternal(el);
+
+		if (el.isParent())
+		{
+			std::strncpy(el.getParent()->name, newName, sizeof(el.getParent()->name) - 1);
+		}
+		else if(el.isUiElement())
+		{
+			std::strncpy(el.getUiElement()->name, newName, sizeof(el.getUiElement()->name) - 1);
+		}
+
+		signalElementToCacheInternl(el);
+		
+	}
 
 	unsigned int SushyContext::addElement(
 		SushiParent &parent,
@@ -9,8 +74,11 @@ namespace sushi
 		Transform &transform,
 		Background &background)
 	{
+
+
+
 		unsigned int id = currentIdCounter++;
-		parent.addElement(name, transform, background, id);
+		parent.addElementInternal(name, transform, background, id);
 		return id;
 	}
 
@@ -21,8 +89,13 @@ namespace sushi
 		Background &background)
 	{
 		unsigned int id = currentIdCounter++;
-		parent.addParent(name, transform, background, id);
+		parent.addParentInternal(name, transform, background, id);
 		return id;
+	}
+
+	bool SushyContext::deleteById(unsigned int id)
+	{
+		return root.deleteByIdInternal(id);
 	}
 
 	void SushyContext::createBasicSchene(int baseId, const char *name)
@@ -174,7 +247,7 @@ namespace sushi
 		background.render(renderer, rectRez);
 	}
 
-	bool SushiParent::deleteById(unsigned int id)
+	bool SushiParent::deleteByIdInternal(unsigned int id)
 	{
 		for (int i = 0; i < orderedElementsIds.size(); i++)
 		{
@@ -201,7 +274,7 @@ namespace sushi
 				return 1;
 			}
 
-			if (parents[i].deleteById(id))
+			if (parents[i].deleteByIdInternal(id))
 			{
 				return 1;
 			};
@@ -210,7 +283,7 @@ namespace sushi
 		return 0;
 	}
 
-	void SushiParent::addElement(
+	void SushiParent::addElementInternal(
 		const char *name,
 		Transform &transform,
 		Background &background,
@@ -226,7 +299,7 @@ namespace sushi
 		orderedElementsIds.push_back(id);
 	}
 
-	void SushiParent::addParent(
+	void SushiParent::addParentInternal(
 		const char *name,
 		Transform &transform,
 		Background &background,

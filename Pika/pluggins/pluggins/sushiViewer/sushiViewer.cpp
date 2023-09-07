@@ -71,7 +71,16 @@ void SushiViewer::displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::ve
 	if (ImGui::BeginChildFrame(e.id, {0, 500}, true))
 	{
 		ImGui::PushID(e.id);
-		ImGui::Text("Ui element editor: %s, id: %u", e.name, e.id);
+		ImGui::Text("Ui element editor: %s id: %u", e.name, e.id);
+
+		char data[16] = {};
+		static_assert(sizeof(data) == sizeof(e.name));
+		std::strncpy(data, e.name, sizeof(e.name) - 1);
+		ImGui::InputText("Rename", data, sizeof(e.name));
+		if (std::strcmp(data, e.name))
+		{
+			sushiContext.rename(&e, data);
+		}
 
 		ImGui::Separator();
 		if (pika::pikaImgui::redButton("Delete"))
@@ -90,11 +99,20 @@ void SushiViewer::displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::ve
 
 void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent)
 {
-	if (ImGui::BeginChildFrame(2, {0, 700}, true))
+	if (pika::pikaImgui::BeginChildFrameColoured(2, {0.2,0.3,0.7,0.9}, { 0, 700 }, true))
 	{
 		ImGui::PushID(e.id);
 
 		ImGui::Text("Parent editor: %s, id: %u", e.name, e.id);
+
+		char data[16] = {};
+		static_assert(sizeof(data) == sizeof(e.name));
+		std::strncpy(data, e.name, sizeof(e.name) - 1);
+		ImGui::InputText("Rename", data, sizeof(e.name));
+		if (std::strcmp(data, e.name))
+		{
+			sushiContext.rename(&e, data);
+		}
 
 		ImGui::Separator();
 		if (pika::pikaImgui::redButton("Delete"))
@@ -255,7 +273,7 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 	{
 		auto id = toDelete.back();
 		toDelete.pop_back();
-		sushiContext.root.deleteById(id);
+		sushiContext.deleteById(id);
 	}
 
 

@@ -13,6 +13,7 @@
 #include <pikaAllocator/freeListAllocator.h>
 
 #include <pikaContext.h>
+#include <glm/vec4.hpp>
 
 #include <vector>
 #include <string>
@@ -66,7 +67,13 @@ namespace pika
 			}
 		};
 
+
 		bool redButton(const char *label, const ImVec2 &size_arg = {});
+
+		bool BeginChildFrameColoured(ImGuiID id,
+			glm::vec4 color,
+			const ImVec2 &size = {},
+			ImGuiWindowFlags extra_flags = 0);
 
 		void addErrorSymbol();
 		void addWarningSymbol();

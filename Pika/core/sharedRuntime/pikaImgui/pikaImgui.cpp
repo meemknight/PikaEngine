@@ -149,6 +149,21 @@ bool pika::pikaImgui::redButton(const char *label, const ImVec2 &size_arg)
 	return rez;
 }
 
+bool pika::pikaImgui::BeginChildFrameColoured(ImGuiID id,
+	glm::vec4 color, const ImVec2 &size, ImGuiWindowFlags extra_flags)
+{
+	ImGuiContext &g = *::ImGui::GetCurrentContext();
+	const ImGuiStyle &style = ::ImGui::GetStyle();
+	::ImGui::PushStyleColor(ImGuiCol_ChildBg, {color.x,color.y,color.z,color.w});
+	::ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, style.FrameRounding);
+	::ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, style.FrameBorderSize);
+	::ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
+	bool ret = ::ImGui::BeginChild(id, size, true, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysUseWindowPadding | extra_flags);
+	::ImGui::PopStyleVar(3);
+	::ImGui::PopStyleColor();
+	return ret;
+}
+
 void pika::pikaImgui::addErrorSymbol()
 {
 	::ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));

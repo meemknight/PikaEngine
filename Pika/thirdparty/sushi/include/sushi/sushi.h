@@ -2,6 +2,8 @@
 #include <gl2d/gl2d.h>
 #include <sushi/sushiPrimitives.h>
 #include <sushi/sushiInput.h>
+#include <unordered_map>
+#include <map>
 
 namespace sushi
 {
@@ -13,7 +15,7 @@ namespace sushi
 		SushiUiElement(const char *name, int id)
 		{
 			this->id = id;
-			std::strncpy(this->name, name, sizeof(name) - 1);
+			std::strncpy(this->name, name, sizeof(this->name) - 1);
 		};
 
 		char name[16] = {};
@@ -28,7 +30,60 @@ namespace sushi
 
 	};
 
-	struct SushiParent;
+	struct SushiParent
+	{
+		SushiParent() {};
+		SushiParent(const char *name, int id)
+		{
+			this->id = id;
+			std::strncpy(this->name, name, sizeof(this->name) - 1);
+		};
+		SushiParent(const char *name, int id, Background b)
+		{
+			this->id = id;
+			std::strncpy(this->name, name, sizeof(this->name) - 1);
+			background = b;
+		};
+
+		Transform transform;
+		Background background;
+		char name[16] = {};
+		unsigned int id = 0;
+
+		enum
+		{
+			layoutFree = 0,
+			layoutHorizontal,
+			layourVertical,
+		};
+
+		int layoutType = 0;
+
+		std::vector<SushiUiElement> allUiElements;
+
+		std::vector<SushiParent> parents;
+
+		std::vector<unsigned int> orderedElementsIds;
+
+		void update(gl2d::Renderer2D &renderer,
+			sushi::SushiInput &input, glm::vec4 parentTransform);
+
+		OutData outData;
+
+		bool deleteByIdInternal(unsigned int id);
+
+		void addElementInternal(
+			const char *name,
+			Transform &transform,
+			Background &background,
+			unsigned int id);
+
+		void addParentInternal(
+			const char *name,
+			Transform &transform,
+			Background &background,
+			unsigned int id);
+	};
 
 	//parent or ui
 	struct SushiElement
@@ -65,61 +120,27 @@ namespace sushi
 			else { return 0; }
 		}
 
-	};
-
-	struct SushiParent
-	{
-		SushiParent() {};
-		SushiParent(const char *name, int id)
+		bool isUiElement() { return type == TypeUiElement; }
+		bool isParent() { return type == TypeParent; }
+		bool hasValue() { return (type != 0) && (ptr != nullptr); }
+		std::string getName()
 		{
-			this->id = id;
-			std::strncpy(this->name, name, sizeof(name) - 1);
-		};
-		SushiParent(const char *name, int id, Background b)
-		{
-			this->id = id;
-			std::strncpy(this->name, name, sizeof(name) - 1);
-			background = b;
-		};
+			if (hasValue())
+			{
+				if (isParent())
+				{
+					return getParent()->name;
+				}else if (isUiElement())
+				{
+					return getUiElement()->name;
+				}
+			}
+			else
+			{
+				return "";
+			}
+		}
 
-		Transform transform;
-		Background background;
-		char name[16] = {};
-		unsigned int id = 0;
-
-		enum
-		{
-			layoutFree = 0,
-			layoutHorizontal,
-			layourVertical,
-		};
-
-		int layoutType = 0;
-
-		std::vector<SushiUiElement> allUiElements;
-
-		std::vector<SushiParent> parents;
-
-		std::vector<unsigned int> orderedElementsIds;
-
-		void update(gl2d::Renderer2D &renderer,
-			sushi::SushiInput &input, glm::vec4 parentTransform);
-		
-		OutData outData;
-
-		bool deleteById(unsigned int id);
-
-		void addElement(
-			const char *name,
-			Transform &transform,
-			Background &background,
-			unsigned int id);
-
-		void addParent(
-			const char *name,
-			Transform &transform,
-			Background &background,
-			unsigned int id);
 	};
 
 	//this is a sushi context. Holds all the windows and manages stuff
@@ -147,10 +168,23 @@ namespace sushi
 			Transform &transform,
 			Background &background);
 
+		bool deleteById(unsigned int id);
+
+		std::unordered_multimap<std::string, SushiElement> cachedData;
+
+		void signalElementToCacheInternl(SushiElement el);
+
+		void signalElementToCacheToRemoveInternal(SushiElement el);
+
+		SushiElement genUniqueElement(std::string name);
+
+		std::pair<std::unordered_multimap<std::string, SushiElement>::iterator,
+			std::unordered_multimap<std::string, SushiElement>::iterator> getElements(std::string name);
+
+		void rename(SushiElement el, char *newName);
 	};
 
-	
-	
+
 
 
 
