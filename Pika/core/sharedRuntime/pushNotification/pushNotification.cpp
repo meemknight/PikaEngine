@@ -120,7 +120,7 @@ void pika::PushNotificationManager::update(bool &open)
 
 
 }
-
+//todo reimplement with a custom deque so we don't allocate memory
 void pika::PushNotificationManager::pushNotification(const char *content, int logType)
 {
 	notificationQue.push_back

@@ -180,7 +180,7 @@ struct RequestedContainerInfo
 
 		if (!getFileSizeBinary(name, s)) { return 0; }
 
-		data.reserve(s);
+		data.resize(s);
 
 		return readEntireFileBinary(name, data.data(), s);
 	}

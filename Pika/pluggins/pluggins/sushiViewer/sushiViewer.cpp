@@ -283,6 +283,42 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 
 	ImGui::Begin("Sushi editor");
 	{
+
+		if (img.fileSelector.run(9000325))
+		{
+
+		};
+
+		if (ImGui::Button("Load"))
+		{
+			sushi::SushyBinaryFormat data;
+
+			if (requestedInfo.readEntireFileBinary(img.fileSelector.file, data.data))
+			{
+				if (!sushiContext.load(data))
+				{
+					requestedInfo.consoleWrite("Couldn't parse file");
+				}
+			}
+			else
+			{
+				requestedInfo.consoleWrite("Couldn't open file");
+			}
+		}
+
+		else if (ImGui::Button("Save"))
+		{
+
+			if (img.fileSelector.file[0] != 0)
+			{
+				auto rez = sushiContext.save();
+
+				requestedInfo.writeEntireFileBinary(img.fileSelector.file, rez.data.data(),
+					rez.data.size() * sizeof(rez.data[0]));
+			}
+
+		}
+
 		ImGui::Text("Current selected id: %u", img.elementId);
 
 		auto &c = sushiContext;

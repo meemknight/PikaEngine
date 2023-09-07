@@ -145,13 +145,17 @@ namespace sushi
 
 	struct SushyBinaryFormat
 	{
-		std::vector<unsigned char> data;
+		std::vector<char> data;
 
 		void addUiElementInternal(sushi::SushiUiElement &el);
 
 		void addPieceInternal(sushi::Transform &transform);
 
 		void addPieceInternal(sushi::Background &background);
+		
+		void addParentPieceInternal(sushi::SushiParent &el);
+
+		void addMainParentInternal(sushi::SushiParent &el);
 
 		void addParentInternal(sushi::SushiParent &el);
 
@@ -164,6 +168,8 @@ namespace sushi
 		bool save(SushiElement element);
 
 		void traverseAddInternal(SushiParent &parent);
+
+		void traverseAddInternalMainParent(SushiParent &parent);
 	};
 
 	//this is a sushi context. Holds all the windows and manages stuff
@@ -199,8 +205,10 @@ namespace sushi
 
 		void signalElementToCacheToRemoveInternal(SushiElement el);
 
+		//can't search for root
 		SushiElement genUniqueElement(std::string name);
 
+		//can't search for root
 		std::pair<std::unordered_multimap<std::string, SushiElement>::iterator,
 			std::unordered_multimap<std::string, SushiElement>::iterator> getElements(std::string name);
 
@@ -210,6 +218,7 @@ namespace sushi
 
 		bool load(SushyBinaryFormat &data);
 
+		
 	};
 
 

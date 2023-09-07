@@ -7,7 +7,7 @@
 #include <pikaSizes.h>
 #include <imgui_spinner.h>
 #include <sushi/sushi.h>
-
+#include <pikaImgui/pikaImgui.h>
 
 struct SushiViewer: public Container
 {
@@ -30,10 +30,10 @@ struct SushiViewer: public Container
 	{
 		unsigned int elementId = 0;
 
-
 		bool dragging = 0;
 		glm::vec2 dragBegin = {};
 		glm::vec2 originalPos = {};
+		pika::pikaImgui::FileSelector fileSelector{"Selected File", PIKA_RESOURCES_PATH, {".sushi"}};
 		
 	}img;
 

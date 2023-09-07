@@ -1,5 +1,7 @@
 #include <sushi/sushi.h>
 #include <cstring>
+#include <optional>
+#include <unordered_set>
 
 namespace sushi
 {
@@ -10,7 +12,8 @@ namespace sushi
 	{
 		markerUiElement = 1,
 		markerParent,
-		markerChildrenIdList
+		markerChildrenIdList,
+		markerMainParent,
 	};
 
 	void SushyBinaryFormat::addPieceInternal(sushi::Transform &transform)
@@ -36,9 +39,8 @@ namespace sushi
 		addBinaryDataInternal(arr.data(), s * sizeof(unsigned int));
 	}
 
-	void SushyBinaryFormat::addParentInternal(sushi::SushiParent &el)
+	void SushyBinaryFormat::addParentPieceInternal(sushi::SushiParent &el)
 	{
-		addMarkerInternal(markerParent);
 		addPieceInternal(el.transform);
 		addPieceInternal(el.background);
 		addBinaryDataInternal(el.name, sizeof(el.name));
@@ -47,6 +49,18 @@ namespace sushi
 
 		addMarkerInternal(markerChildrenIdList);
 		addUIntArrayPieceInternal(el.orderedElementsIds);
+	}
+
+	void SushyBinaryFormat::addMainParentInternal(sushi::SushiParent &el)
+	{
+		addMarkerInternal(markerMainParent);
+		addParentPieceInternal(el);
+	}
+
+	void SushyBinaryFormat::addParentInternal(sushi::SushiParent &el)
+	{
+		addMarkerInternal(markerParent);
+		addParentPieceInternal(el);
 	}
 
 	void SushyBinaryFormat::addMarkerInternal(int marker)
@@ -80,6 +94,24 @@ namespace sushi
 			traverseAddInternal(e);
 		}
 	}
+
+	void SushyBinaryFormat::traverseAddInternalMainParent(SushiParent &parent)
+	{
+		addMainParentInternal(parent);
+
+		auto &ui = parent.allUiElements;
+		for (auto &e : ui)
+		{
+			addUiElementInternal(e);
+		}
+
+		auto &parents = parent.parents;
+		for (auto &e : parents)
+		{
+			traverseAddInternal(e);
+		}
+	}
+
 
 	bool SushyBinaryFormat::save(SushiElement element)
 	{
@@ -423,15 +455,21 @@ namespace sushi
 		SushyBinaryFormat rez;
 
 		//todo print errors or something?
-		rez.save(&root);
-
+		rez.traverseAddInternalMainParent(root);
 		return rez;
 	}
 
-	bool SushyContext::load(SushyBinaryFormat &data)
+	struct LoadeData
 	{
-		*this = {};
+		std::vector<SushiUiElement> elements;
+		std::vector<SushiParent> parents;
+		std::optional<SushiParent> mainParent = std::nullopt;
+	};
 
+	bool loadAllData(SushyBinaryFormat &data, LoadeData &rezult)
+	{
+		rezult = {};
+			
 		size_t cursorPos = 0;
 
 		auto readBinaryData = [&](void *buffer, size_t size) -> bool
@@ -459,26 +497,217 @@ namespace sushi
 			return readBinaryData(buff, sizeof(SushiUiElement));
 		};
 
-		int firstM = getNextMarker();
-
-		if (firstM == markerUiElement)
+		auto getNextTransformPiece = [&](Transform *buff) -> bool
 		{
-			this->createBasicSchene();
+			return readBinaryData(buff, sizeof(Transform));
+		};
 
-			SushiUiElement el;
-
-			if (!getNextUiElementPiece(&el)) { return 0; }
-
-			this->addElement(root, el.name, el.transform, el.background);
-		}
-		else if (firstM == markerParent)
+		auto getNextBackgroundPiece = [&](Background *buff) -> bool
 		{
+			return readBinaryData(buff, sizeof(Background));
+		};
 
-		}
-		else
+		auto getNextUnsignedIntVector = [&](std::vector<unsigned int> &vec) -> bool
 		{
-			return 0;
+			vec.clear();
+			size_t elements = 0;
+			if (!readBinaryData(&elements, sizeof(elements))) { return 0; }
+
+			if (elements > 10'000'000) { return 0; } //probably corupted data
+
+			vec.resize(elements);
+
+			if (!readBinaryData(vec.data(), elements * sizeof(unsigned int))) { vec.clear(); return 0; }
+			
+			return 1;
+		};
+
+		auto getNextParentPiece = [&](SushiParent &parent) -> bool
+		{
+			if (!getNextTransformPiece(&parent.transform)) { return 0; }
+			if (!getNextBackgroundPiece(&parent.background)) { return 0; }
+
+			if (!readBinaryData(parent.name, sizeof(parent.name))) { return 0; }
+			if (!readBinaryData(&parent.id, sizeof(parent.id))) { return 0; }
+			if (!readBinaryData(&parent.layoutType, sizeof(parent.layoutType))) { return 0; }
+
+			if (getNextMarker() != markerChildrenIdList) { return 0; }
+			if (!getNextUnsignedIntVector(parent.orderedElementsIds)) { return 0; }
+
+			return true;
+		};
+
+		while (cursorPos < data.data.size())
+		{
+			int firstM = getNextMarker();
+
+			if (firstM == markerUiElement)
+			{
+				SushiUiElement el;
+				if (!getNextUiElementPiece(&el)) { return 0; }
+				rezult.elements.push_back(el);
+			}
+			else if (firstM == markerParent)
+			{
+				SushiParent el;
+				if (!getNextParentPiece(el)) { return 0; }
+				rezult.parents.push_back(el);
+			}
+			else if (firstM == markerMainParent)
+			{
+				if (rezult.mainParent.has_value()) { return 0; }
+
+				SushiParent el;
+				if (!getNextParentPiece(el)) { return 0; }
+				rezult.mainParent = el;
+			}
+			else
+			{
+				return 0;
+			}
 		}
+		return 1;
+	}
+
+	bool SushyContext::load(SushyBinaryFormat &data)
+	{
+		*this = {};
+
+		LoadeData loaded;
+
+		if (!loadAllData(data, loaded)) { return 0; }
+
+		if (loaded.mainParent)
+		{
+			unsigned int oldId = root.id;
+			root = *loaded.mainParent;
+			root.id = oldId;
+		}
+
+		SushiParent *parentToAddTo = &root;
+		
+		//todo if no loaded.mainParent we will make the first found parent root
+
+		{
+			//no parents, we can just add the elements here
+			if (loaded.parents.empty())
+			{
+				for (auto &e : loaded.elements)
+				{
+					addElement(*parentToAddTo, e.name, e.transform, e.background);
+				}
+			}
+			else
+			{
+			#pragma region find first parent
+				SushiParent *firstParent = 0;
+				if (loaded.mainParent)
+				{
+					firstParent = &(*loaded.mainParent);
+				}
+				else
+				{
+					//determine the main parent
+					std::unordered_set<unsigned int> allparentsids;
+					for (auto &p : loaded.parents)
+					{
+						if (allparentsids.find(p.id) != allparentsids.end())
+						{
+							return 0;
+						}
+						allparentsids.insert(p.id);
+					}
+
+					for (auto &p : loaded.parents)
+					{
+						for (auto &id : p.orderedElementsIds)
+						{
+							auto f = allparentsids.find(id);
+							if (f != allparentsids.end())
+							{
+								allparentsids.erase(f);
+							}
+						}
+					}
+
+					//we found the main parent id
+					if (allparentsids.size() == 1)
+					{
+						unsigned int id = *allparentsids.begin();
+
+						for (auto &p : loaded.parents)
+						{
+							if (p.id == id)
+							{
+								firstParent = &p;
+							}
+						}
+					}
+					else
+					{
+						return 0;
+					}
+
+				}
+			#pragma endregion
+
+				if (!firstParent) { return 0; }
+
+				struct ParentPair
+				{
+					SushiParent *element = 0;
+					SushiParent *parentToAddTo = 0;
+				};
+
+				std::vector<ParentPair> parentsToAdd;
+				parentsToAdd.push_back({firstParent, parentToAddTo});
+
+				while (parentsToAdd.size())
+				{
+					auto currentP = *parentsToAdd.begin();
+					parentsToAdd.erase(parentsToAdd.begin());
+
+					addParent(*currentP.parentToAddTo, currentP.element->name, currentP.element->transform,
+						currentP.element->background);
+
+					bool found = 0;
+					for (auto &id : currentP.element->orderedElementsIds)
+					{
+						for (auto &e : loaded.elements)
+						{
+							if (e.id == id)
+							{
+								addElement(*currentP.element, e.name, e.transform, e.background);
+								found = true;
+								break;
+							}
+						}
+
+						if (!found)
+						{
+							for (auto &e : loaded.parents)
+							{
+								if (e.id == id)
+								{
+									parentsToAdd.push_back({&e,currentP.element});
+									found = true;
+									break;
+								}
+							}
+						}
+						if (found) { break; }
+					}
+
+					if (!found) { return 0; }
+
+				}
+
+			}
+
+		};
+		
+		
+		return 1;
 	}
 
 #pragma endregion
