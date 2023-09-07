@@ -3,6 +3,107 @@
 
 namespace sushi
 {
+
+#pragma region binary format
+
+	enum: int
+	{
+		markerUiElement = 1,
+		markerParent,
+		markerChildrenIdList
+	};
+
+	void SushyBinaryFormat::addPieceInternal(sushi::Transform &transform)
+	{
+		addBinaryDataInternal(&transform, sizeof(transform));
+	}
+
+	void SushyBinaryFormat::addPieceInternal(sushi::Background &background)
+	{
+		addBinaryDataInternal(&background, sizeof(background));
+	}
+
+	void SushyBinaryFormat::addUiElementInternal(sushi::SushiUiElement &el)
+	{
+		addMarkerInternal(markerUiElement);
+		addBinaryDataInternal(&el, sizeof(el));
+	}
+	
+	void SushyBinaryFormat::addUIntArrayPieceInternal(std::vector<unsigned int> &arr)
+	{
+		size_t s = arr.size();
+		addBinaryDataInternal(&s, sizeof(s));
+		addBinaryDataInternal(arr.data(), s * sizeof(unsigned int));
+	}
+
+	void SushyBinaryFormat::addParentInternal(sushi::SushiParent &el)
+	{
+		addMarkerInternal(markerParent);
+		addPieceInternal(el.transform);
+		addPieceInternal(el.background);
+		addBinaryDataInternal(el.name, sizeof(el.name));
+		addBinaryDataInternal(&el.id, sizeof(el.id));
+		addBinaryDataInternal(&el.layoutType, sizeof(el.layoutType));
+
+		addMarkerInternal(markerChildrenIdList);
+		addUIntArrayPieceInternal(el.orderedElementsIds);
+	}
+
+	void SushyBinaryFormat::addMarkerInternal(int marker)
+	{
+		addBinaryDataInternal(&marker, sizeof(marker));
+	}
+
+	void SushyBinaryFormat::addBinaryDataInternal(void *d, size_t s)
+	{
+		if (d && s)
+		{
+			auto beginPos = data.size();
+			data.resize(beginPos + s);
+			std::memcpy(&data[beginPos], d, s);
+		}
+	}
+
+	void SushyBinaryFormat::traverseAddInternal(SushiParent &parent)
+	{
+		addParentInternal(parent);
+
+		auto &ui = parent.allUiElements;
+		for (auto &e : ui)
+		{
+			addUiElementInternal(e);
+		}
+
+		auto &parents = parent.parents;
+		for (auto &e : parents)
+		{
+			traverseAddInternal(e);
+		}
+	}
+
+	bool SushyBinaryFormat::save(SushiElement element)
+	{
+		data.clear();
+		//todo reserve
+		
+		if (element.isUiElement())
+		{
+			addUiElementInternal(*element.getUiElement());
+			return true;
+		}
+		else if (element.isParent())
+		{
+			traverseAddInternal(*element.getParent());
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+#pragma endregion
+
+
 	void SushyContext::signalElementToCacheInternl(SushiElement el)
 	{
 		if (!el.hasValue())return;
@@ -314,6 +415,74 @@ namespace sushi
 		parents.push_back(newParent);
 		orderedElementsIds.push_back(id);
 	}
+
+#pragma region save load
+
+	SushyBinaryFormat SushyContext::save()
+	{
+		SushyBinaryFormat rez;
+
+		//todo print errors or something?
+		rez.save(&root);
+
+		return rez;
+	}
+
+	bool SushyContext::load(SushyBinaryFormat &data)
+	{
+		*this = {};
+
+		size_t cursorPos = 0;
+
+		auto readBinaryData = [&](void *buffer, size_t size) -> bool
+		{
+			if (cursorPos + size > data.data.size())
+			{
+				return 0;
+			}
+
+			std::memcpy(buffer, &data.data[cursorPos], size);
+			cursorPos += size;
+
+			return true;
+		};
+
+		auto getNextMarker = [&]()
+		{
+			int marker = 0;
+			readBinaryData(&marker, sizeof(marker));
+			return marker;
+		};
+
+		auto getNextUiElementPiece = [&](SushiUiElement *buff) -> bool
+		{
+			return readBinaryData(buff, sizeof(SushiUiElement));
+		};
+
+		int firstM = getNextMarker();
+
+		if (firstM == markerUiElement)
+		{
+			this->createBasicSchene();
+
+			SushiUiElement el;
+
+			if (!getNextUiElementPiece(&el)) { return 0; }
+
+			this->addElement(root, el.name, el.transform, el.background);
+		}
+		else if (firstM == markerParent)
+		{
+
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+#pragma endregion
+
 
 };
 

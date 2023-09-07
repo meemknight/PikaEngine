@@ -143,6 +143,29 @@ namespace sushi
 
 	};
 
+	struct SushyBinaryFormat
+	{
+		std::vector<unsigned char> data;
+
+		void addUiElementInternal(sushi::SushiUiElement &el);
+
+		void addPieceInternal(sushi::Transform &transform);
+
+		void addPieceInternal(sushi::Background &background);
+
+		void addParentInternal(sushi::SushiParent &el);
+
+		void addMarkerInternal(int marker);
+		
+		void addBinaryDataInternal(void *d, size_t s);
+
+		void addUIntArrayPieceInternal(std::vector<unsigned int> &arr);
+
+		bool save(SushiElement element);
+
+		void traverseAddInternal(SushiParent &parent);
+	};
+
 	//this is a sushi context. Holds all the windows and manages stuff
 	struct SushyContext
 	{
@@ -182,6 +205,11 @@ namespace sushi
 			std::unordered_multimap<std::string, SushiElement>::iterator> getElements(std::string name);
 
 		void rename(SushiElement el, char *newName);
+
+		SushyBinaryFormat save();
+
+		bool load(SushyBinaryFormat &data);
+
 	};
 
 
