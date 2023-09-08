@@ -113,26 +113,26 @@ namespace sushi
 #pragma endregion
 
 	//todo
-	//void SushyContext::signalElementToCacheInternl(SushiElement el)
-	//{
-	//	if (!el.hasValue())return;
-	//	cachedData.insert({el.getName(), el});
-	//}
-	//
-	//void SushyContext::signalElementToCacheToRemoveInternal(SushiElement el)
-	//{
-	//	if (!el.hasValue())return;
-	//
-	//	auto range = cachedData.equal_range(el.getName());
-	//	for (auto it = range.first; it != range.second; ++it)
-	//	{
-	//		if (it->second.ptr == el.ptr)
-	//		{
-	//			cachedData.erase(it);
-	//			break;
-	//		}
-	//	}
-	//}
+	void SushyContext::signalElementToCacheInternl(SushiParent *parent)
+	{
+		if (!parent)return;
+		cachedData.insert({parent->name, parent});
+	}
+
+	void SushyContext::signalElementToCacheToRemoveInternal(SushiParent *parent)
+	{
+		if (!parent)return;
+	
+		auto range = cachedData.equal_range(parent->name);
+		for (auto it = range.first; it != range.second; ++it)
+		{
+			if (it->second == parent)
+			{
+				cachedData.erase(it);
+				break;
+			}
+		}
+	}
 
 	SushiParent *SushyContext::genUniqueParent(std::string name)
 	{
@@ -163,13 +163,11 @@ namespace sushi
 	{
 		if (!el) { return; }
 
-		//todo cache
-		//signalElementToCacheToRemoveInternal(el);
+		signalElementToCacheToRemoveInternal(el);
 
 		std::strncpy(el->name, newName, sizeof(el->name) - 1);
 
-		//todo cache
-		//signalElementToCacheInternl(el);
+		signalElementToCacheInternl(el);
 	}
 
 	unsigned int SushyContext::addParent(
@@ -178,14 +176,32 @@ namespace sushi
 		Transform &transform,
 		Background &background)
 	{
+
+		for (auto &p : parent.parents)
+		{
+			signalElementToCacheToRemoveInternal(&p);
+		}
+
 		unsigned int id = currentIdCounter++;
 		parent.addParentInternal(name, transform, background, id);
+
+		for (auto &p : parent.parents)
+		{
+			signalElementToCacheInternl(&p);
+		}
+
 		return id;
 	}
 
 	bool SushyContext::deleteById(unsigned int id)
 	{
-		return root.deleteByIdInternal(id);
+		if (root.deleteByIdInternal(id))
+		{
+			regenerateCache();
+			return 1;
+		}
+
+		return 0;
 	}
 
 	void SushyContext::createBasicSchene(int baseId, const char *name)
@@ -305,7 +321,7 @@ namespace sushi
 				orderedElementsIds.erase(orderedElementsIds.begin() + i);
 			}
 		}
-
+	
 		for (int i = 0; i < parents.size(); i++)
 		{
 			if (parents[i].id == id)
@@ -313,13 +329,13 @@ namespace sushi
 				parents.erase(parents.begin() + i);
 				return 1;
 			}
-
+	
 			if (parents[i].deleteByIdInternal(id))
 			{
 				return 1;
 			};
 		}
-
+	
 		return 0;
 	}
 
@@ -337,6 +353,25 @@ namespace sushi
 
 		parents.push_back(newParent);
 		orderedElementsIds.push_back(id);
+	}
+
+	void traverseToAddToCache(SushyContext &c, SushiParent &p)
+	{
+		for (auto &child : p.parents)
+		{
+			c.cachedData.insert({child.name, &child});
+		}
+
+		for (auto &child : p.parents)
+		{
+			traverseToAddToCache(c, child);
+		}
+	}
+
+	void SushyContext::regenerateCache()
+	{
+		cachedData.clear();
+		traverseToAddToCache(*this, root);
 	}
 
 #pragma region save load
@@ -466,7 +501,6 @@ namespace sushi
 
 		SushiParent *parentToAddTo = &root;
 		
-		//todo if no loaded.mainParent we will make a default root
 
 		if (!loaded.parents.empty())
 		{

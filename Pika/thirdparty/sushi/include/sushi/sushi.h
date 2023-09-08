@@ -107,6 +107,10 @@ namespace sushi
 		//todo push backs can invalidate data so just recreate the entire cache
 		std::unordered_multimap<std::string, SushiParent*> cachedData; 
 
+		void signalElementToCacheInternl(SushiParent *parent);
+
+		void signalElementToCacheToRemoveInternal(SushiParent *parent);
+
 		//can't search for root
 		SushiParent *genUniqueParent(std::string name);
 
@@ -120,7 +124,7 @@ namespace sushi
 
 		bool load(SushyBinaryFormat &data);
 
-		
+		void regenerateCache();
 	};
 
 
