@@ -66,44 +66,26 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 	ImGui::EndChildFrame();
 }
 
-void SushiViewer::displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent)
+void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent,
+	bool displayChildren)
 {
-	if (ImGui::BeginChildFrame(e.id, {0, 500}, true))
+	ImGui::PushID(e.id);
+
+	glm::vec4 color = {0.2f,0.2f,0.2f,1.f};
+	if (displayChildren) { color = {0.2,0.3,0.7,0.9}; }
+
+	if (pika::pikaImgui::BeginChildFrameColoured(e.id, color, { 0, 700 }, true))
 	{
-		ImGui::PushID(e.id);
-		ImGui::Text("Ui element editor: %s id: %u", e.name, e.id);
-
-		char data[16] = {};
-		static_assert(sizeof(data) == sizeof(e.name));
-		std::strncpy(data, e.name, sizeof(e.name) - 1);
-		ImGui::InputText("Rename", data, sizeof(e.name));
-		if (std::strcmp(data, e.name))
-		{
-			sushiContext.rename(&e, data);
-		}
-
-		ImGui::Separator();
-		if (pika::pikaImgui::redButton("Delete"))
-		{
-			toDelete.push_back(e.id);
-		}
-		ImGui::Separator();
-
-		displaySushiTransformImgui(e.transform, parent, e.id + 20000);
-		ImGui::Separator();
-		displaySushiBackgroundImgui(e.background, e.id + 10000);
-		ImGui::PopID();
-	}
-	ImGui::EndChildFrame();
-}
-
-void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent)
-{
-	if (pika::pikaImgui::BeginChildFrameColoured(2, {0.2,0.3,0.7,0.9}, { 0, 700 }, true))
-	{
-		ImGui::PushID(e.id);
 
 		ImGui::Text("Parent editor: %s, id: %u", e.name, e.id);
+
+		if (img.elementId != e.id)
+		{
+			if (pika::pikaImgui::blueButton("Select"))
+			{
+				img.elementId = e.id;
+			}
+		}
 
 		char data[16] = {};
 		static_assert(sizeof(data) == sizeof(e.name));
@@ -134,30 +116,30 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 		transform.anchorPoint = sushi::Transform::center; 
 		transform.sizePercentage = glm::vec2(0.5f);
 
-		if (ImGui::Button("Add element"))
+		if (displayChildren)
 		{
-			img.elementId = sushiContext.addElement(e, "New Element", transform, sushi::Background());
-		}
+			if (pika::pikaImgui::greenButton("Add parent"))
+			{
+				img.elementId = sushiContext.addParent(e, "New Item", transform,
+					sushi::Background({0.5,0.2,0.2,1.f}));
+			}
 
-		if (ImGui::Button("Add parent"))
-		{
-			img.elementId = sushiContext.addParent(e, "New Parent", transform, sushi::Background({0.5,0.2,0.2,1.f}));
-		}
+			if (!e.parents.empty())
+			{
+				ImGui::Separator();
+				{ ImGui::Text("Children:"); }
+				for (auto &i : e.parents)
+				{
+					displaySushiParentElementImgui(i, e.outData.absTransform, 0);
+				}
+			}
+		};
 
-		ImGui::Separator();
-		if(!e.allUiElements.empty())
-			{ImGui::Text("Ui Elements:");}
-		int id = 30;
-		for (auto &i : e.allUiElements)
-		{
-			ImGui::PushID(id++);
-			displaySushiUiElementImgui(i, e.outData.absTransform);
-			ImGui::PopID();
-		}
-
-		ImGui::PopID();
 	}
 	ImGui::EndChildFrame();
+
+	ImGui::PopID();
+
 }
 
 //takes the id of a parent and returns his parent
@@ -181,7 +163,7 @@ sushi::SushiParent *findParentOfParent(sushi::SushiParent &parent, unsigned int 
 	return 0;
 }
 
-void visit(sushi::SushiParent &parent, unsigned int id, sushi::SushiUiElement* &selectedElement,
+void visit(sushi::SushiParent &parent, unsigned int id,
 sushi::SushiParent* &selectedParent
 	)
 {
@@ -191,26 +173,16 @@ sushi::SushiParent* &selectedParent
 		return;
 	}
 
-	for (auto &i : parent.allUiElements)
-	{
-		if (i.id == id)
-		{
-			selectedElement = &i;
-			selectedParent = &parent;
-			return;
-		}
-	}
-
 	for (auto &i : parent.parents)
 	{
-		visit(i, id, selectedElement, selectedParent);
-		if (selectedElement || selectedParent) { break; }
+		visit(i, id, selectedParent);
+		if (selectedParent) { break; }
 	}
 
 	return;
 };
 
-void visitSelect(sushi::SushiParent &parent, unsigned int &id, sushi::SushiUiElement *&selectedElement,
+void visitSelect(sushi::SushiParent &parent, unsigned int &id,
 	sushi::SushiParent *&selectedParent, glm::vec2 mousePos
 )
 {
@@ -224,24 +196,9 @@ void visitSelect(sushi::SushiParent &parent, unsigned int &id, sushi::SushiUiEle
 		selectedParent = &parent;
 	}
 
-	for (auto &i : parent.allUiElements)
-	{
-		if (sushi::pointInBox(mousePos, i.outData.absTransform))
-		{
-			id = i.id;
-		}
-
-		if (i.id == id)
-		{
-			selectedElement = &i;
-			selectedParent = &parent;
-		}
-	}
-
 	for (auto &i : parent.parents)
 	{
-		visitSelect(i, id, selectedElement, selectedParent, mousePos);
-		if (selectedElement || selectedParent) { break; }
+		visitSelect(i, id, selectedParent, mousePos);
 	}
 
 	return;
@@ -277,7 +234,6 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 	}
 
 
-	sushi::SushiUiElement *selectedElement = 0;
 	sushi::SushiParent *selectedParent = 0;
 	sushi::SushiParent *parentOfParent = 0;
 
@@ -331,12 +287,12 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		
 		if (input.lMouse.held() && !img.dragging)
 		{		
-			visitSelect(sushiContext.root, img.elementId, selectedElement, selectedParent,
+			visitSelect(sushiContext.root, img.elementId, selectedParent,
 				{input.mouseX, input.mouseY});
 		}
 		else
 		{
-			visit(sushiContext.root, img.elementId, selectedElement, selectedParent);
+			visit(sushiContext.root, img.elementId, selectedParent);
 		}
 
 		//ImGui::InputInt("Element: ", &img.elementSelected);
@@ -345,16 +301,6 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		//img.elementSelected = glm::clamp(img.elementSelected, -1, (int)(elementsSize - 1));
 		//
 
-
-		if (selectedElement && selectedParent)
-		{
-			if (ImGui::Button("Select parent"))
-			{
-				img.elementId = selectedParent->id;
-			}
-
-			displaySushiUiElementImgui(*selectedElement, selectedParent->outData.absTransform);
-		}else
 		if (selectedParent)
 		{
 			parentOfParent = findParentOfParent(sushiContext.root, img.elementId);
@@ -363,11 +309,15 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 			if (parentOfParent)
 			{
 				parentRect = parentOfParent->outData.absTransform;
+
+				if (ImGui::Button("Select parent"))
+				{
+					img.elementId = parentOfParent->id;
+				}
 			}
 
-			displaySushiParentElementImgui(*selectedParent, parentRect);
+			displaySushiParentElementImgui(*selectedParent, parentRect, true);
 		}
-
 
 	
 	}
@@ -501,31 +451,13 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 
 	sushi::Transform *selectedTransform = 0;
 
-	//render element
-	if (selectedElement)
+	//render parent gyzmos
+	if (selectedParent) 
 	{
-		glm::vec4 parentTransform = {0,0,renderer.windowW, renderer.windowH};
-		if (selectedParent) { parentTransform = selectedParent->outData.absTransform; }
-
-		drawGyzmos(selectedElement->outData.absTransform, selectedElement->transform, 
-			parentTransform);
-
-		if (selectedParent)
+		if (parentOfParent)
 		{
-			//todo add alias render box
-			renderer.renderRectangleOutline(selectedParent->outData.absTransform,
+			renderer.renderRectangleOutline(parentOfParent->outData.absTransform,
 				{0.5,0.5,0,0.5}, 4.0f);
-		}
-
-		selectedTransform = &selectedElement->transform;
-	}else
-	if (selectedParent) //rende
-	{
-
-		for (auto &i : selectedParent->allUiElements)
-		{
-			drawGyzmos(i.outData.absTransform, i.transform,
-				selectedParent->outData.absTransform, 0.2);
 		}
 
 		for (auto &i : selectedParent->parents)

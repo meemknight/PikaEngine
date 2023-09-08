@@ -9,27 +9,6 @@ namespace sushi
 {
 
 	//this can also be a window or a button or whatever you want
-	struct SushiUiElement
-	{
-		SushiUiElement() {};
-		SushiUiElement(const char *name, int id)
-		{
-			this->id = id;
-			std::strncpy(this->name, name, sizeof(this->name) - 1);
-		};
-
-		char name[16] = {};
-		unsigned int id = 0;
-		Transform transform;
-		Background background;
-
-		void update(gl2d::Renderer2D &renderer,
-			sushi::SushiInput &input, glm::vec4 parentTransform);
-
-		OutData outData;
-
-	};
-
 	struct SushiParent
 	{
 		SushiParent() {};
@@ -59,8 +38,6 @@ namespace sushi
 
 		int layoutType = 0;
 
-		std::vector<SushiUiElement> allUiElements;
-
 		std::vector<SushiParent> parents;
 
 		std::vector<unsigned int> orderedElementsIds;
@@ -72,12 +49,6 @@ namespace sushi
 
 		bool deleteByIdInternal(unsigned int id);
 
-		void addElementInternal(
-			const char *name,
-			Transform &transform,
-			Background &background,
-			unsigned int id);
-
 		void addParentInternal(
 			const char *name,
 			Transform &transform,
@@ -85,69 +56,9 @@ namespace sushi
 			unsigned int id);
 	};
 
-	//parent or ui
-	struct SushiElement
-	{
-		SushiElement() {};
-		SushiElement(void *ptr, int type):ptr(ptr), type(type) {};
-		SushiElement(SushiUiElement *ptr):ptr(ptr), type(TypeUiElement) {};
-		SushiElement(SushiParent *ptr):ptr(ptr), type(TypeParent) {};
-
-		void *ptr = 0;
-		int type = 0;
-
-		enum Type
-		{
-			TypeUiElement = 1,
-			TypeParent = 2,
-		};
-
-		SushiUiElement *getUiElement()
-		{
-			if (type == TypeUiElement)
-			{
-				return (SushiUiElement *)ptr;
-			}
-			else { return 0; }
-		}
-
-		SushiParent *getParent()
-		{
-			if (type == TypeParent)
-			{
-				return (SushiParent *)ptr;
-			}
-			else { return 0; }
-		}
-
-		bool isUiElement() { return type == TypeUiElement; }
-		bool isParent() { return type == TypeParent; }
-		bool hasValue() { return (type != 0) && (ptr != nullptr); }
-		std::string getName()
-		{
-			if (hasValue())
-			{
-				if (isParent())
-				{
-					return getParent()->name;
-				}else if (isUiElement())
-				{
-					return getUiElement()->name;
-				}
-			}
-			else
-			{
-				return "";
-			}
-		}
-
-	};
-
 	struct SushyBinaryFormat
 	{
 		std::vector<char> data;
-
-		void addUiElementInternal(sushi::SushiUiElement &el);
 
 		void addPieceInternal(sushi::Transform &transform);
 
@@ -165,7 +76,7 @@ namespace sushi
 
 		void addUIntArrayPieceInternal(std::vector<unsigned int> &arr);
 
-		bool save(SushiElement element);
+		void save(SushiParent &parent, bool isMainParent);
 
 		void traverseAddInternal(SushiParent &parent);
 
@@ -185,12 +96,6 @@ namespace sushi
 		void update(gl2d::Renderer2D &renderer, 
 			sushi::SushiInput &input);
 
-		unsigned int addElement(
-			SushiParent &parent,
-			const char *name,
-			Transform &transform,
-			Background &background);
-
 		unsigned int addParent(
 			SushiParent &parent,
 			const char *name,
@@ -199,20 +104,17 @@ namespace sushi
 
 		bool deleteById(unsigned int id);
 
-		std::unordered_multimap<std::string, SushiElement> cachedData;
-
-		void signalElementToCacheInternl(SushiElement el);
-
-		void signalElementToCacheToRemoveInternal(SushiElement el);
+		//todo push backs can invalidate data so just recreate the entire cache
+		std::unordered_multimap<std::string, SushiParent*> cachedData; 
 
 		//can't search for root
-		SushiElement genUniqueElement(std::string name);
+		SushiParent *genUniqueParent(std::string name);
 
 		//can't search for root
-		std::pair<std::unordered_multimap<std::string, SushiElement>::iterator,
-			std::unordered_multimap<std::string, SushiElement>::iterator> getElements(std::string name);
+		std::pair<std::unordered_multimap<std::string, SushiParent*>::iterator,
+			std::unordered_multimap<std::string, SushiParent*>::iterator> genParents(std::string name);
 
-		void rename(SushiElement el, char *newName);
+		void rename(SushiParent *el, char *newName);
 
 		SushyBinaryFormat save();
 

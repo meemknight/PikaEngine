@@ -28,6 +28,7 @@ struct SushiViewer: public Container
 
 	struct ImGuiStuff
 	{
+		//set this to something to automatically change the current element
 		unsigned int elementId = 0;
 
 		bool dragging = 0;
@@ -37,9 +38,7 @@ struct SushiViewer: public Container
 		
 	}img;
 
-	void displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent);
-
-	void displaySushiUiElementImgui(::sushi::SushiUiElement &e, glm::vec4 parent);
+	void displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent, bool displayChildren);
 
 	void displaySushiTransformImgui(::sushi::Transform &e, glm::vec4 parent, int id);
 

@@ -143,7 +143,23 @@ void pika::pikaImgui::imguiEndFrame(PikaContext pikaContext)
 
 bool pika::pikaImgui::redButton(const char *label, const ImVec2 &size_arg)
 {
-	::ImGui::PushStyleColor(ImGuiCol_Button, {1,0,0,1});
+	return colouredButton(label, {1,0,0,1}, size_arg);
+}
+
+bool pika::pikaImgui::greenButton(const char *label, const ImVec2 &size_arg)
+{
+	return colouredButton(label, {0,1,0,1}, size_arg);
+}
+
+bool pika::pikaImgui::blueButton(const char *label, const ImVec2 &size_arg)
+{
+	return colouredButton(label, {0,0,1,1}, size_arg);
+}
+
+bool pika::pikaImgui::colouredButton(const char *label, glm::vec4 color,
+	const ImVec2 &size_arg)
+{
+	::ImGui::PushStyleColor(ImGuiCol_Button, {color.r, color.g, color.b, color.a});
 	auto rez = ::ImGui::Button(label, size_arg);
 	::ImGui::PopStyleColor();
 	return rez;
@@ -227,7 +243,6 @@ void pika::pikaImgui::displayMemorySizeValue(size_t value)
 	//ImGui::Text("%" IM_PRIu64 " (bytes)", value); 
 
 }
-
 
 void pika::pikaImgui::displayMemorySizeToggle()
 {
