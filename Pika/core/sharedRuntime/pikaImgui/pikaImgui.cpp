@@ -151,6 +151,45 @@ bool pika::pikaImgui::greenButton(const char *label, const ImVec2 &size_arg)
 	return colouredButton(label, {0,1,0,1}, size_arg);
 }
 
+
+void addColorButton(const char *id, const ImVec4 &col, float outCol[4])
+{
+	if (ImGui::ColorButton(id, col))
+	{
+		outCol[0] = col.x;
+		outCol[1] = col.y;
+		outCol[2] = col.z;
+		outCol[3] = col.w;
+	}
+}
+
+bool pika::pikaImgui::ColorEdit4Swatches(const char *label, float col[4], ImGuiColorEditFlags flags)
+{
+	bool rez = ::ImGui::ColorEdit4(label, col);
+
+	::ImGui::BeginGroup();
+	::ImGui::PushID(label);
+
+	if (::ImGui::BeginPopup("picker"))
+	{
+		addColorButton("0", {0,0,0,1}, col); ImGui::SameLine(); 
+		addColorButton("1", {1,0,0,1}, col); ImGui::SameLine();
+		addColorButton("2", {0,1,0,1}, col); ImGui::SameLine();
+		addColorButton("3", {0,0,1,1}, col); ImGui::SameLine();
+		addColorButton("4", {1,1,0,1}, col); ImGui::SameLine();
+		addColorButton("5", {1,0,1,1}, col); ImGui::SameLine();
+		addColorButton("6", {0,1,1,1}, col); ImGui::SameLine();
+		addColorButton("7", {1,1,1,1}, col);
+		
+		::ImGui::EndPopup();
+	}
+
+	::ImGui::PopID();
+	::ImGui::EndGroup();
+
+	return rez;
+}
+
 bool pika::pikaImgui::blueButton(const char *label, const ImVec2 &size_arg)
 {
 	return colouredButton(label, {0,0,1,1}, size_arg);

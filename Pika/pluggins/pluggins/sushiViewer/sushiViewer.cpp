@@ -28,7 +28,7 @@ void SushiViewer::displaySushiBackgroundImgui(::sushi::Background &e, int id)
 	{
 		ImGui::Text("Background element editor");
 
-		ImGui::ColorEdit4("Background color", &e.color[0]);
+		pika::pikaImgui::ColorEdit4Swatches("Background color", &e.color[0]);
 
 		//todo texture stuff
 	}

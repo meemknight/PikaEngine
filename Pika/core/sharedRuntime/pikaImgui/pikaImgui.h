@@ -73,6 +73,8 @@ namespace pika
 		bool blueButton(const char *label, const ImVec2 &size_arg = {});
 		bool colouredButton(const char *label, glm::vec4 color, const ImVec2 &size_arg = {});
 
+		bool ColorEdit4Swatches(const char *label, float col[4], ImGuiColorEditFlags flags = 0);
+
 		bool BeginChildFrameColoured(ImGuiID id,
 			glm::vec4 color,
 			const ImVec2 &size = {},

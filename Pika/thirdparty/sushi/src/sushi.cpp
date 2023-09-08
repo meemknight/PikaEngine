@@ -454,75 +454,22 @@ namespace sushi
 
 		LoadeData loaded;
 
-		if (!loadAllData(data, loaded)) { return 0; }
+		if (!loadAllData(data, loaded)) { *this = {}; return 0; }
 
 		if (loaded.mainParent)
 		{
 			unsigned int oldId = root.id;
 			root = *loaded.mainParent;
 			root.id = oldId;
+			root.orderedElementsIds = {};
 		}
 
 		SushiParent *parentToAddTo = &root;
 		
-		//todo if no loaded.mainParent we will make the first found parent root
+		//todo if no loaded.mainParent we will make a default root
 
 		if (!loaded.parents.empty())
 		{
-		#pragma region find first parent
-			SushiParent *firstParent = 0;
-			if (loaded.mainParent)
-			{
-				firstParent = &(*loaded.mainParent);
-			}
-			else
-				{
-					//determine the main parent
-					std::unordered_set<unsigned int> allparentsids;
-					for (auto &p : loaded.parents)
-					{
-						if (allparentsids.find(p.id) != allparentsids.end())
-						{
-							return 0;
-						}
-						allparentsids.insert(p.id);
-					}
-
-					for (auto &p : loaded.parents)
-					{
-						for (auto &id : p.orderedElementsIds)
-						{
-							auto f = allparentsids.find(id);
-							if (f != allparentsids.end())
-							{
-								allparentsids.erase(f);
-							}
-						}
-					}
-
-					//we found the main parent id
-					if (allparentsids.size() == 1)
-					{
-						unsigned int id = *allparentsids.begin();
-
-						for (auto &p : loaded.parents)
-						{
-							if (p.id == id)
-							{
-								firstParent = &p;
-							}
-						}
-					}
-					else
-					{
-						return 0;
-					}
-
-				}
-		#pragma endregion
-
-			if (!firstParent) { return 0; }
-
 			struct ParentPair
 			{
 				SushiParent *element = 0;
@@ -530,7 +477,78 @@ namespace sushi
 			};
 
 			std::vector<ParentPair> parentsToAdd;
-			parentsToAdd.push_back({firstParent, parentToAddTo});
+
+		#pragma region find first parent
+			if (loaded.mainParent)
+			{
+				for (auto &id : loaded.mainParent->orderedElementsIds)
+				{
+					bool found = 0;
+
+					for (auto &e : loaded.parents)
+					{
+						if (e.id == id)
+						{
+							parentsToAdd.push_back({&e,&this->root});
+							found = true;
+							break;
+						}
+					}
+
+					if (!found) { *this = {}; return 0; }
+				}
+			}
+			else //not tested
+			{
+				SushiParent *firstParent = 0;
+
+				//determine the main parent
+				std::unordered_set<unsigned int> allparentsids;
+				for (auto &p : loaded.parents)
+				{
+					if (allparentsids.find(p.id) != allparentsids.end())
+					{
+						*this = {};
+						return 0;
+					}
+					allparentsids.insert(p.id);
+				}
+
+				for (auto &p : loaded.parents)
+				{
+					for (auto &id : p.orderedElementsIds)
+					{
+						auto f = allparentsids.find(id);
+						if (f != allparentsids.end())
+						{
+							allparentsids.erase(f);
+						}
+					}
+				}
+
+				//we found the main parent id
+				if (allparentsids.size() == 1)
+				{
+					unsigned int id = *allparentsids.begin();
+
+					for (auto &p : loaded.parents)
+					{
+						if (p.id == id)
+						{
+							firstParent = &p;
+						}
+					}
+				}
+				else
+				{
+					*this = {};
+					return 0;
+				}
+
+				parentsToAdd.push_back({firstParent, parentToAddTo});
+			}
+		#pragma endregion
+
 
 			while (parentsToAdd.size())
 			{
@@ -540,26 +558,22 @@ namespace sushi
 				addParent(*currentP.parentToAddTo, currentP.element->name, currentP.element->transform,
 					currentP.element->background);
 
-				bool found = 0;
 				for (auto &id : currentP.element->orderedElementsIds)
 				{
+					bool found = 0;
 
-					if (!found)
+					for (auto &e : loaded.parents)
 					{
-						for (auto &e : loaded.parents)
+						if (e.id == id)
 						{
-							if (e.id == id)
-							{
-								parentsToAdd.push_back({&e,currentP.element});
-								found = true;
-								break;
-							}
+							parentsToAdd.push_back({&e,currentP.element});
+							found = true;
+							break;
 						}
 					}
-					if (found) { break; }
+					
+					if (!found) { *this = {}; return 0; }
 				}
-
-				if (!found) { return 0; }
 
 			}
 
