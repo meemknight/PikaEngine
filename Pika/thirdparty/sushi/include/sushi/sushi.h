@@ -53,7 +53,10 @@ namespace sushi
 			const char *name,
 			Transform &transform,
 			Background &background,
-			unsigned int id);
+			unsigned int id,
+			SushiParent **outNewElement);
+
+		SushiParent *getParentByIdInternal(unsigned int id);
 	};
 
 	struct SushyBinaryFormat
@@ -86,9 +89,9 @@ namespace sushi
 	//this is a sushi context. Holds all the windows and manages stuff
 	struct SushyContext
 	{
-		void createBasicSchene(int baseId = 1, const char *name = "Main Parent");
+		void createBasicSchene(int baseId = 1, const char *name = "Root");
 
-		SushiParent root = SushiParent{"Main Parent", 1, sushi::Background(glm::vec4{0,0,0,1}, 
+		SushiParent root = SushiParent{"Root", 1, sushi::Background(glm::vec4{0,0,0,1}, 
 			gl2d::Texture{})};
 		unsigned int currentIdCounter = 2;
 
@@ -100,7 +103,19 @@ namespace sushi
 			SushiParent &parent,
 			const char *name,
 			Transform &transform,
-			Background &background);
+			Background &background,
+			SushiParent **outNewElement = nullptr
+			);
+
+		unsigned int addParent(
+			unsigned int parent,
+			const char *name,
+			Transform &transform,
+			Background &background,
+			SushiParent **outNewElement = nullptr
+		);
+
+		SushiParent *getParentByid(unsigned int id);
 
 		bool deleteById(unsigned int id);
 
@@ -121,6 +136,8 @@ namespace sushi
 		void rename(SushiParent *el, char *newName);
 
 		SushyBinaryFormat save();
+
+		SushyBinaryFormat saveFromParent(SushiParent *parent);
 
 		bool load(SushyBinaryFormat &data);
 

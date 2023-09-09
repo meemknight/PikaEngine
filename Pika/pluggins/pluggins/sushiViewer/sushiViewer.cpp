@@ -120,7 +120,10 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 		{
 			if (pika::pikaImgui::greenButton("Add parent"))
 			{
-				img.elementId = sushiContext.addParent(e, "New Item", transform,
+				//img.elementId = sushiContext.addParent(e, "New Item", transform,
+				//	sushi::Background({0.5,0.2,0.2,1.f}));
+
+				sushiContext.addParent(e, "New Item", transform,
 					sushi::Background({0.5,0.2,0.2,1.f}));
 			}
 
@@ -233,7 +236,6 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		sushiContext.deleteById(id);
 	}
 
-
 	sushi::SushiParent *selectedParent = 0;
 	sushi::SushiParent *parentOfParent = 0;
 
@@ -261,8 +263,8 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 				requestedInfo.consoleWrite("Couldn't open file");
 			}
 		}
-
-		else if (ImGui::Button("Save"))
+		
+		if (ImGui::Button("Save"))
 		{
 
 			if (img.fileSelector.file[0] != 0)
@@ -275,18 +277,15 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 
 		}
 
-		ImGui::Text("Current selected id: %u", img.elementId);
-
+	#pragma region get selected parent
 		auto &c = sushiContext;
-		
-
 		if (img.elementId == 0)
 		{
 			img.elementId = c.root.id;
 		}
-		
+
 		if (input.lMouse.held() && !img.dragging)
-		{		
+		{
 			visitSelect(sushiContext.root, img.elementId, selectedParent,
 				{input.mouseX, input.mouseY});
 		}
@@ -294,7 +293,25 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		{
 			visit(sushiContext.root, img.elementId, selectedParent);
 		}
+	#pragma endregion
 
+
+		if (selectedParent != 0 && selectedParent != &sushiContext.root
+			&& ImGui::Button("Save from current children"))
+		{
+			if (img.fileSelector.file[0] != 0)
+			{
+				auto rez = sushiContext.saveFromParent(selectedParent);
+
+				requestedInfo.writeEntireFileBinary(img.fileSelector.file, rez.data.data(),
+					rez.data.size() * sizeof(rez.data[0]));
+			}
+		}
+
+
+		ImGui::Text("Current selected id: %u", img.elementId);
+
+	
 		//ImGui::InputInt("Element: ", &img.elementSelected);
 		//
 		//size_t elementsSize = c.root.allUiElements.size();

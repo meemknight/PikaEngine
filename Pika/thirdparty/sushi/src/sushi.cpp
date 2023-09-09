@@ -174,7 +174,8 @@ namespace sushi
 		SushiParent &parent,
 		const char *name,
 		Transform &transform,
-		Background &background)
+		Background &background,
+		SushiParent **outNewElement)
 	{
 
 		for (auto &p : parent.parents)
@@ -183,7 +184,7 @@ namespace sushi
 		}
 
 		unsigned int id = currentIdCounter++;
-		parent.addParentInternal(name, transform, background, id);
+		parent.addParentInternal(name, transform, background, id, outNewElement);
 
 		for (auto &p : parent.parents)
 		{
@@ -191,6 +192,35 @@ namespace sushi
 		}
 
 		return id;
+	}
+
+	unsigned int SushyContext::addParent(
+		unsigned int parent,
+		const char *name,
+		Transform &transform,
+		Background &background,
+		SushiParent **outNewElement
+	)
+	{
+		return addParent(*getParentByid(parent), name, transform, background, outNewElement);
+	}
+
+	SushiParent *SushyContext::getParentByid(unsigned int id)
+	{
+		return root.getParentByIdInternal(id);
+	}
+
+	SushiParent *SushiParent::getParentByIdInternal(unsigned int id)
+	{
+		if (id == this->id) { return this; }
+
+		for (auto &p : parents)
+		{
+			auto rez = p.getParentByIdInternal(id);
+			if (rez) { return rez; }
+		}
+
+		return nullptr;
 	}
 
 	bool SushyContext::deleteById(unsigned int id)
@@ -343,7 +373,8 @@ namespace sushi
 		const char *name,
 		Transform &transform,
 		Background &background,
-		unsigned int id)
+		unsigned int id,
+		SushiParent **outNewElement)
 	{
 		sushi::SushiParent newParent;
 		newParent.id = id;
@@ -353,6 +384,11 @@ namespace sushi
 
 		parents.push_back(newParent);
 		orderedElementsIds.push_back(id);
+
+		if (outNewElement)
+		{
+			*outNewElement = &parents.back();
+		}
 	}
 
 	void traverseToAddToCache(SushyContext &c, SushiParent &p)
@@ -382,6 +418,15 @@ namespace sushi
 
 		//todo print errors or something?
 		rez.traverseAddInternalMainParent(root);
+		return rez;
+	}
+
+	SushyBinaryFormat SushyContext::saveFromParent(SushiParent *parent)
+	{
+		SushyBinaryFormat rez;
+
+		//todo print errors or something?
+		rez.traverseAddInternal(*parent);
 		return rez;
 	}
 
@@ -499,15 +544,13 @@ namespace sushi
 			root.orderedElementsIds = {};
 		}
 
-		SushiParent *parentToAddTo = &root;
-		
 
 		if (!loaded.parents.empty())
 		{
 			struct ParentPair
 			{
 				SushiParent *element = 0;
-				SushiParent *parentToAddTo = 0;
+				unsigned int parentToAddToId = 0;
 			};
 
 			std::vector<ParentPair> parentsToAdd;
@@ -523,12 +566,13 @@ namespace sushi
 					{
 						if (e.id == id)
 						{
-							parentsToAdd.push_back({&e,&this->root});
+							parentsToAdd.push_back({&e,this->root.id});
 							found = true;
 							break;
 						}
 					}
 
+					//we need to find a match for all ids here or else the data is corrupted
 					if (!found) { *this = {}; return 0; }
 				}
 			}
@@ -570,6 +614,7 @@ namespace sushi
 						if (p.id == id)
 						{
 							firstParent = &p;
+							break;
 						}
 					}
 				}
@@ -579,7 +624,7 @@ namespace sushi
 					return 0;
 				}
 
-				parentsToAdd.push_back({firstParent, parentToAddTo});
+				parentsToAdd.push_back({firstParent, root.id});
 			}
 		#pragma endregion
 
@@ -589,7 +634,7 @@ namespace sushi
 				auto currentP = *parentsToAdd.begin();
 				parentsToAdd.erase(parentsToAdd.begin());
 
-				addParent(*currentP.parentToAddTo, currentP.element->name, currentP.element->transform,
+				auto newParentAddedId = addParent(currentP.parentToAddToId, currentP.element->name, currentP.element->transform,
 					currentP.element->background);
 
 				for (auto &id : currentP.element->orderedElementsIds)
@@ -600,7 +645,7 @@ namespace sushi
 					{
 						if (e.id == id)
 						{
-							parentsToAdd.push_back({&e,currentP.element});
+							parentsToAdd.push_back({&e, newParentAddedId});
 							found = true;
 							break;
 						}
