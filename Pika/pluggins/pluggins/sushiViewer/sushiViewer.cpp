@@ -54,6 +54,37 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 			"\0bottom Right"
 			"\0absolute\0");
 
+		const char *names[] = {
+			"topLeft", "top Middle", "top Right", "middle Left", "center", "middle Right", 
+			"bottom Left", "bottom Middle", "bottom Right", "absolute",
+		};
+
+		{
+			bool selected[3 * 3 + 1] = {};
+			for (int y = 0; y < 3; y++)
+			{
+				for (int x = 0; x < 3; x++)
+				{
+					ImVec2 alignment = ImVec2((float)x, (float)y);
+				
+					if (x > 0) ImGui::SameLine();
+					ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, alignment);
+					if (ImGui::Button(names[x + y * 3], ImVec2(40, 40)))
+					{
+						copy.anchorPoint = x + y * 3;
+					}
+					ImGui::PopStyleVar();
+				}
+			}
+
+			ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, {1,3});
+			if (ImGui::Button(names[sushi::Transform::absolute], ImVec2(40, 40)))
+			{
+				copy.anchorPoint = sushi::Transform::absolute;
+			}
+			ImGui::PopStyleVar();
+		}
+
 		ImGui::DragFloat2("Pos pixels", &e.positionPixels[0]);
 		ImGui::DragFloat2("Pos percentage", &e.positionPercentage[0], 0.01);
 
@@ -534,7 +565,6 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		img.dragging = 0;
 		img.dragBegin = {};
 	}
-
 
 	renderer.flush();
 
