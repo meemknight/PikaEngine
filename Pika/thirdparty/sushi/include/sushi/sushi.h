@@ -29,14 +29,7 @@ namespace sushi
 		char name[16] = {};
 		unsigned int id = 0;
 
-		enum
-		{
-			layoutFree = 0,
-			layoutHorizontal,
-			layourVertical,
-		};
-
-		int layoutType = 0;
+		Layout layout;
 
 		std::vector<SushiParent> parents;
 
@@ -53,6 +46,7 @@ namespace sushi
 			const char *name,
 			Transform &transform,
 			Background &background,
+			Layout &layout,
 			unsigned int id,
 			SushiParent **outNewElement);
 
@@ -63,9 +57,9 @@ namespace sushi
 	{
 		std::vector<char> data;
 
-		void addPieceInternal(sushi::Transform &transform);
+		void addTransformInternal(sushi::Transform &transform);
 
-		void addPieceInternal(sushi::Background &background);
+		void addBackgroundInternal(sushi::Background &background);
 		
 		void addParentPieceInternal(sushi::SushiParent &el);
 
@@ -76,6 +70,8 @@ namespace sushi
 		void addMarkerInternal(int marker);
 		
 		void addBinaryDataInternal(void *d, size_t s);
+
+		void addLayourInternal(sushi::Layout &layout);
 
 		void addUIntArrayPieceInternal(std::vector<unsigned int> &arr);
 
@@ -104,6 +100,7 @@ namespace sushi
 			const char *name,
 			Transform &transform,
 			Background &background,
+			Layout &layout,
 			SushiParent **outNewElement = nullptr
 			);
 
@@ -112,6 +109,7 @@ namespace sushi
 			const char *name,
 			Transform &transform,
 			Background &background,
+			Layout &layout,
 			SushiParent **outNewElement = nullptr
 		);
 
@@ -139,7 +137,7 @@ namespace sushi
 
 		SushyBinaryFormat saveFromParent(SushiParent *parent);
 
-		bool load(SushyBinaryFormat &data);
+		bool load(SushyBinaryFormat &data, unsigned int fromId = 0);
 
 		void regenerateCache();
 	};

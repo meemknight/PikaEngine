@@ -105,7 +105,7 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 
 		ImGui::NewLine();
 
-		ImGui::Combo("Layout type", &e.layoutType, "Free\0Horizonta\0Vertical\0");
+		ImGui::Combo("Layout type", &e.layout.layoutType, "Free\0Horizonta\0Vertical\0");
 
 		displaySushiTransformImgui(e.transform, parent, e.id + 20000);
 		ImGui::Separator();
@@ -124,7 +124,7 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 				//	sushi::Background({0.5,0.2,0.2,1.f}));
 
 				sushiContext.addParent(e, "New Item", transform,
-					sushi::Background({0.5,0.2,0.2,1.f}));
+					sushi::Background({0.5,0.2,0.2,1.f}), sushi::Layout{});
 			}
 
 			if (!e.parents.empty())
@@ -263,7 +263,27 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 				requestedInfo.consoleWrite("Couldn't open file");
 			}
 		}
-		
+
+		if (img.elementId)
+		{
+			if (ImGui::Button("Load and append from selected"))
+			{
+				sushi::SushyBinaryFormat data;
+
+				if (requestedInfo.readEntireFileBinary(img.fileSelector.file, data.data))
+				{
+					if (!sushiContext.load(data, img.elementId))
+					{
+						requestedInfo.consoleWrite("Couldn't parse file");
+					}
+				}
+				else
+				{
+					requestedInfo.consoleWrite("Couldn't open file");
+				}
+			}
+		}
+
 		if (ImGui::Button("Save"))
 		{
 

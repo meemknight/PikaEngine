@@ -83,6 +83,18 @@ namespace sushi
 		}
 	};
 
+	struct Layout
+	{
+		enum
+		{
+			layoutFree = 0,
+			layoutHorizontal,
+			layourVertical,
+		};
+
+		int layoutType = 0;
+	};
+
 	struct Background
 	{
 		Background() {};

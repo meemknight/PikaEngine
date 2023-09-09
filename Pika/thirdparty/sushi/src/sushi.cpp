@@ -13,15 +13,22 @@ namespace sushi
 		markerParent = 1,
 		markerChildrenIdList,
 		markerMainParent,
+		markerLayout,
+		markerTransform,
+		markerBackground,
+		markerId,
+		markerName,
 	};
 
-	void SushyBinaryFormat::addPieceInternal(sushi::Transform &transform)
+	void SushyBinaryFormat::addTransformInternal(sushi::Transform &transform)
 	{
+		addMarkerInternal(markerTransform);
 		addBinaryDataInternal(&transform, sizeof(transform));
 	}
 
-	void SushyBinaryFormat::addPieceInternal(sushi::Background &background)
+	void SushyBinaryFormat::addBackgroundInternal(sushi::Background &background)
 	{
+		addMarkerInternal(markerBackground);
 		addBinaryDataInternal(&background, sizeof(background));
 	}
 
@@ -34,11 +41,16 @@ namespace sushi
 
 	void SushyBinaryFormat::addParentPieceInternal(sushi::SushiParent &el)
 	{
-		addPieceInternal(el.transform);
-		addPieceInternal(el.background);
+		//todo don't add default data
+		addTransformInternal(el.transform);
+		addBackgroundInternal(el.background);
+		addLayourInternal(el.layout);
+
+		addMarkerInternal(markerName);
 		addBinaryDataInternal(el.name, sizeof(el.name));
+
+		addMarkerInternal(markerId);
 		addBinaryDataInternal(&el.id, sizeof(el.id));
-		addBinaryDataInternal(&el.layoutType, sizeof(el.layoutType));
 
 		addMarkerInternal(markerChildrenIdList);
 		addUIntArrayPieceInternal(el.orderedElementsIds);
@@ -48,6 +60,12 @@ namespace sushi
 	{
 		addMarkerInternal(markerMainParent);
 		addParentPieceInternal(el);
+	}
+
+	void SushyBinaryFormat::addLayourInternal(sushi::Layout &layout)
+	{
+		addMarkerInternal(markerLayout);
+		addBinaryDataInternal(&layout, sizeof(layout));
 	}
 
 	void SushyBinaryFormat::addParentInternal(sushi::SushiParent &el)
@@ -175,6 +193,7 @@ namespace sushi
 		const char *name,
 		Transform &transform,
 		Background &background,
+		Layout &layout,
 		SushiParent **outNewElement)
 	{
 
@@ -184,7 +203,7 @@ namespace sushi
 		}
 
 		unsigned int id = currentIdCounter++;
-		parent.addParentInternal(name, transform, background, id, outNewElement);
+		parent.addParentInternal(name, transform, background, layout, id, outNewElement);
 
 		for (auto &p : parent.parents)
 		{
@@ -199,10 +218,12 @@ namespace sushi
 		const char *name,
 		Transform &transform,
 		Background &background,
+		Layout &layout,
 		SushiParent **outNewElement
 	)
 	{
-		return addParent(*getParentByid(parent), name, transform, background, outNewElement);
+		return addParent(*getParentByid(parent), name, transform, background, 
+			layout, outNewElement);
 	}
 
 	SushiParent *SushyContext::getParentByid(unsigned int id)
@@ -297,9 +318,9 @@ namespace sushi
 
 		auto toDrawSize = toDraw.size();
 
-		switch (layoutType)
+		switch (layout.layoutType)
 		{
-		case layoutFree:
+		case Layout::layoutFree:
 		{
 			for (int i = 0; i < toDrawSize; i++)
 			{
@@ -308,7 +329,7 @@ namespace sushi
 		}
 		break;
 
-		case layourVertical:
+		case Layout::layourVertical:
 		{
 			for (int i = 0; i < toDrawSize; i++)
 			{
@@ -321,7 +342,7 @@ namespace sushi
 		}
 		break;
 
-		case layoutHorizontal:
+		case Layout::layoutHorizontal:
 		{
 			for (int i = 0; i < toDrawSize; i++)
 			{
@@ -373,6 +394,7 @@ namespace sushi
 		const char *name,
 		Transform &transform,
 		Background &background,
+		Layout &layout,
 		unsigned int id,
 		SushiParent **outNewElement)
 	{
@@ -380,6 +402,7 @@ namespace sushi
 		newParent.id = id;
 		newParent.background = background;
 		newParent.transform = transform;
+		newParent.layout = layout;
 		std::strncpy(newParent.name, name, sizeof(newParent.name) - 1);
 
 		parents.push_back(newParent);
@@ -442,7 +465,7 @@ namespace sushi
 			
 		size_t cursorPos = 0;
 
-		auto readBinaryData = [&](void *buffer, size_t size) -> bool
+		auto peekBinaryData = [&](void *buffer, size_t size) -> bool
 		{
 			if (cursorPos + size > data.data.size())
 			{
@@ -450,9 +473,23 @@ namespace sushi
 			}
 
 			std::memcpy(buffer, &data.data[cursorPos], size);
-			cursorPos += size;
 
 			return true;
+		};
+
+		auto readBinaryData = [&](void *buffer, size_t size) -> bool
+		{
+			bool rez = peekBinaryData(buffer, size);
+
+			if (rez)
+			{
+				cursorPos += size;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		};
 
 		auto getNextMarker = [&]()
@@ -462,9 +499,21 @@ namespace sushi
 			return marker;
 		};
 
+		auto peekNextMarker = [&]()
+		{
+			int marker = 0;
+			peekBinaryData(&marker, sizeof(marker));
+			return marker;
+		};
+
 		auto getNextTransformPiece = [&](Transform *buff) -> bool
 		{
 			return readBinaryData(buff, sizeof(Transform));
+		};
+
+		auto getNextLayoutPiece = [&](Layout *buff) -> bool
+		{
+			return readBinaryData(buff, sizeof(Layout));
 		};
 
 		auto getNextBackgroundPiece = [&](Background *buff) -> bool
@@ -489,15 +538,74 @@ namespace sushi
 
 		auto getNextParentPiece = [&](SushiParent &parent) -> bool
 		{
-			if (!getNextTransformPiece(&parent.transform)) { return 0; }
-			if (!getNextBackgroundPiece(&parent.background)) { return 0; }
 
-			if (!readBinaryData(parent.name, sizeof(parent.name))) { return 0; }
-			if (!readBinaryData(&parent.id, sizeof(parent.id))) { return 0; }
-			if (!readBinaryData(&parent.layoutType, sizeof(parent.layoutType))) { return 0; }
+			while (true)
+			{
+				auto marker = peekNextMarker();
 
-			if (getNextMarker() != markerChildrenIdList) { return 0; }
-			if (!getNextUnsignedIntVector(parent.orderedElementsIds)) { return 0; }
+				if (marker == 0) { return true; }
+
+				switch (marker)
+				{
+				case markerParent:
+					return 1;
+				break;
+
+				case markerChildrenIdList:
+				{
+					int _ = getNextMarker();
+					if (!getNextUnsignedIntVector(parent.orderedElementsIds)) { return 0; }
+				}
+				break;
+
+				case markerMainParent:
+					return 1;
+				break;
+
+				case markerLayout:
+				{
+					int _ = getNextMarker();
+					if (!getNextLayoutPiece(&parent.layout)) { return 0; }
+
+				}
+				break;
+
+				case markerTransform:
+				{
+					int _ = getNextMarker();
+					if (!getNextTransformPiece(&parent.transform)) { return 0; }
+				}
+				break;
+
+				case markerBackground:
+				{
+					int _ = getNextMarker();
+					if (!getNextBackgroundPiece(&parent.background)) { return 0; }
+				}
+				break;
+
+				case markerId:
+				{
+					int _ = getNextMarker();
+					if (!readBinaryData(&parent.id, sizeof(parent.id))) { return 0; }
+				}
+				break;
+
+				case markerName:
+				{
+					int _ = getNextMarker();
+					if (!readBinaryData(parent.name, sizeof(parent.name))) { return 0; }
+				}
+				break;
+
+				default:
+				return 0;
+				}
+
+
+			}
+
+			
 
 			return true;
 		};
@@ -528,22 +636,32 @@ namespace sushi
 		return 1;
 	}
 
-	bool SushyContext::load(SushyBinaryFormat &data)
+	bool SushyContext::load(SushyBinaryFormat &data, unsigned int fromId)
 	{
-		*this = {};
+		//*this = {};
 
 		LoadeData loaded;
 
-		if (!loadAllData(data, loaded)) { *this = {}; return 0; }
+		if (!loadAllData(data, loaded)) { return 0; }
 
-		if (loaded.mainParent)
+		if (fromId == 0)
 		{
-			unsigned int oldId = root.id;
-			root = *loaded.mainParent;
-			root.id = oldId;
-			root.orderedElementsIds = {};
-		}
+			if (loaded.mainParent)
+			{
+				*this = {};
+				unsigned int oldId = root.id;
+				root = *loaded.mainParent;
+				root.id = oldId;
+				root.orderedElementsIds = {};
+			}
+			else
+			{
+				*this = {};
+			}
+		};
 
+		unsigned int addTo = root.id;
+		if (fromId) { addTo = fromId; }
 
 		if (!loaded.parents.empty())
 		{
@@ -566,7 +684,7 @@ namespace sushi
 					{
 						if (e.id == id)
 						{
-							parentsToAdd.push_back({&e,this->root.id});
+							parentsToAdd.push_back({&e, addTo});
 							found = true;
 							break;
 						}
@@ -624,7 +742,7 @@ namespace sushi
 					return 0;
 				}
 
-				parentsToAdd.push_back({firstParent, root.id});
+				parentsToAdd.push_back({firstParent, addTo});
 			}
 		#pragma endregion
 
@@ -634,8 +752,9 @@ namespace sushi
 				auto currentP = *parentsToAdd.begin();
 				parentsToAdd.erase(parentsToAdd.begin());
 
-				auto newParentAddedId = addParent(currentP.parentToAddToId, currentP.element->name, currentP.element->transform,
-					currentP.element->background);
+				auto newParentAddedId = addParent(currentP.parentToAddToId,
+					currentP.element->name, currentP.element->transform,
+					currentP.element->background, currentP.element->layout);
 
 				for (auto &id : currentP.element->orderedElementsIds)
 				{
