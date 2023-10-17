@@ -209,4 +209,30 @@ namespace sushi
 		renderer.renderRectangle(pos, color);
 	}
 
+	void Text::render(gl2d::Renderer2D &renderer, glm::vec4 box, gl2d::Font &f)
+	{
+		if (!text.empty())
+		{
+			glm::vec4 finalPos = transform.applyTransform(box);
+			auto s = renderer.determineTextRescaleFit(text, f, box);
+
+			finalPos.x += finalPos.z / 2.f;
+			finalPos.y += finalPos.w / 2.f;
+
+			renderer.renderText(finalPos, text.c_str(), f, color, s);
+
+			renderer.renderRectangle({finalPos.x-2, finalPos.y-2, 4, 4}, Colors_Red);
+		}
+	}
+
+
+	void renderSushiElement(gl2d::Renderer2D &renderer, glm::vec4 box, sushi::Background &background, Text &text,
+		gl2d::Font &font)
+	{
+		//backgrouund
+		background.render(renderer, box);
+
+		text.render(renderer, box, font);
+	}
+
 };

@@ -31,12 +31,15 @@ namespace sushi
 
 		Layout layout;
 
+		Text text;
+
 		std::vector<SushiParent> parents;
 
 		std::vector<unsigned int> orderedElementsIds;
 
 		void update(gl2d::Renderer2D &renderer,
-			sushi::SushiInput &input, glm::vec4 parentTransform);
+			sushi::SushiInput &input, glm::vec4 parentTransform, 
+			gl2d::Font &font);
 
 		OutData outData;
 
@@ -59,11 +62,15 @@ namespace sushi
 
 		void addTransformInternal(sushi::Transform &transform);
 
+		void addColorInternal(glm::vec4 &color);
+
 		void addBackgroundInternal(sushi::Background &background);
 		
 		void addParentPieceInternal(sushi::SushiParent &el);
 
 		void addMainParentInternal(sushi::SushiParent &el);
+
+		void addTextInternal(std::string &el);
 
 		void addParentInternal(sushi::SushiParent &el);
 
@@ -74,6 +81,8 @@ namespace sushi
 		void addLayourInternal(sushi::Layout &layout);
 
 		void addUIntArrayPieceInternal(std::vector<unsigned int> &arr);
+
+		void addTextInternal(sushi::Text &text);
 
 		void save(SushiParent &parent, bool isMainParent);
 
@@ -91,9 +100,10 @@ namespace sushi
 			gl2d::Texture{})};
 		unsigned int currentIdCounter = 2;
 
+		//todo option to use another rect than camera
 		//draw regions are like this: x, y, w, h
 		void update(gl2d::Renderer2D &renderer, 
-			sushi::SushiInput &input);
+			sushi::SushiInput &input, gl2d::Font &font);
 
 		unsigned int addParent(
 			SushiParent &parent,
@@ -141,8 +151,6 @@ namespace sushi
 
 		void regenerateCache();
 	};
-
-
 
 
 

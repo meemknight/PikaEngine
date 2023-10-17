@@ -18,12 +18,21 @@ namespace sushi
 		markerBackground,
 		markerId,
 		markerName,
+		markerText,
+		markerTextElement,
+		markerColor,
 	};
 
 	void SushyBinaryFormat::addTransformInternal(sushi::Transform &transform)
 	{
 		addMarkerInternal(markerTransform);
 		addBinaryDataInternal(&transform, sizeof(transform));
+	}
+
+	void SushyBinaryFormat::addColorInternal(glm::vec4 &color)
+	{
+		addMarkerInternal(markerColor);
+		addBinaryDataInternal(&color, sizeof(color));
 	}
 
 	void SushyBinaryFormat::addBackgroundInternal(sushi::Background &background)
@@ -52,8 +61,32 @@ namespace sushi
 		addMarkerInternal(markerId);
 		addBinaryDataInternal(&el.id, sizeof(el.id));
 
+		addTextInternal(el.text);		
+
 		addMarkerInternal(markerChildrenIdList);
 		addUIntArrayPieceInternal(el.orderedElementsIds);
+	}
+
+	void  SushyBinaryFormat::addTextInternal(std::string &el)
+	{
+		addMarkerInternal(markerText);
+		size_t s = el.size();
+		addBinaryDataInternal((void *)&s, sizeof(size_t));
+		addBinaryDataInternal(el.data(), s);
+	}
+
+	void  SushyBinaryFormat::addTextInternal(sushi::Text &el)
+	{
+		addMarkerInternal(markerTextElement);
+		
+		if (!el.text.empty()) 
+		{
+			addTextInternal(el.text);
+		}
+		
+		addTransformInternal(el.transform);
+	
+		addColorInternal(el.color);
 	}
 
 	void SushyBinaryFormat::addMainParentInternal(sushi::SushiParent &el)
@@ -265,7 +298,7 @@ namespace sushi
 	}
 
 	void sushi::SushyContext::update(gl2d::Renderer2D &renderer,
-		sushi::SushiInput &input)
+		sushi::SushiInput &input, gl2d::Font &font)
 	{
 
 		if (renderer.windowH == 0 || renderer.windowW == 0)
@@ -277,28 +310,41 @@ namespace sushi
 
 		renderer.pushCamera();
 		{
-			root.update(renderer, input, drawRegion);
-
+			root.update(renderer, input, drawRegion, font);
 		}
 		renderer.popCamera();
 	}
 
 	void sushi::SushiParent::update(gl2d::Renderer2D &renderer,
-		sushi::SushiInput &input, glm::vec4 parentTransform)
+		sushi::SushiInput &input, glm::vec4 parentTransform, gl2d::Font &font)
 	{
 
 		glm::vec4 drawRegion = transform.applyTransform(parentTransform);
-		outData.set(drawRegion);
+		{
+			bool mouseIn = pointInBox({input.mouseX, input.mouseY}, drawRegion);
 
-		//backgrouund
-		background.render(renderer, drawRegion);
+			auto lMouse = input.lMouse;
+			auto rMouse = input.rMouse;
+
+			if (!mouseIn)
+			{
+				lMouse.flags = 0;
+				rMouse.flags = 0;
+			}
+
+			outData.set(drawRegion, mouseIn, lMouse, rMouse);
+		}
+
+		renderSushiElement(renderer, drawRegion, background, text, font);
+
+	#pragma region update children
 		auto parentsSize = parents.size();
 		auto orderedElementsSize = orderedElementsIds.size();
 
 		//todo signal error here
 		assert(parentsSize == orderedElementsSize);
 
-		std::vector<sushi::SushiParent*> toDraw;
+		std::vector<sushi::SushiParent *> toDraw;
 		toDraw.reserve(orderedElementsSize);
 
 		for (int i = 0; i < orderedElementsSize; i++)
@@ -324,7 +370,7 @@ namespace sushi
 		{
 			for (int i = 0; i < toDrawSize; i++)
 			{
-				toDraw[i]->update(renderer, input, drawRegion);
+				toDraw[i]->update(renderer, input, drawRegion, font);
 			}
 		}
 		break;
@@ -337,7 +383,7 @@ namespace sushi
 				newPos.w /= toDrawSize;
 				newPos.y += newPos.w * i;
 
-				toDraw[i]->update(renderer, input, newPos);
+				toDraw[i]->update(renderer, input, newPos, font);
 			}
 		}
 		break;
@@ -350,7 +396,7 @@ namespace sushi
 				newPos.z /= toDrawSize;
 				newPos.x += newPos.z * i;
 
-				toDraw[i]->update(renderer, input, newPos);
+				toDraw[i]->update(renderer, input, newPos, font);
 			}
 		}
 		break;
@@ -359,7 +405,7 @@ namespace sushi
 		assert(0);
 		break;
 		}
-
+	#pragma endregion
 
 	}
 
@@ -521,6 +567,41 @@ namespace sushi
 			return readBinaryData(buff, sizeof(Background));
 		};
 
+		auto getNextTextElementPiece = [&](sushi::Text *text) -> bool
+		{
+
+			int m = getNextMarker();
+
+			switch (m)
+			{
+				case markerText:
+				{
+					size_t textSize = 0;
+					if (!readBinaryData(&textSize, sizeof(textSize))) { return 0; }
+					text->text.resize(textSize);
+					if (!readBinaryData(text->text.data(), textSize)) { return 0; }
+					break;
+				}
+
+				case markerTransform:
+				{
+					if (!getNextTransformPiece(&text->transform)) { return 0; }
+					break;
+				}
+
+				case markerColor:
+				{
+					if (!readBinaryData(&text->color,sizeof(text->color))) { return 0; }
+					break;
+				}
+
+				default:
+				return 0;
+			}
+
+			return true;
+		};
+
 		auto getNextUnsignedIntVector = [&](std::vector<unsigned int> &vec) -> bool
 		{
 			vec.clear();
@@ -595,6 +676,13 @@ namespace sushi
 				{
 					int _ = getNextMarker();
 					if (!readBinaryData(parent.name, sizeof(parent.name))) { return 0; }
+				}
+				break;
+
+				case markerTextElement:
+				{
+					int _ = getNextMarker();
+					if (!getNextTextElementPiece(&parent.text)) { return 0; }
 				}
 				break;
 

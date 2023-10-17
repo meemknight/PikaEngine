@@ -1,13 +1,15 @@
 #include <pluggins/sushiViewer/sushiViewer.h>
 #include <engineLibraresSupport/sushi/engineSushiSupport.h>
 #include <pikaImgui/pikaImgui.h>
+#include <imgui_stdlib.h>
+#include <engineLibraresSupport/engineGL2DSupport.h>
 
 //todo user can request imgui ids; shortcut manager context; allocators
 
 ContainerStaticInfo SushiViewer::containerInfo()
 {
 	ContainerStaticInfo info = {};
-	info.defaultHeapMemorySize = pika::MB(10);
+	info.defaultHeapMemorySize = pika::MB(50);
 
 	info.requestImguiFbo = true;
 	info.pushAnImguiIdForMe = true;
@@ -18,6 +20,7 @@ ContainerStaticInfo SushiViewer::containerInfo()
 bool SushiViewer::create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 {
 	renderer.create(requestedInfo.requestedFBO.fbo);
+	font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "arial.ttf", requestedInfo);
 
 	return true;
 }
@@ -99,7 +102,7 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 
 		if (e.sizeCalculationType == sushi::Transform::normalSize)
 		{
-			ImGui::DragFloat2("Size pixels", &copy.sizePixels[0]);
+			ImGui::DragFloat2("Size pixels", &e.sizePixels[0]);
 			ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
 		}
 		else if (e.sizeCalculationType == sushi::Transform::useAspectRatioOnY)
@@ -132,6 +135,22 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 
 	}
 	ImGui::EndChildFrame();
+}
+
+void SushiViewer::displaySushiTextElementImgui(::sushi::Text &e, glm::vec4 parent, int id)
+{
+	ImGui::PushID(id);
+
+	ImGui::Text("Text element:");
+
+	ImGui::InputText("text content", &e.text);
+
+	::pika::pikaImgui::ColorEdit4Swatches("Text color: ", &e.color[0]);
+
+	displaySushiTransformImgui(e.transform, parent, id);
+
+	ImGui::PopID();
+
 }
 
 void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent,
@@ -180,14 +199,20 @@ void SushiViewer::displaySushiParentElementImgui(::sushi::SushiParent &e, glm::v
 		displaySushiBackgroundImgui(e.background, e.id + 10000);
 		ImGui::Separator();
 
-		sushi::Transform transform;
-		transform.anchorPoint = sushi::Transform::center; 
-		transform.sizePercentage = glm::vec2(0.5f);
+		displaySushiTextElementImgui(e.text, e.outData.absTransform, e.id);
+
+		ImGui::Separator();
+
 
 		if (displayChildren)
 		{
+
 			if (pika::pikaImgui::greenButton("Add parent"))
 			{
+				sushi::Transform transform;
+				transform.anchorPoint = sushi::Transform::center;
+				transform.sizePercentage = glm::vec2(0.5f);
+
 				//img.elementId = sushiContext.addParent(e, "New Item", transform,
 				//	sushi::Background({0.5,0.2,0.2,1.f}));
 
@@ -289,7 +314,7 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		sushi::SushiInput in;
 		in.mouseX = input.mouseX;
 		in.mouseY = input.mouseY;
-		sushiContext.update(renderer, in);
+		sushiContext.update(renderer, in, font);
 	}
 	//else
 	//{

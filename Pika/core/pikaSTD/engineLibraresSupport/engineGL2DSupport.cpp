@@ -57,6 +57,7 @@
 	return t;
 }
 
+//todo make this use the default allocator or a temporary allocator
 ::gl2d::Font pika::gl2d::loadFont(const char *path, RequestedContainerInfo &info)
 {
 	::gl2d::Font f = {};
@@ -70,7 +71,10 @@
 		}
 		else
 		{
-			info.consoleWrite(std::string("error loading font: ") + path);
+			info.consoleWrite(std::string("error loading font, parsing file ") + path);
+			//todo
+			//info.log((std::string("error loading font, parsing file: ") + path).c_str(), pika::logError);
+			
 		}
 
 		delete[] data;
@@ -78,6 +82,8 @@
 	else
 	{
 		info.consoleWrite(std::string("error loading font: ") + path);
+		//todo
+		//info.log((std::string("error loading font, openning file: ") + path).c_str(), pika::logError);
 		return {};
 	}
 

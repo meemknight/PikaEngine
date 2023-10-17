@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <gl2d/gl2d.h>
+#include <sushi/sushiInput.h>
 
 namespace sushi
 {
@@ -11,10 +12,17 @@ namespace sushi
 	{
 		glm::vec4 absTransform = {};
 
-		void set(glm::vec4 absTransform)
+		sushi::SushiButton lmouse;
+		sushi::SushiButton rmouse;
+
+		bool mouseIn = 0; 
+
+		void set(glm::vec4 absTransform, bool mouseIn, sushi::SushiButton lmouse, sushi::SushiButton rmouse)
 		{
 			this->absTransform = absTransform;
-
+			this->mouseIn = mouseIn;
+			this->lmouse = lmouse;
+			this->rmouse = rmouse;
 		}
 	};
 
@@ -96,5 +104,18 @@ namespace sushi
 
 		void render(gl2d::Renderer2D &renderer, glm::vec4 pos);
 	};
+
+	struct Text
+	{
+		std::string text;
+		Transform transform;
+		glm::vec4 color = {1,1,1,1};
+
+		void render(gl2d::Renderer2D &renderer, glm::vec4 box, gl2d::Font &f);
+
+	};
+
+	void renderSushiElement(gl2d::Renderer2D &renderer, glm::vec4 box, sushi::Background &background, 
+		Text &text, gl2d::Font &font);
 
 };

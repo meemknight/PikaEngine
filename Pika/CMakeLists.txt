@@ -19,8 +19,8 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) #under no circumstance we want th
 
 
 #declare projects
-project(pikaCore)
 project(pikaGameplay)
+project(pikaCore)
 #project(pikaProduction)
 
 

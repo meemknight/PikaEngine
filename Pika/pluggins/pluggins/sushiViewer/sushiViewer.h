@@ -14,6 +14,7 @@ struct SushiViewer: public Container
 
 	gl2d::Renderer2D renderer;
 	sushi::SushyContext sushiContext;
+	gl2d::Font font;
 
 	static ContainerStaticInfo containerInfo();
 
@@ -37,6 +38,8 @@ struct SushiViewer: public Container
 		pika::pikaImgui::FileSelector fileSelector{"Selected File", PIKA_RESOURCES_PATH, {".sushi"}};
 		
 	}img;
+
+	void displaySushiTextElementImgui(::sushi::Text &e, glm::vec4 parent, int id);
 
 	void displaySushiParentElementImgui(::sushi::SushiParent &e, glm::vec4 parent, bool displayChildren);
 

@@ -116,9 +116,14 @@ struct RequestedContainerInfo
 	{
 		//do not allocate memory here!
 		//log is from core realm
+		//todo test
 
 		if (!logManager) { return false; }
+		
+		::pika::memory::pushCustomAllocatorsToStandard();
 		logManager->log(l, type);
+		::pika::memory::popCustomAllocatorsToStandard();
+
 	}
 
 	//returns true if succeded (can return false if console is disabeled)
