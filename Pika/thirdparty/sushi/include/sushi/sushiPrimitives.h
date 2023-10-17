@@ -20,36 +20,26 @@ namespace sushi
 
 	struct Transform
 	{
-		//enum
-		//{
-		//	RelativeTransform = 0,
-		//	AbsoluteTransform,
-		//};
-		//
-		//enum
-		//{
-		//	DimensionsPercentage = 0,
-		//	DimensionsPixelsAbsolute,
-		//};
-		//
-		//union
-		//{
-		//	glm::vec4 dimensions = {0,0,1,1};
-		//	struct
-		//	{
-		//		glm::vec2 pos;
-		//		glm::vec2 size;
-		//	};
-		//};
-		//
-		//int placementType = RelativeTransform;
-		//int dimensionsType = DimensionsPercentage;
 
 		glm::vec2 sizePixels = {0,0};
 		glm::vec2 sizePercentage = {1,1};
 
 		glm::vec2 positionPixels = {};
 		glm::vec2 positionPercentage = {};
+
+		float aspectRation = 1.f;
+
+		enum sizeCalculation
+		{
+			normalSize = 0,
+			useAspectRatioOnX,
+			useAspectRatioOnY,
+			useAspectRatioOnXKeepMinimum,
+			useAspectRatioOnYKeepMinimum,
+
+		};
+
+		int sizeCalculationType = 0;
 
 		enum anchor
 		{

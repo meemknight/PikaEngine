@@ -48,6 +48,49 @@ namespace sushi
 		glm::vec2 pos = {};
 		glm::vec2 size = parentSize * sizePercentage + sizePixels;
 
+		if (sizeCalculationType == Transform::normalSize)
+		{
+
+		}else if(sizeCalculationType == Transform::useAspectRatioOnY)
+		{
+			size.y = size.x * aspectRation;
+		}else if (sizeCalculationType == Transform::useAspectRatioOnX)
+		{
+			size.x = size.y * aspectRation;
+		}
+		else if (sizeCalculationType == Transform::useAspectRatioOnYKeepMinimum)
+		{
+			float newSize = size.x * aspectRation;
+			if(newSize > size.y)
+			{
+				float minimizeFactor = newSize / size.y;
+				size.y = newSize;
+				size /= minimizeFactor;
+			}
+			else
+			{
+				size.y = newSize;
+			}
+		}
+		else if (sizeCalculationType == Transform::useAspectRatioOnXKeepMinimum)
+		{
+			float newSize = size.y * aspectRation;
+			if (newSize > size.x)
+			{
+				float minimizeFactor = newSize / size.x;
+				size.x = newSize;
+				size /= minimizeFactor;
+			}
+			else
+			{
+				size.x = newSize;
+			}
+		}
+		else
+		{
+			//toto error
+		}
+
 		auto leftAlign = [&]()
 		{
 			pos.x = parentPos.x;
@@ -155,46 +198,8 @@ namespace sushi
 			return {};
 		}
 
-		pos += positionPixels + parentSize * positionPercentage;
-		//switch (dimensionsType)
-		//{
-		//case DimensionsPercentage:
-		//{
-		//	size = glm::vec2(dimensions.z, dimensions.w) * parentSize;
-		//}
-		//break;
-		//
-		//case DimensionsPixelsAbsolute:
-		//{
-		//	size = glm::vec2(dimensions.z, dimensions.w);
-		//}
-		//break;
-		//
-		//default:
-		//return {};
-		////todo special error functions
-		//};
-		//
-		////determine position;
-		//switch (placementType)
-		//{
-		//case RelativeTransform:
-		//{
-		//	pos = parentPos + glm::vec2(dimensions);
-		//}
-		//break;
-		//
-		//case AbsoluteTransform:
-		//{
-		//	pos = glm::vec2(dimensions);
-		//}
-		//break;
-		//
-		//default:
-		//return {};
-		////todo special error functions
-		//};
 
+		pos += positionPixels + parentSize * positionPercentage;
 
 		return {pos, size};
 	}

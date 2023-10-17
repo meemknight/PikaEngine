@@ -88,8 +88,45 @@ void SushiViewer::displaySushiTransformImgui(::sushi::Transform & e, glm::vec4 p
 		ImGui::DragFloat2("Pos pixels", &e.positionPixels[0]);
 		ImGui::DragFloat2("Pos percentage", &e.positionPercentage[0], 0.01);
 
-		ImGui::DragFloat2("Size pixels", &e.sizePixels[0]);
-		ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
+		
+
+		ImGui::Combo("Size calculation", &e.sizeCalculationType, "normal"
+			"\0aspect ratio on x"
+			"\0aspect ratio on y"
+			"\0aspect ratio on X keep minimum"
+			"\0aspect ratio on y keep minimum"
+			"\0");
+
+		if (e.sizeCalculationType == sushi::Transform::normalSize)
+		{
+			ImGui::DragFloat2("Size pixels", &copy.sizePixels[0]);
+			ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
+		}
+		else if (e.sizeCalculationType == sushi::Transform::useAspectRatioOnY)
+		{
+			ImGui::DragFloat("Size pixels", &e.sizePixels[0]);
+			ImGui::DragFloat("Size percentage x", &e.sizePercentage[0], 0.01);
+			ImGui::DragFloat("Aspect ratio", &e.aspectRation, 0.01, 0);
+		}
+		else if (e.sizeCalculationType == sushi::Transform::useAspectRatioOnX)
+		{
+			ImGui::DragFloat("Size pixels", &e.sizePixels[1]);
+			ImGui::DragFloat("Size percentage y", &e.sizePercentage[1], 0.01);
+			ImGui::DragFloat("Aspect ratio", &e.aspectRation, 0.01, 0);
+		}
+		else if (e.sizeCalculationType == sushi::Transform::useAspectRatioOnXKeepMinimum)
+		{
+			ImGui::DragFloat2("Size pixels", &e.sizePixels[0]);
+			ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
+			ImGui::DragFloat("Aspect ratio", &e.aspectRation, 0.01, 0);
+		}
+		else if (e.sizeCalculationType == sushi::Transform::useAspectRatioOnYKeepMinimum)
+		{
+			ImGui::DragFloat2("Size pixels", &e.sizePixels[0]);
+			ImGui::DragFloat2("Size percentage", &e.sizePercentage[0], 0.01);
+			ImGui::DragFloat("Aspect ratio", &e.aspectRation, 0.01, 0);
+		}
+
 
 		e.changeSettings(copy, parent);
 
@@ -377,8 +414,8 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 			if (parentOfParent)
 			{
 				parentRect = parentOfParent->outData.absTransform;
-
-				if (ImGui::Button("Select parent"))
+				
+				if (::pika::pikaImgui::blueButton("Select parent"))
 				{
 					img.elementId = parentOfParent->id;
 				}
@@ -565,6 +602,7 @@ bool SushiViewer::update(pika::Input input, pika::WindowState windowState, Reque
 		img.dragging = 0;
 		img.dragBegin = {};
 	}
+
 
 	renderer.flush();
 

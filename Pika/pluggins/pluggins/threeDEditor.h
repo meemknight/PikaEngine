@@ -62,7 +62,7 @@ struct ThreeDEditor: public Container
 			false, 10);
 
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
-		model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", 0.5, gl3d::TextureLoadQuality::maxQuality);
+		model = renderer.loadModel(PIKA_RESOURCES_PATH "rave.glb", gl3d::TextureLoadQuality::maxQuality, 1);
 		
 		gl3d::Transform t;
 		t.position = {0, -1, -4};
@@ -101,6 +101,7 @@ struct ThreeDEditor: public Container
 			
 		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
 
+		renderer.setEntityAnimate(entity, true);
 
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
