@@ -6,6 +6,7 @@
 #include <logs/assert.h>
 #include <compilerIntrinsics.h>
 #include <stringManipulation/stringManipulation.h>
+#include "imgui_internal.h"
 
 //todo macro to remove imgui impl
 
@@ -286,6 +287,15 @@ void pika::pikaImgui::displayMemorySizeValue(size_t value)
 void pika::pikaImgui::displayMemorySizeToggle()
 {
 	ImGui::Combo("Sizes type##pika", &sizesType, "Bytes\0KB\0MB\0GB\0");
+}
+
+void pika::pikaImgui::removeFocusToCurrentWindow()
+{
+	auto *g = ::ImGui::GetCurrentContext();
+	if (g)
+	{
+		g->NavWindow = 0;
+	}
 }
 
 void pika::pikaImgui::FileSelector::setInfo(std::string title, std::string pwd, std::vector<std::string> typeFilters)

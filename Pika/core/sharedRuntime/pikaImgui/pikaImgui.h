@@ -112,5 +112,7 @@ namespace pika
 			bool run(int id);
 		};
 
+		void removeFocusToCurrentWindow();
+
 	};
 };

@@ -1,0 +1,30 @@
+# 
+# Wavefront material file
+# Converted by the DEEP Exploration  Deep Exploration 6.5 x64 6.5.0.9182
+# Right Hemisphere, LTD
+# http://www.righthemisphere.com/
+# 
+
+newmtl BASE
+Ka 0.7 0.7 0.7
+Kd 0.7 0.7 0.7
+Ks 0.7 0.7 0.7
+illum 2
+Ns 80
+
+map_Kd BASE_MAPS\Base_material_BaseColor.png
+map_Kn BASE_MAPS\Base_material_Normal.png
+map_Pm BASE_MAPS\Base_material_Metallic.png
+map_Pr BASE_MAPS\Base_material_Roughness.png
+
+newmtl GROUND
+Ka 0.7 0.7 0.7
+Kd 0.7 0.7 0.7
+Ks 0.7 0.7 0.7
+illum 2
+Ns 80
+
+map_Kd GROUND_MAPS\Ground_material_BaseColor.png
+map_Kn GROUND_MAPS\Ground_material_Normal.png
+Pm 0.0
+map_Pr GROUND_MAPS\Ground_material_Roughness.png

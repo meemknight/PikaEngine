@@ -475,6 +475,24 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 	}
 }
 
+bool pika::gl3d::loadSettingsFromFileName(::gl3d::Renderer3D &renderer, std::string file, RequestedContainerInfo &info)
+{
+	std::string data;
+
+	if (info.readEntireFile(file.c_str(), data))
+	{
+		if (data.size() > 0)
+		{
+			renderer.loadSettingsFromJson(data.c_str(), 1, 0, 0);
+			return 1;
+		}
+		return 0;
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 void pika::gl3d::General3DEditor::loadFromFile(::gl3d::Renderer3D &renderer, std::string file, RequestedContainerInfo &info)
 {
@@ -484,9 +502,10 @@ void pika::gl3d::General3DEditor::loadFromFile(::gl3d::Renderer3D &renderer, std
 	{
 		if (data.size() > 0)
 		{
-			renderer.loadSettingsFromJson(data.c_str(), 1, 0, 0);
+			renderer.loadSettingsFromJson(data.c_str(), 1, 1, 0);
 		}
-		pika::strlcpy(currentFile, file, sizeof(currentFile));
+		
+		pika::strlcpy(settingsFileSelector.file, file, sizeof(settingsFileSelector.file));
 	}
 }
 
@@ -584,18 +603,23 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 			}
 
 		}
-
-
 		
 
-		ImGui::InputText("current file", currentFile, sizeof(currentFile));
+		ImGui::PushID(123454);
+		if (settingsFileSelector.run(imguiId))
+		{
+			//...
+		}
+		ImGui::PopID();
+	
 		if (ImGui::Button("save"))
 		{
 			saveToFile(renderer, info);
 		}
+		ImGui::SameLine();
 		if (ImGui::Button("load"))
 		{
-			loadFromFile(renderer, currentFile, info);
+			loadFromFile(renderer, settingsFileSelector.file, info);
 		}
 
 
@@ -612,5 +636,5 @@ void pika::gl3d::General3DEditor::saveToFile(::gl3d::Renderer3D &renderer, Reque
 {
 	auto rez = renderer.saveSettingsToJson(true);
 
-	info.writeEntireFile(currentFile, rez);
+	info.writeEntireFile(settingsFileSelector.file, rez);
 };

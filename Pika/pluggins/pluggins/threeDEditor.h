@@ -82,21 +82,24 @@ struct ThreeDEditor: public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-
+	#pragma region init stuff
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
-	
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
-		
-
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
+	#pragma endregion
+		
+		if (input.buttons[pika::Button::Escape].released())
+		{
+			::pika::pikaImgui::removeFocusToCurrentWindow();
+		}
 
 			
 		editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
@@ -108,6 +111,11 @@ struct ThreeDEditor: public Container
 
 
 		return true;
+	}
+
+	void destruct(RequestedContainerInfo &requestedInfo) override
+	{
+		renderer.clearAllRendererResources();
 	}
 
 };

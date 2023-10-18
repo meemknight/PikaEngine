@@ -38850,7 +38850,6 @@ namespace gl3d
 		}
 
 		return directionalShadows.frustumSplits[cascadeIndex];
-		// TODO: insert return statement here
 	}
 
 	bool &Renderer3D::chromaticAberationEnabeled()
@@ -38931,7 +38930,7 @@ namespace gl3d
 			j["atmosphericScattering"] = a;
 		}
 
-		if (!skyBoxName.empty() || atmosphericScattering != nullptr)
+		//if (!skyBoxName.empty() || atmosphericScattering != nullptr)
 		{
 			j["ambientr"] = skyBox.color.r;
 			j["ambientg"] = skyBox.color.g;

@@ -1,0 +1,7 @@
+
+This texture uses color channels such as metallic, roughness and ambient occlusion. 
+This saves the need for a map for each function.
+
+Red > Ambient Occlusion
+Green > Roughness
+Blue > Mettalic
