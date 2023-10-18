@@ -10,6 +10,8 @@
 #include <imfilebrowser.h>
 #include <engineLibraresSupport/engineGL3DSupport.h>
 #include <containers/minecraftDungeons/mcDungeonsgameplay.h>
+#include <sushi/sushi.h>
+#include <engineLibraresSupport/sushi/engineSushiSupport.h>
 
 //animations
 //3 attack
@@ -42,15 +44,23 @@ struct ThreeDGameExample: public Container
 	gl3d::Model cabinModel;
 	gl3d::Model knightModel;
 	gl3d::Entity groundEntity;
-	gl3d::Entity treeEntity;
+	//gl3d::Entity treeEntity;
 	gl3d::Entity cabinEntity;
 	gl3d::Entity playerEntity;
 	bool first = 1;
 
+	sushi::SushyContext sushyContext;
+
 	pika::gl3d::General3DEditor editor;
+
+	gl2d::Renderer2D renderer2d;
+	gl2d::Font font;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
+		renderer2d.create(requestedInfo.requestedFBO.fbo);
+		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "arial.ttf", requestedInfo);
+
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -74,8 +84,8 @@ struct ThreeDGameExample: public Container
 		groundModel = renderer.loadModel(PIKA_RESOURCES_PATH "threedgame/ground/GROUND_ON_BASE.obj", 
 			gl3d::TextureLoadQuality::maxQuality, 1);
 
-		treesModel = renderer.loadModel(PIKA_RESOURCES_PATH "threedgame/tree/Honey Tree.obj",
-			gl3d::TextureLoadQuality::maxQuality, 0.02);
+		treesModel = renderer.loadModel(PIKA_RESOURCES_PATH "threedgame/Tree_Red-spruce.glb",
+			gl3d::TextureLoadQuality::maxQuality, 1);
 
 		cabinModel = renderer.loadModel(PIKA_RESOURCES_PATH "threedgame/cabin/models/big_watchtower.obj",
 			gl3d::TextureLoadQuality::maxQuality,0.2);
@@ -89,7 +99,11 @@ struct ThreeDGameExample: public Container
 
 		groundEntity = renderer.createEntity(groundModel, t);
 
-		treeEntity = renderer.createEntity(treesModel);
+		renderer.createEntity(treesModel, gl3d::Transform{{0,0,10}});
+		renderer.createEntity(treesModel, gl3d::Transform{{-5,0,7}});
+		renderer.createEntity(treesModel, gl3d::Transform{{-17,0,2}});
+		renderer.createEntity(treesModel, gl3d::Transform{{-13,0,-5}});
+		renderer.createEntity(treesModel, gl3d::Transform{{12,0,10}});
 
 		cabinEntity = renderer.createEntity(cabinModel, gl3d::Transform{{0,0,-25}});
 
@@ -100,6 +114,13 @@ struct ThreeDGameExample: public Container
 		renderer.setEntityAnimate(playerEntity, 1);
 		renderer.setEntityAnimationIndex(playerEntity, 15);
 
+
+		{
+			sushi::SushyBinaryFormat loader;
+			requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "threedgame/ui.sushi", loader.data);
+			sushyContext.load(loader);
+			sushyContext.root.background.color = {0,0,0,0};
+		}
 
 		return true;
 	}
@@ -123,12 +144,16 @@ struct ThreeDGameExample: public Container
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_LINE_SMOOTH);
+		glDisable(GL_MULTISAMPLE);
 
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
+
+		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
 	#pragma endregion
 
-		if (input.buttons[pika::Button::Escape].released())
+		if (input.buttons[pika::Button::Escape].released())	
 		{
 			::pika::pikaImgui::removeFocusToCurrentWindow();
 			requestedInfo.setNormalCursor();
@@ -185,12 +210,18 @@ struct ThreeDGameExample: public Container
 					playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
 
 					if (animationCulldown <= 0)
+					{
 						renderer.setEntityAnimationIndex(playerEntity, 5); //run 
+						renderer.setEntityAnimationSpeed(playerEntity, 1.5);
+					}
 				}
 				else
 				{
 					if (animationCulldown <= 0)
+					{
 						renderer.setEntityAnimationIndex(playerEntity, 15); //idle
+						renderer.setEntityAnimationSpeed(playerEntity, 1);
+					}
 				}
 
 				float speed = 3;
@@ -200,8 +231,9 @@ struct ThreeDGameExample: public Container
 				if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
 				{
 					renderer.setEntityAnimationIndex(playerEntity, 3); //attack
-					animationCulldown = 0.45;
-					attackCulldown = 0.8;
+					renderer.setEntityAnimationSpeed(playerEntity, 1.3);
+					animationCulldown = 1.2;
+					attackCulldown = 1.2;
 
 					//for (int i = 0; i < enemies.size(); i++)
 					//{
@@ -349,84 +381,84 @@ struct ThreeDGameExample: public Container
 			//	}
 			//	else
 			//	{
-			//		renderer.setEntityAnimationIndex(e.entity, Animations::zombieIdle);
-			//	}
-			//
-			//	if (e.attackCulldown > 0)
-			//	{
-			//		e.attackCulldown -= input.deltaTime;
-			//	}
-			//
-			//	solveRotation(e.physics);
-			//
-			//	resolveConstrains(e.physics);
-			//	e.physics.updateMove();
-			//
-			//	setTransform(e.physics, e.entity);
-			//}
+//		renderer.setEntityAnimationIndex(e.entity, Animations::zombieIdle);
+//	}
+//
+//	if (e.attackCulldown > 0)
+//	{
+//		e.attackCulldown -= input.deltaTime;
+//	}
+//
+//	solveRotation(e.physics);
+//
+//	resolveConstrains(e.physics);
+//	e.physics.updateMove();
+//
+//	setTransform(e.physics, e.entity);
+//}
 
 
-		#pragma region sword
-			//{
-			//	gl3d::Transform t;
-			//	renderer.getEntityJointTransform(player, "arm.r", t);
-			//	t.scale = glm::vec3(0.5);
-			//
-			//	gl3d::Transform offset;
-			//	offset.rotation.x = glm::radians(90.f);
-			//	//offset.position.y = -1.f;
-			//
-			//	t.setFromMatrix(t.getTransformMatrix() * offset.getTransformMatrix());
-			//
-			//	renderer.setEntityTransform(sword, t);
-			//}
-		#pragma endregion
+#pragma region sword
+	//{
+	//	gl3d::Transform t;
+	//	renderer.getEntityJointTransform(player, "arm.r", t);
+	//	t.scale = glm::vec3(0.5);
+	//
+	//	gl3d::Transform offset;
+	//	offset.rotation.x = glm::radians(90.f);
+	//	//offset.position.y = -1.f;
+	//
+	//	t.setFromMatrix(t.getTransformMatrix() * offset.getTransformMatrix());
+	//
+	//	renderer.setEntityTransform(sword, t);
+	//}
+#pragma endregion
 
 
-		#pragma region camera hover
+#pragma region camera hover
 			{
-				//cameraPos.y += cameraYoffset;
+			//cameraPos.y += cameraYoffset;
 
-				//auto checkHit = [&](glm::vec3 pos) -> bool
-				//{
-				//	for (int x = -2; x <= 2; x++)
-				//		for (int y = -2; y <= 2; y++)
-				//			for (int z = -2; z <= 2; z++)
-				//			{
-				//				glm::vec3 p = pos + glm::vec3(x, y, z);
-				//				if (getBlockSafe(p.x, p.y, p.z) != 0)
-				//				{
-				//					return true;
-				//				}
-				//			}
-				//	return false;
-				//};
+			//auto checkHit = [&](glm::vec3 pos) -> bool
+			//{
+			//	for (int x = -2; x <= 2; x++)
+			//		for (int y = -2; y <= 2; y++)
+			//			for (int z = -2; z <= 2; z++)
+			//			{
+			//				glm::vec3 p = pos + glm::vec3(x, y, z);
+			//				if (getBlockSafe(p.x, p.y, p.z) != 0)
+			//				{
+			//					return true;
+			//				}
+			//			}
+			//	return false;
+			//};
 
-				//float hoverSpeed = 2;
-				//if (!diamonds.empty())
-				//{
-				//	if (checkHit(cameraPos))
-				//	{
-				//		cameraYoffset += input.deltaTime * hoverSpeed;
-				//	}
-				//	else
-				//	{
-				//		if (cameraYoffset > 0)
-				//			if (!checkHit(cameraPos -= glm::vec3(0, 0.1f, 0)))
-				//			{
-				//				cameraYoffset -= input.deltaTime * hoverSpeed;
-				//			}
-				//	}
-				//}
-				//else
-				//{
-				//	cameraYoffset += input.deltaTime;
-				//}
-				//
-				//
-				//cameraYoffset = std::max(cameraYoffset, 0.f);
-				//
-				//cameraPos.x = std::max(cameraPos.x, 2.f);
+			//float hoverSpeed = 2;
+			//if (!diamonds.empty())
+			//{
+			//	if (checkHit(cameraPos))
+			//	{
+			//		cameraYoffset += input.deltaTime * hoverSpeed;
+			//	}
+			//	else
+			//	{
+			//		if (cameraYoffset > 0)
+			//			if (!checkHit(cameraPos -= glm::vec3(0, 0.1f, 0)))
+			//			{
+			//				cameraYoffset -= input.deltaTime * hoverSpeed;
+			//			}
+			//	}
+			//}
+			//else
+			//{
+			//	cameraYoffset += input.deltaTime;
+			//}
+			//
+			//
+			//cameraYoffset = std::max(cameraYoffset, 0.f);
+			//
+			//cameraPos.x = std::max(cameraPos.x, 2.f);
 
 			}
 
@@ -439,7 +471,7 @@ struct ThreeDGameExample: public Container
 			}
 			else
 			{
-				editor.update(requestedInfo.requestedImguiIds, renderer, input, 
+				editor.update(requestedInfo.requestedImguiIds, renderer, input,
 					4, requestedInfo, {windowState.windowW,windowState.windowH});
 			}
 
@@ -448,9 +480,39 @@ struct ThreeDGameExample: public Container
 	#pragma endregion
 
 
+	#pragma region render3d
 
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
+	#pragma endregion
+
+
+	#pragma region ui
+		{
+			sushyContext.update(renderer2d, pika::toSushi(input), font);
+			
+			auto life = sushyContext.genUniqueParent("life");
+			if (life)
+			{
+				renderer2d.renderRectangle(life->outData.absTransform, {1,0,0,0.5});
+			}
+			
+			auto xp = sushyContext.genUniqueParent("xp");
+			if (xp)
+			{
+				renderer2d.renderRectangle(xp->outData.absTransform, {0,1,0,0.5});
+			}
+			
+			auto score = sushyContext.genUniqueParent("score");
+			if (score)
+			{
+				renderer2d.renderRectangle(score->outData.absTransform, {0.5,0.5,0.5,0.3});
+			}
+			
+			renderer2d.flush();
+		}
+	#pragma endregion
+
 
 
 		return true;

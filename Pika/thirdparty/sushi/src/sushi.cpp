@@ -570,33 +570,41 @@ namespace sushi
 		auto getNextTextElementPiece = [&](sushi::Text *text) -> bool
 		{
 
-			int m = getNextMarker();
 
-			switch (m)
+			while (true)
 			{
-				case markerText:
+				int m = peekNextMarker();
+
+				switch (m)
 				{
-					size_t textSize = 0;
-					if (!readBinaryData(&textSize, sizeof(textSize))) { return 0; }
-					text->text.resize(textSize);
-					if (!readBinaryData(text->text.data(), textSize)) { return 0; }
+					case markerText:
+					{
+						int _ = getNextMarker();
+						size_t textSize = 0;
+						if (!readBinaryData(&textSize, sizeof(textSize))) { return 0; }
+						text->text.resize(textSize);
+						if (!readBinaryData(text->text.data(), textSize)) { return 0; }
+						break;
+					}
+
+					case markerTransform:
+					{
+						int _ = getNextMarker();
+						if (!getNextTransformPiece(&text->transform)) { return 0; }
+						break;
+					}
+
+					case markerColor:
+					{
+						int _ = getNextMarker();
+						if (!readBinaryData(&text->color, sizeof(text->color))) { return 0; }
+						break;
+					}
+
+					default:
+					return true;
 					break;
 				}
-
-				case markerTransform:
-				{
-					if (!getNextTransformPiece(&text->transform)) { return 0; }
-					break;
-				}
-
-				case markerColor:
-				{
-					if (!readBinaryData(&text->color,sizeof(text->color))) { return 0; }
-					break;
-				}
-
-				default:
-				return 0;
 			}
 
 			return true;
