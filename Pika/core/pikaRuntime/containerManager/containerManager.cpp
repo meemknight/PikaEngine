@@ -745,7 +745,7 @@ bool pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 
 				if (!allocateContainerMemory(container, info, 0))
 				{
-					logs.log("Internal error 1", pika::logError);
+					logs.log("Internal error 1 (couldn't allocate container memory)", pika::logError);
 				}
 				else
 				{

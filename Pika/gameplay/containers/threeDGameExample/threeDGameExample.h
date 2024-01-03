@@ -33,8 +33,6 @@ struct ThreeDGameExample: public Container
 		ContainerStaticInfo info = {};
 		info.defaultHeapMemorySize = pika::MB(1500); //todo option to use global allocator
 
-		info.extensionsSuported = {".gl3d"};
-
 		info.requestImguiFbo = true;
 		info.requestImguiIds = 1;
 
@@ -52,20 +50,27 @@ struct ThreeDGameExample: public Container
 		Enemy(int x, int z) { physics.position = {x,z}; physics.lastPos = {x,z}; };
 	};
 
+	struct PlayerModel
+	{
+		gl3d::Entity head;
+		gl3d::Entity torso;
+		gl3d::Entity hands[2];
+		gl3d::Entity legs[2];
+
+		float armAngle = 0;
+	};
+
+	PlayerModel playerModel;
 
 	std::vector<Enemy> enemies;
+	float enemySpawnTimer = 5;
 
 	gl3d::Renderer3D renderer;
 	gl3d::Model groundModel;
 	gl3d::Entity groundEntity;
-	gl3d::Entity playerEntity;
 	bool first = 1;
-	float health = 1;
 
 	int killed = 0;
-
-	float floatingPeriod = 0;
-	float killTimer = 1.5;
 
 	sushi::SushyContext sushyContext;
 
@@ -74,6 +79,193 @@ struct ThreeDGameExample: public Container
 	gl2d::Renderer2D renderer2d;
 	gl2d::Font font;
 
+	//todo add this in the renderer
+	//todo add a default material if material left blank or something
+	gl3d::Model createCubeModel(gl3d::Renderer3D &renderer, glm::vec3 color)
+	{
+		static float uv = 1;
+		static float cubePositionsNormals[] = {
+			-1.0f, +1.0f, +1.0f, // 0
+			+0.0f, +1.0f, +0.0f, // Normal
+			0, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, +1.0f, +1.0f, // 1
+			+0.0f, +1.0f, +0.0f, // Normal
+			1 * uv, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, +1.0f, -1.0f, // 2
+			+0.0f, +1.0f, +0.0f, // Normal
+			1 * uv, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, +1.0f, -1.0f, // 3
+			+0.0f, +1.0f, +0.0f, // Normal
+			0, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+
+
+			-1.0f, +1.0f, -1.0f, // 4
+			 0.0f, +0.0f, -1.0f, // Normal
+			 0, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, +1.0f, -1.0f, // 5
+			 0.0f, +0.0f, -1.0f, // Normal
+			 1 * uv, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			 +1.0f, -1.0f, -1.0f, // 6
+			 0.0f, +0.0f, -1.0f, // Normal
+			 1 * uv, 0,				 //uv
+			 //0,0,0,				 //tangent
+			 //0,0,0,				 //btangent
+
+			-1.0f, -1.0f, -1.0f, // 7
+			 0.0f, +0.0f, -1.0f, // Normal
+			 0, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, +1.0f, -1.0f, // 8
+			+1.0f, +0.0f, +0.0f, // Normal
+			1 * uv, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, +1.0f, +1.0f, // 9
+			+1.0f, +0.0f, +0.0f, // Normal
+			1 * uv, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, -1.0f, +1.0f, // 10
+			+1.0f, +0.0f, +0.0f, // Normal
+			0, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			+1.0f, -1.0f, -1.0f, // 11
+			+1.0f, +0.0f, +0.0f, // Normal
+			0, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, +1.0f, +1.0f, // 12
+			-1.0f, +0.0f, +0.0f, // Normal
+			1 * uv, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, +1.0f, -1.0f, // 13
+			-1.0f, +0.0f, +0.0f, // Normal
+			1 * uv, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, -1.0f, -1.0f, // 14
+			-1.0f, +0.0f, +0.0f, // Normal
+			0, 0,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, -1.0f, +1.0f, // 15
+			-1.0f, +0.0f, +0.0f, // Normal
+			0, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+
+			+1.0f, +1.0f, +1.0f, // 16
+			+0.0f, +0.0f, +1.0f, // Normal
+			1 * uv, 1 * uv,				 //uv
+			//0,0,0,				 //tangent
+			//0,0,0,				 //btangent
+
+			-1.0f, +1.0f, +1.0f, // 17
+			+0.0f, +0.0f, +1.0f, // Normal
+			0, 1 * uv,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+			-1.0f, -1.0f, +1.0f, // 18
+			+0.0f, +0.0f, +1.0f, // Normal
+			0, 0,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+			+1.0f, -1.0f, +1.0f, // 19
+			+0.0f, +0.0f, +1.0f, // Normal
+			1 * uv, 0,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+
+			+1.0f, -1.0f, -1.0f, // 20
+			+0.0f, -1.0f, +0.0f, // Normal
+			1 * uv, 0,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+			-1.0f, -1.0f, -1.0f, // 21
+			+0.0f, -1.0f, +0.0f, // Normal
+			0, 0,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+			-1.0f, -1.0f, +1.0f, // 22
+			+0.0f, -1.0f, +0.0f, // Normal
+			0, 1 * uv,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+			+1.0f, -1.0f, +1.0f, // 23
+			+0.0f, -1.0f, +0.0f, // Normal
+			1 * uv, 1 * uv,				 //uv
+			//0, 0, 0,				 //tangent
+			//0, 0, 0,				 //btangent
+
+		};
+
+		static unsigned int cubeIndices[] = {
+		0,   1,  2,  0,  2,  3, // Top
+		4,   5,  6,  4,  6,  7, // Back
+		8,   9, 10,  8, 10, 11, // Right
+		12, 13, 14, 12, 14, 15, // Left
+		16, 17, 18, 16, 18, 19, // Front
+		20, 22, 21, 20, 23, 22, // Bottom
+		};
+
+		auto material = renderer.createMaterial(0, {color,1}, 0, 1);
+
+		return renderer.createModelFromData(material, "cube",
+			sizeof(cubePositionsNormals)/sizeof(cubePositionsNormals[0]), cubePositionsNormals,
+			sizeof(cubeIndices)/ sizeof(cubeIndices[0]), cubeIndices);
+
+	}
+
+	void createPlayerEntity(gl3d::Renderer3D &renderer, glm::vec3 color)
+	{
+		auto cube = createCubeModel(renderer, color);
+
+		playerModel.torso = renderer.createEntity(cube, {}, false);
+
+		playerModel.legs[0] = renderer.createEntity(cube, {}, false);
+		playerModel.legs[1] = renderer.createEntity(cube, {}, false);
+
+		playerModel.hands[0] = renderer.createEntity(cube, {}, false);
+		playerModel.hands[1] = renderer.createEntity(cube, {}, false);
+
+		playerModel.head = renderer.createEntity(cube, {}, false);
+	}
 
 	gl3d::Model createPlane(gl3d::Renderer3D &renderer)
 	{
@@ -106,6 +298,39 @@ struct ThreeDGameExample: public Container
 	}
 
 
+	void addEnemy(glm::vec2 position, gl3d::Model playerM, gl3d::Material mat)
+	{
+		Enemy i = {};
+		i.physics.position = position; i.physics.lastPos = position;
+
+		i.entity = renderer.createEntity(playerM,
+			gl3d::Transform{glm::vec3{i.physics.position.x, 0, i.physics.position.y}
+			,{},glm::vec3{0.5f}
+			}, false);
+
+
+		int count = renderer.getEntityMeshesCount(i.entity);
+		//if (!count)return 0;
+
+		for (int j = 0; j < count; j++)
+		{
+			renderer.setEntityMeshMaterial(i.entity, j, mat);
+
+			auto m = renderer.getEntityMeshMaterialValues(i.entity, j);
+			m.kd = {(rand()%255)/255.f,(rand() % 255) / 255.f,(rand() % 255) / 255.f,1};
+			renderer.setEntityMeshMaterialValues(i.entity, j, m);
+		}
+
+		renderer.setEntityAnimationIndex(i.entity, 15); //idle
+		renderer.setEntityAnimationSpeed(i.entity, 1);
+		renderer.setEntityAnimate(i.entity, true);
+
+		enemies.push_back(i);
+	}
+
+	gl3d::Model playerM;
+	std::vector<gl3d::Material> zombieMat;
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 		renderer2d.create(requestedInfo.requestedFBO.fbo);
@@ -125,10 +350,11 @@ struct ThreeDGameExample: public Container
 		//pika::gl3d::loadSettingsFromFileName(renderer, PIKA_RESOURCES_PATH "/threedgame/settings.gl3d", requestedInfo);
 		editor.loadFromFile(renderer, PIKA_RESOURCES_PATH "/threedgame/settings.gl3d", requestedInfo);
 
-		auto zombieMat = renderer.loadMaterial(PIKA_RESOURCES_PATH "threedgame/zombie.mtl", 0);
+		zombieMat = renderer.loadMaterial(PIKA_RESOURCES_PATH "threedgame/zombie.mtl", 0);
 		if (zombieMat.size() != 1) { return false; }
 
-		auto playerModel = renderer.loadModel(PIKA_RESOURCES_PATH "mcDungeons/steve.glb", 0, 1);
+
+		playerM = renderer.loadModel(PIKA_RESOURCES_PATH "mcDungeons/steve.glb", 0, 1);
 
 		renderer.getSSRdata().setLowQuality();
 
@@ -138,6 +364,8 @@ struct ThreeDGameExample: public Container
 
 
 		//renderer.
+
+		createPlayerEntity(renderer, {1,1,0});
 
 		groundModel = createPlane(renderer);
 
@@ -150,13 +378,8 @@ struct ThreeDGameExample: public Container
 		groundEntity = renderer.createEntity(groundModel, t);
 
 
-		playerEntity = renderer.createEntity(playerModel, gl3d::Transform{{0,0,-5},{},glm::vec3{0.5f}}, false);
-
 		renderer.createDirectionalLight(glm::normalize(glm::vec3{-0.175,-0.577, -0.798}));
 	
-		renderer.setEntityAnimate(playerEntity, 1);
-		renderer.setEntityAnimationIndex(playerEntity, idle);
-
 
 		{
 			sushi::SushyBinaryFormat loader;
@@ -169,39 +392,22 @@ struct ThreeDGameExample: public Container
 		{
 			enemies.push_back(Enemy(18, 16));
 			enemies.push_back(Enemy(16, 16));
+
+			addEnemy({18,16}, playerM, zombieMat[0]);
+			addEnemy({16,16}, playerM, zombieMat[0]);
 		}
 
 		for (auto &i : enemies)
 		{
-			i.entity = renderer.createEntity(playerModel, 
-				gl3d::Transform{glm::vec3{i.physics.position.x, 0, i.physics.position.y}
-				,{},glm::vec3{0.5f}
-				}, false);
-
-
-			int count = renderer.getEntityMeshesCount(i.entity);
-			if (!count)return 0;
-			for (int j = 0; j < count; j++)
-			{
-				renderer.setEntityMeshMaterial(i.entity, j, zombieMat[0]);
-
-				auto m = renderer.getEntityMeshMaterialValues(i.entity, j);
-				m.kd = {1,0,0,1};
-				renderer.setEntityMeshMaterialValues(i.entity, j, m);
-			}
-
-			renderer.setEntityAnimationIndex(i.entity, 15); //idle
-			renderer.setEntityAnimationSpeed(i.entity, 1);
-			renderer.setEntityAnimate(i.entity, true);
+			
 		}
 
 		return true;
 	}
 
-	float animationCulldown = 0;
 	float attackCulldown = 0;
-	float cameraYoffset = 0;
 	bool freeCamera = 0;
+
 
 	McDungeonsGameplay::PhysicsComponent playerPhysics;
 
@@ -226,6 +432,22 @@ struct ThreeDGameExample: public Container
 		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
 	#pragma endregion
 
+
+		if (enemySpawnTimer < 0)
+		{
+			
+			if (enemies.size() < 15)
+			{
+				addEnemy({rand() % 100 - 50, rand() % 100 - 50}, playerM, zombieMat[0]);
+			}
+
+
+		}
+		else
+		{
+			enemySpawnTimer -= input.deltaTime;
+		}
+
 		if (input.buttons[pika::Button::Escape].released())	
 		{
 			::pika::pikaImgui::removeFocusToCurrentWindow();
@@ -244,128 +466,190 @@ struct ThreeDGameExample: public Container
 
 		#pragma region input
 
-			if (health <= 0)
-			{
-				renderer.setEntityAnimationIndex(playerEntity, 18); //die
-				renderer.setEntityAnimationSpeed(playerEntity, 0.5);
-
-				killTimer -= input.deltaTime;
-
-				if (killTimer <= 0)
-				{
-					requestedInfo.setNormalCursor(); //todo set by the engine on exit container
-					requestedInfo.createContainer("ThreeDGameMenu");
-					return 0;
-				}
-			}
-			else
+			
 			{
 				if (!freeCamera)
 				{
-					glm::vec2 dir = {};
 
-					if (animationCulldown <= 0)
+					auto updatePlayer = [&](PlayerModel &p)
 					{
-						if (input.buttons[pika::Button::A].held() || input.buttons[pika::Button::Left].held())
-						{
-							dir -= glm::vec2(1, 1);
-						}
-						if (input.buttons[pika::Button::D].held() || input.buttons[pika::Button::Right].held())
-						{
-							dir += glm::vec2(1, 1);
-						}
-						if (input.buttons[pika::Button::W].held() || input.buttons[pika::Button::Up].held())
-						{
-							dir += glm::vec2(1, -1);
-						}
-						if (input.buttons[pika::Button::S].held() || input.buttons[pika::Button::Down].held())
-						{
-							dir -= glm::vec2(1, -1);
-						}
-					}
 
-					if (dir.x != 0 || dir.y != 0)
-					{
-						dir = glm::normalize(dir);
+						glm::vec2 dir = {};
 
-						auto lerp = [&](float x, float y, float a)
 						{
-							a = std::min(a, 1.f);
-							a = std::max(a, 0.f);
-							return x * (1 - a) + y * (a);
-						};
-
-						playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
-
-						if (animationCulldown <= 0)
-						{
-							renderer.setEntityAnimationIndex(playerEntity, run); //run 
-							renderer.setEntityAnimationSpeed(playerEntity, 1.5);
-						}
-					}
-					else
-					{
-						if (animationCulldown <= 0)
-						{
-							renderer.setEntityAnimationIndex(playerEntity, idle); //idle
-							renderer.setEntityAnimationSpeed(playerEntity, 1);
-						}
-					}
-
-					float speed = 3;
-					playerPhysics.position += dir * input.deltaTime * speed;
-
-
-					if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
-					{
-						renderer.setEntityAnimationIndex(playerEntity, attack); //attack
-						renderer.setEntityAnimationSpeed(playerEntity, 1.3);
-						animationCulldown = 1.2;
-						attackCulldown = 1.2;
-
-						for (int i = 0; i < enemies.size(); i++)
-						{
-							float d = glm::distance(playerPhysics.position, enemies[i].physics.position);
-							if (d < 1.5f)
+							if (input.buttons[pika::Button::A].held() || input.buttons[pika::Button::Left].held())
 							{
-								enemies[i].life -= 0.4;
+								dir -= glm::vec2(1, 1);
+							}
+							if (input.buttons[pika::Button::D].held() || input.buttons[pika::Button::Right].held())
+							{
+								dir += glm::vec2(1, 1);
+							}
+							if (input.buttons[pika::Button::W].held() || input.buttons[pika::Button::Up].held())
+							{
+								dir += glm::vec2(1, -1);
+							}
+							if (input.buttons[pika::Button::S].held() || input.buttons[pika::Button::Down].held())
+							{
+								dir -= glm::vec2(1, -1);
+							}
+						}
 
-								if (enemies[i].life <= 0)
+						if (dir.x != 0 || dir.y != 0)
+						{
+							dir = glm::normalize(dir);
+
+							playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
+							
+							p.armAngle = sin(clock()/100.f);
+
+							{
+								//renderer.setEntityAnimationIndex(playerEntity, run); //run 
+								//renderer.setEntityAnimationSpeed(playerEntity, 1.5);
+							}
+						}
+						else
+						{
+							if (p.armAngle > 0)
+							{
+								p.armAngle -= input.deltaTime;
+								if (p.armAngle < 0) p.armAngle = 0;
+
+							}
+							else if(p.armAngle < 0)
+							{
+								p.armAngle += input.deltaTime;
+								if (p.armAngle > 0) p.armAngle = 0;
+							}
+
+							{
+								//renderer.setEntityAnimationIndex(playerEntity, idle); //idle
+								//renderer.setEntityAnimationSpeed(playerEntity, 1);
+							}
+						}
+
+						float speed = 3;
+						playerPhysics.position += dir * input.deltaTime * speed;
+
+
+						if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
+						{
+							//renderer.setEntityAnimationIndex(playerEntity, attack); //attack
+							//renderer.setEntityAnimationSpeed(playerEntity, 1.3);
+							attackCulldown = 0.2;
+
+							for (int i = 0; i < enemies.size(); i++)
+							{
+								float d = glm::distance(playerPhysics.position, enemies[i].physics.position);
+								if (d < 1.5f)
 								{
-									renderer.deleteEntity(enemies[i].entity);
-									enemies.erase(enemies.begin() + i);
-									killed++;
-									i--;
-									continue;
+									enemies[i].life -= 0.4;
+
+									if (enemies[i].life <= 0)
+									{
+										renderer.deleteEntity(enemies[i].entity);
+										enemies.erase(enemies.begin() + i);
+										killed++;
+										i--;
+										continue;
+									}
+
+									glm::vec2 dir(1, 0);
+
+									if (d != 0)
+									{
+										dir = (enemies[i].physics.position - playerPhysics.position) / d;
+									}
+
+									enemies[i].physics.position += dir * 4.0f;
 								}
 
-								glm::vec2 dir(1, 0);
-
-								if (d != 0)
-								{
-									dir = (enemies[i].physics.position - playerPhysics.position) / d;
-								}
-
-								enemies[i].physics.position += dir * 4.0f;
 							}
 
 						}
 
-					}
+						if (attackCulldown > 0)
+						{
+							attackCulldown -= input.deltaTime;
+						}
 
-				}
+						//set player's position
+						{
+							auto setPos = [&](PlayerModel &p)
+							{
+								float limbRotation = p.armAngle;
 
-				if (animationCulldown > 0)
-				{
-					animationCulldown -= input.deltaTime;
-				}
+								renderer.setEntityTransform(p.torso,
+									{{playerPhysics.position.x, 2.50, playerPhysics.position.y}, {0,
+									playerPhysics.rotation, 0}, {0.5,1,0.25}});
 
-				if (attackCulldown > 0)
-				{
-					attackCulldown -= input.deltaTime;
+								renderer.setEntityTransform(p.head,
+									{{playerPhysics.position.x, 3.0, playerPhysics.position.y}, {0,
+									playerPhysics.rotation, 0}, {0.5,0.5,0.5}});
+
+								glm::mat4 legMatrix =
+									glm::translate(glm::vec3{playerPhysics.position.x, 0.75, playerPhysics.position.y}) *
+									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
+									glm::rotate(limbRotation, glm::vec3{1,0,0}) *
+									glm::translate(glm::vec3{-0.25, -0.75 / 2.f, 0}) *
+									glm::scale(glm::vec3{0.25,0.75,0.25});
+
+								gl3d::Transform legTransform;
+								legTransform.setFromMatrix(legMatrix);
+
+								glm::mat4 legMatrix2 =
+									glm::translate(glm::vec3{playerPhysics.position.x, 0.75, playerPhysics.position.y}) *
+									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
+									glm::rotate(-limbRotation, glm::vec3{1,0,0}) *
+									glm::translate(glm::vec3{0.25, -0.75 / 2.f, 0}) *
+									glm::scale(glm::vec3{0.25,0.75,0.25});
+
+								gl3d::Transform legTransform2;
+								legTransform2.setFromMatrix(legMatrix2);
+								renderer.setEntityTransform(p.legs[0], legTransform);
+								renderer.setEntityTransform(p.legs[1], legTransform2);
+
+
+								glm::mat4 armMatrix =
+									glm::translate(glm::vec3{playerPhysics.position.x, 1.75, playerPhysics.position.y}) *
+									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
+									glm::rotate(-limbRotation, glm::vec3{1,0,0}) *
+									glm::translate(glm::vec3{-0.75, -0.75 / 2.f, 0}) *
+									glm::scale(glm::vec3{0.25,0.75,0.25});
+								gl3d::Transform armTransform;
+								armTransform.setFromMatrix(armMatrix);
+
+								glm::mat4 armMatrix2 =
+									glm::translate(glm::vec3{playerPhysics.position.x, 1.75, playerPhysics.position.y}) *
+									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
+									glm::rotate(limbRotation, glm::vec3{1,0,0}) *
+									glm::translate(glm::vec3{0.75, -0.75 / 2.f, 0}) *
+									glm::scale(glm::vec3{0.25,0.75,0.25});
+								gl3d::Transform armTransform2;
+								armTransform2.setFromMatrix(armMatrix2);
+
+
+								renderer.setEntityTransform(p.hands[0], armTransform);
+								renderer.setEntityTransform(p.hands[1], armTransform2);
+
+
+
+
+							};
+
+							setPos(p);
+						}
+					};
+
+					updatePlayer(playerModel);
 				}
 			}
 
+			
 			
 
 		#pragma endregion
@@ -437,10 +721,12 @@ struct ThreeDGameExample: public Container
 			};
 
 		#pragma region player position
-			auto t = setTransform(playerPhysics, playerEntity);
-			glm::vec3 playerPos = t.position;
-			glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 0.8, 1));
-			glm::vec3 cameraPos = playerPos + cameraViewDir * 20.f;
+			glm::vec3 playerPos = {playerPhysics.position.x, -0.5, playerPhysics.position.y};
+			glm::vec3 cameraPos = {};
+			{
+				glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 0.8, 1));
+				cameraPos = playerPos + cameraViewDir * 20.f;
+			}
 		#pragma endregion
 
 			for (auto &e : enemies)
@@ -513,23 +799,6 @@ struct ThreeDGameExample: public Container
 #pragma endregion
 
 
-#pragma region camera hover
-			{
-			
-			if(health<=0)
-			{
-				cameraYoffset += input.deltaTime;
-			}
-			//
-			//
-			cameraYoffset = std::max(cameraYoffset, 0.f);
-			cameraPos.y += cameraYoffset;
-			//cameraPos.x = std::max(cameraPos.x, 2.f);
-
-			}
-
-		#pragma endregion
-
 			if (!freeCamera)
 			{
 				renderer.camera.position = cameraPos;
@@ -547,53 +816,12 @@ struct ThreeDGameExample: public Container
 
 
 
-		health = glm::clamp(health, 0.f, 1.f);
-
-
 	#pragma region render3d
 
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
 	#pragma endregion
 
-
-	#pragma region ui
-		if(!freeCamera)
-		{
-			sushyContext.update(renderer2d, pika::toSushi(input), font);
-			
-			auto life = sushyContext.genUniqueParent("life");
-			if (life)
-			{
-				auto t2 = life->outData.absTransform;
-				t2.z *= health;
-
-				renderer2d.renderRectangle(life->outData.absTransform, {0.5,0.5,0.5,0.1});
-				renderer2d.renderRectangle(t2, {1,0,0,0.5});
-			}
-			
-			//auto xp = sushyContext.genUniqueParent("xp");
-			//if (xp)
-			//{
-			//	renderer2d.renderRectangle(xp->outData.absTransform, {0,1,0,0.5});
-			//}
-			
-			auto score = sushyContext.genUniqueParent("score");
-			if (score)
-			{
-				renderer2d.renderRectangle(score->outData.absTransform, {0.5,0.5,0.5,0.3});
-
-				auto s = renderer2d.determineTextRescaleFit(std::to_string(killed).c_str(), font,
-					score->outData.absTransform);
-
-				renderer2d.renderText(glm::vec2(score->outData.absTransform) + glm::vec2{score->outData.absTransform.z,score->outData.absTransform.w} / 2.f,
-					std::to_string(killed).c_str(), font, Colors_White);
-
-			}
-			
-			renderer2d.flush();
-		}
-	#pragma endregion
 
 
 
