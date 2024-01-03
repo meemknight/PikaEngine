@@ -78,7 +78,7 @@ bool IsometricGameEditor::create(RequestedContainerInfo &requestedInfo, pika::St
 	}
 
 	
-
+	newMapSize = map.size;
 
 	return true;
 }
@@ -105,22 +105,8 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 		return position;
 	};
 
-	for (int y = 0; y < map.size.y; y++)
-		for (int z = 0; z < map.size.z; z++)
-			for (int x = 0; x < map.size.x; x++)
-			{
-				auto b = map.getSafe({x,y,z});
-
-				if (b->get().x != 0)
-				{
-					glm::vec2 position = calculateBlockPos({x,y,z});
-
-					requestedInfo.consoleWrite("yes");
-					renderer.renderRectangle({position,size,size}, tiles, Colors_White, {}, 0,
-						tilesAtlas.get(b->get().x, b->get().y));
-				}
-			}
-
+	glm::ivec3 currentSelectedBlockDelete{-1};
+	glm::ivec3 currentSelectedBlockPlace{-1};
 
 	auto viewRect = renderer.getViewRect();
 
@@ -132,60 +118,136 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 	glm::vec2 blockPositionScreen = lerp(glm::vec2(viewRect.x, viewRect.y),
 		glm::vec2(viewRect.x + viewRect.z, viewRect.y + viewRect.w),
 		glm::vec2(input.mouseX, input.mouseY) / glm::vec2(windowState.windowW, windowState.windowH));
-	
 
-	glm::ivec3 currentSelectedBlock{-1};
-	
-	if(input.rMouse.pressed())
+
+		for (int y = 0; y < map.size.y; y++)
+			for (int z = 0; z < map.size.z; z++)
+				for (int x = 0; x < map.size.x; x++)
+				{
+
+					auto checkPointInBox = [&](int x, int y, int z, bool reverse = 0)
+					{
+						auto b = map.getSafe({x,y,z});
+
+						if (!b) { return false; }
+
+						if ((b->get().x != 0 && !reverse)
+							|| (b->get().x == 0 && reverse)
+							)
+						{
+							glm::vec2 position = calculateBlockPos({x,y,z});
+							glm::vec4 box = renderer.toScreen({position, size, size});
+							//todo new functon
+
+							box.x += 1;
+							box.x /= 2.f;
+							box.x *= renderer.windowW;
+
+							box.y *= -1;
+							box.y += 1;
+							box.y /= 2.f;
+							box.y *= renderer.windowH;
+
+							box.z += 1;
+							box.z /= 2.f;
+							box.z *= renderer.windowW;
+
+							box.w *= -1;
+							box.w += 1;
+							box.w /= 2.f;
+							box.w *= renderer.windowH;
+
+							box.z = box.z - box.x;
+							box.w = box.w - box.y;
+
+							if (pointInBox(glm::vec2(input.mouseX, input.mouseY), box))
+							{
+								return true;
+							}
+
+						}
+
+						return false;
+					};
+
+					if (checkPointInBox(x,y,z))
+					{
+						currentSelectedBlockDelete = {x,y,z};
+
+						if (checkPointInBox(x + 1, y, z, true))
+						{
+							currentSelectedBlockPlace = {x + 1,y,z};
+						}
+
+						if (checkPointInBox(x, y + 1, z, true))
+						{
+							currentSelectedBlockPlace = {x,y + 1,z};
+						}
+
+						if (checkPointInBox(x, y, z + 1, true))
+						{
+							currentSelectedBlockPlace = {x,y,z + 1};
+						}
+					}
+
+				}
+
 	for (int y = 0; y < map.size.y; y++)
 		for (int z = 0; z < map.size.z; z++)
 			for (int x = 0; x < map.size.x; x++)
 			{
-
 				auto b = map.getSafe({x,y,z});
 
 				if (b->get().x != 0)
 				{
 					glm::vec2 position = calculateBlockPos({x,y,z});
-					glm::vec4 box = renderer.toScreen({position, size, size});
-					//todo new functon
 
-					box.x += 1;
-					box.x /= 2.f;
-					box.x *= renderer.windowW;
-
-					box.y *= -1;
-					box.y += 1;
-					box.y /= 2.f;
-					box.y *= renderer.windowH;
-
-					box.z += 1;
-					box.z /= 2.f;
-					box.z *= renderer.windowW;
-
-					box.w *= -1;
-					box.w += 1;
-					box.w /= 2.f;
-					box.w *= renderer.windowH;
-
-					box.z = box.z - box.x;
-					box.w = box.w - box.y;
-
-					if(pointInBox(glm::vec2(input.mouseX, input.mouseY), box))
-					{
-						currentSelectedBlock = {x,y,z};
-					}
-
+					renderer.renderRectangle({position,size,size}, tiles, Colors_White, {}, 0,
+						tilesAtlas.get(b->get().x, b->get().y));
 				}
 
+				if (currentSelectedBlockDelete == glm::ivec3{x, y, z})
+				{
+					glm::vec2 position = calculateBlockPos({x,y,z});
+				
+					renderer.renderRectangle({position,size,size}, tiles, Colors_White, {}, 0,
+						tilesAtlas.get(0, 1));
+				}
+
+				if (currentSelectedBlockPlace == glm::ivec3{x, y, z})
+				{
+					glm::vec2 position = calculateBlockPos({x,y,z});
+
+					renderer.renderRectangle({position,size,size}, tiles, {0.1,0.1,0.1,0.1}, {}, 0,
+						tilesAtlas.get(0, 1));
+				}
 			}
 
-	if (currentSelectedBlock.x > -1)
+	if (currentSelectedBlockDelete.x > -1)
 	{
-		auto b = map.getSafe(currentSelectedBlock);
-		if (b)
+		if (
+			input.lMouse.pressed()
+			)
 		{
-			b->set(0, 0);
+			auto b = map.getSafe(currentSelectedBlockDelete);
+			if (b)
+			{
+				b->set(0, 0);
+			}
+		}
+	}
+
+	if (currentSelectedBlockPlace.x > -1)
+	{
+		if (
+			input.rMouse.pressed()
+			)
+		{
+			auto b = map.getSafe(currentSelectedBlockPlace);
+			if (b)
+			{
+				b->set(currentBlock, 0);
+			}
 		}
 	}
 
@@ -229,6 +291,40 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 
 	ImGui::NewLine();
 
+	//ImGui::DragInt3("Cursor pos", &currentSelectedBlockDelete[0], 1);
+	//currentSelectedBlock = glm::clamp(currentSelectedBlock, glm::ivec3{0}, map.size - glm::ivec3(1));
+
+	ImGui::NewLine();
+
+
+	ImGui::DragInt3("NewMapSize", &newMapSize[0]);
+
+	if (ImGui::Button("Resize Map"))
+	{
+		Map newMap;
+		newMap.init(newMapSize);
+
+		for (int x = 0; x < map.size.x; x++)
+			for (int y = 0; y < map.size.y; y++)
+				for (int z = 0; z < map.size.z; z++)
+				{
+
+					auto b = map.getSafe({x,y,z});
+
+					auto b2 = newMap.getSafe({x,y,z});
+
+					if (b2)
+					{
+						*b2 = *b;
+					}
+				}
+
+		map = std::move(newMap);
+	}
+
+	ImGui::NewLine();
+
+
 	loadedLevel.run(requestedInfo.requestedImguiIds);
 
 	if (ImGui::Button("save map"))
@@ -241,6 +337,9 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 			//toto log errors
 		}
 	}
+
+	ImGui::NewLine();
+
 
 
 

@@ -1,4 +1,7 @@
-#2024-01-03 15:37:45: Created container: IsometricGameEditor
-#2024-01-03 15:37:52: Destroyed continer: IsometricGameEditor #1
-#2024-01-03 15:37:53: Created container: IsometricGameEditor
-#2024-01-03 15:37:59: Destroyed continer: IsometricGameEditor #2
+#2024-01-03 16:04:06: Created container: IsometricGameEditor
+#2024-01-03 16:04:49: Reloaded dll
+#2024-01-03 16:07:06: Reloaded dll
+#2024-01-03 16:07:44: Reloaded dll
+#2024-01-03 16:07:58: Reloaded dll
+#2024-01-03 16:08:48: Reloaded dll
+#2024-01-03 16:10:43: Destroyed continer: IsometricGameEditor #1

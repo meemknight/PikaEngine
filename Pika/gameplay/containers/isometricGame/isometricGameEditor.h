@@ -20,6 +20,8 @@ struct IsometricGameEditor: public Container
 	gl2d::Texture tiles;
 	gl2d::TextureAtlasPadding tilesAtlas;
 
+	glm::ivec3 newMapSize = {};
+
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
