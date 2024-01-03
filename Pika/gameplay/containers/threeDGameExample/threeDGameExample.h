@@ -81,7 +81,7 @@ struct ThreeDGameExample: public Container
 
 	//todo add this in the renderer
 	//todo add a default material if material left blank or something
-	gl3d::Model createCubeModel(gl3d::Renderer3D &renderer, glm::vec3 color)
+	gl3d::Model createCubeModel(gl3d::Renderer3D &renderer, glm::vec3 color, float metallic = 1)
 	{
 		static float uv = 1;
 		static float cubePositionsNormals[] = {
@@ -244,7 +244,7 @@ struct ThreeDGameExample: public Container
 		20, 22, 21, 20, 23, 22, // Bottom
 		};
 
-		auto material = renderer.createMaterial(0, {color,1}, 0, 1);
+		auto material = renderer.createMaterial(0, {color,1}, 0, metallic);
 
 		return renderer.createModelFromData(material, "cube",
 			sizeof(cubePositionsNormals)/sizeof(cubePositionsNormals[0]), cubePositionsNormals,
@@ -290,13 +290,54 @@ struct ThreeDGameExample: public Container
 				0, 1 * uv,			 //uv
 		};
 
-		auto material =  renderer.createMaterial(0, {0.4,1,0.4,1}, 0, 1);
+		auto material =  renderer.createMaterial(0, {1,1,1,1}, 0, 1);
 
 		return renderer.createModelFromData(material, "plane",
 			topVer.size(), topVer.data(), ind.size(),
 			ind.data());
 	}
 
+
+	void createStalpi()
+	{
+		auto cube = createCubeModel(renderer, {0.2,0.4,0.8}, 0);
+
+		bool flip = 0;
+		for (int x = -100; x <= 100; x += 25)
+		{
+			for (int z = -100; z <= 100; z+=50)
+			{
+
+				addStalp({x, z + 25 * flip}, cube);
+
+			}
+
+			flip = !flip;
+		}
+
+	}
+
+	std::vector<gl3d::SpotLight> spotLights;
+
+	void addStalp(glm::vec2 position, gl3d::Model cube)
+	{
+		renderer.createEntity(cube, {glm::vec3{position.x, 3.5, position.y}
+			,{},{0.25,5,0.25}
+			});
+
+		renderer.createEntity(cube, {glm::vec3{position.x, 8.5, position.y}
+			,{},{3,0.25,0.25}
+			});
+
+		spotLights.push_back(renderer.createSpotLight({position.x - 1.5, 8.1, position.y},
+			glm::radians(50.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(20.f), 1.f, 0));
+
+		spotLights.push_back
+		(renderer.createSpotLight({position.x + 1.5, 8.1, position.y},
+			glm::radians(50.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(20.f), 1.f, 0));
+
+
+	}
 
 	void addEnemy(glm::vec2 position, gl3d::Model playerM, gl3d::Material mat)
 	{
@@ -349,6 +390,8 @@ struct ThreeDGameExample: public Container
 
 		//pika::gl3d::loadSettingsFromFileName(renderer, PIKA_RESOURCES_PATH "/threedgame/settings.gl3d", requestedInfo);
 		editor.loadFromFile(renderer, PIKA_RESOURCES_PATH "/threedgame/settings.gl3d", requestedInfo);
+		//renderer.skyBox.color = glm::vec3(0.8f);
+
 
 		zombieMat = renderer.loadMaterial(PIKA_RESOURCES_PATH "threedgame/zombie.mtl", 0);
 		if (zombieMat.size() != 1) { return false; }
@@ -366,6 +409,8 @@ struct ThreeDGameExample: public Container
 		//renderer.
 
 		createPlayerEntity(renderer, {1,1,0});
+
+		createStalpi();
 
 		groundModel = createPlane(renderer);
 
@@ -390,16 +435,8 @@ struct ThreeDGameExample: public Container
 
 		//if (0)
 		{
-			enemies.push_back(Enemy(18, 16));
-			enemies.push_back(Enemy(16, 16));
-
 			addEnemy({18,16}, playerM, zombieMat[0]);
 			addEnemy({16,16}, playerM, zombieMat[0]);
-		}
-
-		for (auto &i : enemies)
-		{
-			
 		}
 
 		return true;
