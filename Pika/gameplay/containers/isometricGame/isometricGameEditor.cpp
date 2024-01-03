@@ -1,7 +1,7 @@
 #include <containers/isometricGame/isometricGameEditor.h>
 #include <glui/glui.h>
 
-static int blocksCount = 8;
+static int blocksCount = 16;
 
 static bool pointInBox(glm::vec2 p, glm::vec4 box)
 {
@@ -26,7 +26,7 @@ bool IsometricGameEditor::create(RequestedContainerInfo &requestedInfo, pika::St
 
 	tiles = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "isoTiles/Isometric-Tiles.png", requestedInfo, 32, true);
 
-	tilesAtlas = gl2d::TextureAtlasPadding(8, 2, tiles.GetSize().x, tiles.GetSize().y);
+	tilesAtlas = gl2d::TextureAtlasPadding(16, 8, tiles.GetSize().x, tiles.GetSize().y);
 
 	//fileChanged.setFile(mapFile.c_str());
 
@@ -202,8 +202,61 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 				{
 					glm::vec2 position = calculateBlockPos({x,y,z});
 
-					renderer.renderRectangle({position,size,size}, tiles, Colors_White, {}, 0,
+					glm::vec4 color = Colors_White;
+
+					if (b->get().x == Blocks::redstone)
+					{
+						color = glm::vec4(0.8, 0.2, 0.2, 1.0);
+					}
+
+					renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
 						tilesAtlas.get(b->get().x, b->get().y));
+
+					if (b->get().x == Blocks::redstone)
+					{
+						auto b2 = map.getSafe({x,y,z-1});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 1));
+						}
+
+						b2 = map.getSafe({x-1,y,z});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 2));
+						}
+
+						b2 = map.getSafe({x + 1,y,z});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 3));
+						}
+
+						b2 = map.getSafe({x,y,z + 1});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 4));
+						}
+
+						b2 = map.getSafe({x-1,y+1,z});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 5));
+						}
+
+						b2 = map.getSafe({x,y+1,z-1});
+						if (b2 && b2->type == Blocks::redstone)
+						{
+							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+								tilesAtlas.get(b->get().x, 6));
+						}
+
+					}
 				}
 
 				if (currentSelectedBlockDelete == glm::ivec3{x, y, z})

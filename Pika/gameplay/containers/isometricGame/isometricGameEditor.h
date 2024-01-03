@@ -12,6 +12,20 @@
 struct IsometricGameEditor: public Container
 {
 
+	enum Blocks
+	{
+		air = 0,
+		clay,
+		stone,
+		ice,
+		snowDirt,
+		dirt,
+		log,
+		woddenPlank,
+		redstone
+	};
+
+
 	pika::FileChanged fileChanged;
 
 	gl2d::Renderer2D renderer;
@@ -40,26 +54,17 @@ struct IsometricGameEditor: public Container
 	struct Block
 	{
 		unsigned char type;
+		unsigned char secondType;
 
-		void set(unsigned char count, bool down)
+		void set(unsigned char count, unsigned char down)
 		{
 			type = count;
-			if (down)
-			{
-				type |= 0b1000'0000;
-			}
+			secondType = down;
 		}
 
 		glm::ivec2 get()
 		{
-			if (type & 0b1000'0000)
-			{
-				return {type & 0b0111'1111, 1};
-			}
-			else
-			{
-				return {type, 0};
-			}
+			return {type, secondType};
 		}
 	};
 
