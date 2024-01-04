@@ -25,6 +25,8 @@ struct IsometricGameEditor: public Container
 		redstone,
 		trapdor,
 		lever,
+		redstoneTorch,
+		redstoneBlock,
 	};
 
 
@@ -38,6 +40,8 @@ struct IsometricGameEditor: public Container
 	gl2d::TextureAtlasPadding tilesAtlas;
 
 	glm::ivec3 newMapSize = {};
+
+	glm::ivec3 blockSelector = {};
 
 	static ContainerStaticInfo containerInfo()
 	{

@@ -22,14 +22,18 @@ static bool pointInBox(glm::vec2 p, glm::vec4 box)
 static bool redstoneWire(int type)
 {
 	return type == IsometricGameEditor::Blocks::redstone ||
-	type == IsometricGameEditor::Blocks::trapdor ||
+		type == IsometricGameEditor::Blocks::trapdor ||
+		type == IsometricGameEditor::Blocks::redstoneTorch ||
+		type == IsometricGameEditor::Blocks::redstoneBlock ||
 	type == IsometricGameEditor::Blocks::lever;
 }
 
 static bool canPlaceRedstoneOn(int type)
 {
-	return type >= IsometricGameEditor::Blocks::clay &&
-		type <= IsometricGameEditor::Blocks::woddenPlank;
+	return (type >= IsometricGameEditor::Blocks::clay &&
+		type <= IsometricGameEditor::Blocks::woddenPlank)
+		|| type == IsometricGameEditor::Blocks::redstoneBlock;
+		
 }
 
 
@@ -249,7 +253,9 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 						color = glm::vec4(0.8, 0.2, 0.2, 1.0);
 					}
 
-					if (b->get().x == Blocks::redstone || b->get().x == Blocks::lever)
+					if (b->get().x == Blocks::redstone || b->get().x == Blocks::lever
+						|| b->get().x == Blocks::redstoneTorch
+						)
 					{
 						auto cr = glm::vec4(0.8, 0.2, 0.2, 1.0);
 
@@ -332,7 +338,8 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 
 						auto b2 = map.getSafe({x,y2,z});
 
-						if (b2 && b2->get().x != 0)
+						if (b2 && b2->get().x != 0 && b->get().x != Blocks::redstone 
+							&& b->get().x != Blocks::lever)
 						{
 							renderer.renderRectangle({position,size,size}, shadow, 
 								{1,1,1,1.f/advance}
@@ -357,6 +364,14 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 					glm::vec2 position = calculateBlockPos({x,y,z});
 
 					renderer.renderRectangle({position,size,size}, tiles, {0.1,0.1,0.1,0.1}, {}, 0,
+						tilesAtlas.get(0, 1));
+				}
+
+				if (blockSelector == glm::ivec3{x, y, z})
+				{
+					glm::vec2 position = calculateBlockPos({x,y,z});
+
+					renderer.renderRectangle({position,size,size}, tiles, {0.5,0.9,0.1,0.9}, {}, 0,
 						tilesAtlas.get(0, 1));
 				}
 			}
@@ -407,6 +422,10 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 	ImGui::DragFloat2("camera", &renderer.currentCamera.position[0], 2, -3200, 3200);
 
 
+	ImGui::DragInt3("block selector", &blockSelector[0], 1, 0);
+
+
+
 	{
 		auto uv1 = tilesAtlas.get(currentBlock, 0);
 		ImGui::Image((void *)(intptr_t)tiles.id,
@@ -435,6 +454,9 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 
 		}
 	}
+
+	if (input.buttons[pika::Button::Z].pressed()) { currentBlock--; }
+	if (input.buttons[pika::Button::X].pressed()) { currentBlock++; }
 
 	currentBlock = glm::clamp(currentBlock, 0, blocksCount-1);
 
@@ -471,6 +493,18 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 		map = std::move(newMap);
 	}
 
+	if (ImGui::Button("Replace floor"))
+	{
+		for (int x = 0; x < map.size.x; x++)
+			for (int z = 0; z < map.size.z; z++)
+			{
+
+				auto b = map.getSafe({x,0,z});
+				b->set(currentBlock, 0);
+			}
+
+	}
+
 	ImGui::NewLine();
 
 
@@ -486,6 +520,7 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 			//toto log errors
 		}
 	}
+
 
 	ImGui::NewLine();
 
