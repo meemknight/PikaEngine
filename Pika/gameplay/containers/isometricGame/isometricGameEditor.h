@@ -22,7 +22,9 @@ struct IsometricGameEditor: public Container
 		dirt,
 		log,
 		woddenPlank,
-		redstone
+		redstone,
+		trapdor,
+		lever,
 	};
 
 
@@ -32,6 +34,7 @@ struct IsometricGameEditor: public Container
 	pika::pikaImgui::FileSelector loadedLevel;
 
 	gl2d::Texture tiles;
+	gl2d::Texture shadow;
 	gl2d::TextureAtlasPadding tilesAtlas;
 
 	glm::ivec3 newMapSize = {};

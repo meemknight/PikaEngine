@@ -19,12 +19,26 @@ static bool pointInBox(glm::vec2 p, glm::vec4 box)
 	}
 }
 
+static bool redstoneWire(int type)
+{
+	return type == IsometricGameEditor::Blocks::redstone ||
+	type == IsometricGameEditor::Blocks::trapdor ||
+	type == IsometricGameEditor::Blocks::lever;
+}
+
+static bool canPlaceRedstoneOn(int type)
+{
+	return type >= IsometricGameEditor::Blocks::clay &&
+		type <= IsometricGameEditor::Blocks::woddenPlank;
+}
+
 
 bool IsometricGameEditor::create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 {
 	renderer.create(requestedInfo.requestedFBO.fbo);
 
 	tiles = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "isoTiles/Isometric-Tiles.png", requestedInfo, 32, true);
+	shadow = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "isoTiles/shadow.png", requestedInfo, 32, true);
 
 	tilesAtlas = gl2d::TextureAtlasPadding(16, 8, tiles.GetSize().x, tiles.GetSize().y);
 
@@ -92,6 +106,32 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 #pragma endregion
 
 	float size = 100;
+	
+#pragma region move
+
+	float cameraSpeed = input.deltaTime * size * 2.f;
+
+	if (input.buttons[pika::Button::A].held())
+	{
+		renderer.currentCamera.position.x -= cameraSpeed;
+	}
+	if (input.buttons[pika::Button::D].held())
+	{
+		renderer.currentCamera.position.x += cameraSpeed;
+	}
+
+	if (input.buttons[pika::Button::W].held())
+	{
+		renderer.currentCamera.position.y -= cameraSpeed;
+	}
+	if (input.buttons[pika::Button::S].held())
+	{
+		renderer.currentCamera.position.y += cameraSpeed;
+	}
+#pragma endregion
+
+
+
 
 	auto calculateBlockPos = [size](glm::ivec3 in)
 	{
@@ -209,54 +249,99 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 						color = glm::vec4(0.8, 0.2, 0.2, 1.0);
 					}
 
-					renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-						tilesAtlas.get(b->get().x, b->get().y));
-
-					if (b->get().x == Blocks::redstone)
+					if (b->get().x == Blocks::redstone || b->get().x == Blocks::lever)
 					{
-						auto b2 = map.getSafe({x,y,z-1});
-						if (b2 && b2->type == Blocks::redstone)
+						auto cr = glm::vec4(0.8, 0.2, 0.2, 1.0);
+
+						auto b2 = map.getSafe({x,y,z - 1});
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 1));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 1));
 						}
 
-						b2 = map.getSafe({x-1,y,z});
-						if (b2 && b2->type == Blocks::redstone)
+						b2 = map.getSafe({x - 1,y,z});
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 2));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 2));
 						}
 
 						b2 = map.getSafe({x + 1,y,z});
-						if (b2 && b2->type == Blocks::redstone)
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 3));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 3));
 						}
 
 						b2 = map.getSafe({x,y,z + 1});
-						if (b2 && b2->type == Blocks::redstone)
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 4));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 4));
 						}
 
-						b2 = map.getSafe({x-1,y+1,z});
-						if (b2 && b2->type == Blocks::redstone)
+						//redstone on wall
+
+						b2 = map.getSafe({x - 1,y + 1,z});
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 5));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 2));
+
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 5));
 						}
 
-						b2 = map.getSafe({x,y+1,z-1});
-						if (b2 && b2->type == Blocks::redstone)
+						b2 = map.getSafe({x,y + 1,z - 1});
+						if (b2 && redstoneWire(b2->type))
 						{
-							renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-								tilesAtlas.get(b->get().x, 6));
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 1));
+
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 6));
+						}
+
+
+						//redstone down
+
+						b2 = map.getSafe({x + 1,y - 1,z});
+						if (b2 && redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 3));
+						}
+
+						b2 = map.getSafe({x,y - 1,z + 1});
+						if (b2 && redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(Blocks::redstone, 4));
 						}
 
 					}
+
+					renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+						tilesAtlas.get(b->get().x, b->get().y));
+
+					int advance = 1;
+					for (int y2 = y + 2; y2 < map.size.y; y2++)
+					{
+						advance++;
+
+						auto b2 = map.getSafe({x,y2,z});
+
+						if (b2 && b2->get().x != 0)
+						{
+							renderer.renderRectangle({position,size,size}, shadow, 
+								{1,1,1,1.f/advance}
+							);
+							break;
+						}
+
+					}
+
 				}
 
 				if (currentSelectedBlockDelete == glm::ivec3{x, y, z})
@@ -299,7 +384,18 @@ bool IsometricGameEditor::update(pika::Input input, pika::WindowState windowStat
 			auto b = map.getSafe(currentSelectedBlockPlace);
 			if (b)
 			{
-				b->set(currentBlock, 0);
+				if (currentBlock == Blocks::redstone || currentBlock == Blocks::trapdor)
+				{
+					auto b2 = map.getSafe(currentSelectedBlockPlace - glm::ivec3(0,1,0));
+					if (b2 && canPlaceRedstoneOn(b2->get().x))
+					{
+						b->set(currentBlock, 0);
+					}
+				}
+				else
+				{
+					b->set(currentBlock, 0);
+				}
 			}
 		}
 	}

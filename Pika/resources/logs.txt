@@ -1,2 +1,2 @@
-#2024-01-04 11:33:14: Created container: ThreeDGameExample
-#2024-01-04 11:35:50: Reloaded dll
+#2024-01-04 12:47:49: Created container: IsometricGameEditor
+#2024-01-04 12:49:03: Destroyed continer: IsometricGameEditor #1
