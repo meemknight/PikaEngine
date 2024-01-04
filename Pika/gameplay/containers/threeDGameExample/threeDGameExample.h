@@ -398,8 +398,8 @@ struct ThreeDGameExample: public Container
 		renderer2d.create(requestedInfo.requestedFBO.fbo, 50);
 		//font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "arial.ttf", requestedInfo);
 
-		frameBuffers[0].createFramebuffer(1, 1, true);
-		frameBuffers[1].createFramebuffer(1, 1, true);
+		frameBuffers[0].createFramebuffer(1, 1, false);
+		frameBuffers[1].createFramebuffer(1, 1, false);
 		
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -561,19 +561,26 @@ struct ThreeDGameExample: public Container
 						glm::vec2 dir = {};
 
 						{
-							if (input.buttons[pika::Button::A].held() || input.buttons[pika::Button::Left].held())
+							if (
+								(!differentInput && input.buttons[pika::Button::A].held()) ||
+								(differentInput && input.buttons[pika::Button::Left].held()) )
 							{
 								dir -= glm::vec2(1, 1);
 							}
-							if (input.buttons[pika::Button::D].held() || input.buttons[pika::Button::Right].held())
+							if (
+								(!differentInput && input.buttons[pika::Button::D].held() )								
+								|| (differentInput && input.buttons[pika::Button::Right].held()) )
 							{
 								dir += glm::vec2(1, 1);
 							}
-							if (input.buttons[pika::Button::W].held() || input.buttons[pika::Button::Up].held())
+							if (
+							  	(!differentInput && input.buttons[pika::Button::W].held() )
+								|| (differentInput && input.buttons[pika::Button::Up].held()))
 							{
 								dir += glm::vec2(1, -1);
 							}
-							if (input.buttons[pika::Button::S].held() || input.buttons[pika::Button::Down].held())
+							if ((!differentInput && input.buttons[pika::Button::S].held() )
+								|| (differentInput && input.buttons[pika::Button::Down].held()))
 							{
 								dir -= glm::vec2(1, -1);
 							}
@@ -615,8 +622,7 @@ struct ThreeDGameExample: public Container
 						float speed = 3;
 						p.physics.position += dir * input.deltaTime * speed;
 
-
-						if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
+						if (input.buttons[pika::Button::Space].pressed() /*&& attackCulldown <= 0*/)
 						{
 							//renderer.setEntityAnimationIndex(playerEntity, attack); //attack
 							//renderer.setEntityAnimationSpeed(playerEntity, 1.3);
@@ -625,7 +631,7 @@ struct ThreeDGameExample: public Container
 							for (int i = 0; i < enemies.size(); i++)
 							{
 								float d = glm::distance(p.physics.position, enemies[i].physics.position);
-								if (d < 1.5f)
+								if (d < 4.5f)
 								{
 									enemies[i].life -= 0.4;
 
@@ -837,32 +843,50 @@ struct ThreeDGameExample: public Container
 			for (auto &e : enemies)
 			{
 				float d = glm::distance(e.physics.position, playerModel1.physics.position);
-				if (d < 8.f)
+				float d2 = glm::distance(e.physics.position, playerModel2.physics.position);
+
+				if (!player2joined) { d2 = 10000000000; }
+
+				if (d < 8.f || d2 < 8.f)
 				{
-					if (d > 1.f)
+
+					auto attack = [&](PlayerModel &p, float d)
 					{
-						glm::vec2 dir = glm::normalize(playerModel1.physics.position - e.physics.position);
-						float speed = 1.4;
-						e.physics.position += dir * input.deltaTime * speed;
-			
-						e.physics.desiredRotation = std::atan2(dir.x, dir.y);
-			
-						renderer.setEntityAnimationIndex(e.entity, zombieRun); //run 
-						renderer.setEntityAnimationSpeed(e.entity, 1.5);
-			
+						if (d > 1.f)
+						{
+							glm::vec2 dir = glm::normalize(p.physics.position - e.physics.position);
+							float speed = 1.4;
+							e.physics.position += dir * input.deltaTime * speed;
+
+							e.physics.desiredRotation = std::atan2(dir.x, dir.y);
+
+							renderer.setEntityAnimationIndex(e.entity, zombieRun); //run 
+							renderer.setEntityAnimationSpeed(e.entity, 1.5);
+
+						}
+						else
+						{
+							renderer.setEntityAnimationIndex(e.entity, zombieAttack); //attack
+							renderer.setEntityAnimationSpeed(e.entity, 1.3);
+
+							if (e.attackCulldown <= 0.f)
+							{
+								//health -= 0.1;
+								e.attackCulldown = 1.f;
+							}
+							//attack
+						}
+					};
+
+					if (d < d2)
+					{
+						attack(playerModel1, d);
 					}
 					else
 					{
-						renderer.setEntityAnimationIndex(e.entity, zombieAttack); //attack
-						renderer.setEntityAnimationSpeed(e.entity, 1.3);
-			
-						if (e.attackCulldown <= 0.f)
-						{
-							//health -= 0.1;
-							e.attackCulldown = 1.f;
-						}
-						//attack
+						attack(playerModel2, d2);
 					}
+				
 				}
 				else
 				{
@@ -903,7 +927,6 @@ struct ThreeDGameExample: public Container
 	#pragma endregion
 
 
-
 	#pragma region render3d
 
 		if (player2joined && !freeCamera)
@@ -913,6 +936,15 @@ struct ThreeDGameExample: public Container
 			renderer.updateWindowMetrics(windowState.windowW/2, windowState.windowH);
 			renderer.camera.aspectRatio = (float)(windowState.windowW/2) / windowState.windowH;
 			renderer.render(input.deltaTime);
+
+			glm::vec3 playerPos = {playerModel2.physics.position.x, -0.5, playerModel2.physics.position.y};
+			glm::vec3 cameraPos = {};
+			{
+				glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 0.8, 1));
+				cameraPos = playerPos + cameraViewDir * 20.f;
+			}
+			renderer.camera.position = cameraPos;
+			renderer.camera.viewDirection = glm::normalize(playerPos - cameraPos);
 
 			renderer.frameBuffer = frameBuffers[1].fbo;
 			//renderer.updateWindowMetrics(windowState.windowW / 2, windowState.windowH);
@@ -933,6 +965,8 @@ struct ThreeDGameExample: public Container
 		{
 			renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 			renderer.frameBuffer = requestedInfo.requestedFBO.fbo;
+			renderer.camera.aspectRatio = (float)(windowState.windowW) / windowState.windowH;
+
 			renderer.render(input.deltaTime);
 		}
 
