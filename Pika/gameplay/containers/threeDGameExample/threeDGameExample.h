@@ -13,7 +13,7 @@
 #include <sushi/sushi.h>
 #include <engineLibraresSupport/sushi/engineSushiSupport.h>
 
-
+//todo engine: don't remove notifications untill the user can see them (the engine has focus)
 struct ThreeDGameExample: public Container
 {
 	enum Animations
@@ -26,6 +26,9 @@ struct ThreeDGameExample: public Container
 		zombieIdle,
 		zombieRun,
 	};
+
+
+	bool player2joined = 0;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -58,9 +61,15 @@ struct ThreeDGameExample: public Container
 		gl3d::Entity legs[2];
 
 		float armAngle = 0;
+
+		gl3d::PointLight pointLight;
+		gl3d::SpotLight spotLight;
+
+		McDungeonsGameplay::PhysicsComponent physics;
 	};
 
-	PlayerModel playerModel;
+	PlayerModel playerModel1;
+	PlayerModel playerModel2;
 
 	std::vector<Enemy> enemies;
 	float enemySpawnTimer = 5;
@@ -78,6 +87,8 @@ struct ThreeDGameExample: public Container
 
 	gl2d::Renderer2D renderer2d;
 	gl2d::Font font;
+
+	pika::GL::PikaFramebuffer frameBuffers[2];
 
 	//todo add this in the renderer
 	//todo add a default material if material left blank or something
@@ -252,24 +263,27 @@ struct ThreeDGameExample: public Container
 
 	}
 
-	void createPlayerEntity(gl3d::Renderer3D &renderer, glm::vec3 color)
+	void createPlayerEntity(gl3d::Renderer3D &renderer, glm::vec3 color, PlayerModel& playerModel)
 	{
-		auto cube = createCubeModel(renderer, color);
+		auto cube = createCubeModel(renderer, color, 0);
 
-		playerModel.torso = renderer.createEntity(cube, {}, false);
+		playerModel.torso = renderer.createEntity(cube, {}, false, true, false);
 
-		playerModel.legs[0] = renderer.createEntity(cube, {}, false);
-		playerModel.legs[1] = renderer.createEntity(cube, {}, false);
+		playerModel.legs[0] = renderer.createEntity(cube, {}, false, true, false);
+		playerModel.legs[1] = renderer.createEntity(cube, {}, false, true, false);
 
-		playerModel.hands[0] = renderer.createEntity(cube, {}, false);
-		playerModel.hands[1] = renderer.createEntity(cube, {}, false);
+		playerModel.hands[0] = renderer.createEntity(cube, {}, false, true, false);
+		playerModel.hands[1] = renderer.createEntity(cube, {}, false, true, false);
 
-		playerModel.head = renderer.createEntity(cube, {}, false);
+		playerModel.head = renderer.createEntity(cube, {}, false, true, false);
+
+		playerModel.pointLight = renderer.createPointLight({}, glm::vec3{1.f}, 20, 1);
+		playerModel.spotLight = renderer.createSpotLight({}, glm::radians(50.f), {0,0}, 40, 10, glm::vec3(2.f));
 	}
 
 	gl3d::Model createPlane(gl3d::Renderer3D &renderer)
 	{
-		float uv = 1;
+		float uv = 10;
 		float size = 200;
 		std::vector<unsigned int> ind = {0,   1,  2,  0,  2,  3};
 		std::vector<float> topVer = {
@@ -290,9 +304,15 @@ struct ThreeDGameExample: public Container
 				0, 1 * uv,			 //uv
 		};
 
-		auto material =  renderer.createMaterial(0, {1,1,1,1}, 0, 1);
+		//auto material =  renderer.createMaterial(0, {1,1,1,1}, 0, 1);
+		auto material =  renderer.loadMaterial(PIKA_RESOURCES_PATH "materials/rustedIron.mtl", gl3d::maxQuality);
 
-		return renderer.createModelFromData(material, "plane",
+		if (material.empty())
+		{
+			material.push_back(renderer.createMaterial(0, {1,1,1,1}, 0, 1));
+		}
+
+		return renderer.createModelFromData(material[0], "plane",
 			topVer.size(), topVer.data(), ind.size(),
 			ind.data());
 	}
@@ -330,11 +350,11 @@ struct ThreeDGameExample: public Container
 			});
 
 		spotLights.push_back(renderer.createSpotLight({position.x - 1.5, 8.1, position.y},
-			glm::radians(50.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(20.f), 1.f, 0));
+			glm::radians(55.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(1.f), 1.f, 0));
 
 		spotLights.push_back
 		(renderer.createSpotLight({position.x + 1.5, 8.1, position.y},
-			glm::radians(50.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(20.f), 1.f, 0));
+			glm::radians(55.f), glm::vec3(0, -1, 0), 20, 2, glm::vec3(1.f), 1.f, 0));
 
 
 	}
@@ -374,9 +394,12 @@ struct ThreeDGameExample: public Container
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-		renderer2d.create(requestedInfo.requestedFBO.fbo);
-		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "arial.ttf", requestedInfo);
+		
+		renderer2d.create(requestedInfo.requestedFBO.fbo, 50);
+		//font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "arial.ttf", requestedInfo);
 
+		frameBuffers[0].createFramebuffer(1, 1, true);
+		frameBuffers[1].createFramebuffer(1, 1, true);
 		
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -408,7 +431,7 @@ struct ThreeDGameExample: public Container
 
 		//renderer.
 
-		createPlayerEntity(renderer, {1,1,0});
+		createPlayerEntity(renderer, {1,1,0}, playerModel1);
 
 		createStalpi();
 
@@ -423,7 +446,7 @@ struct ThreeDGameExample: public Container
 		groundEntity = renderer.createEntity(groundModel, t);
 
 
-		renderer.createDirectionalLight(glm::normalize(glm::vec3{-0.175,-0.577, -0.798}));
+		renderer.createDirectionalLight(glm::normalize(glm::vec3{-0.175,-0.577, -0.798}), glm::vec3{0.25f});
 	
 
 		{
@@ -445,9 +468,6 @@ struct ThreeDGameExample: public Container
 	float attackCulldown = 0;
 	bool freeCamera = 0;
 
-
-	McDungeonsGameplay::PhysicsComponent playerPhysics;
-
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
@@ -463,12 +483,24 @@ struct ThreeDGameExample: public Container
 		glDisable(GL_LINE_SMOOTH);
 		glDisable(GL_MULTISAMPLE);
 
-		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
-		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
+		//renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		//renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
 		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
 	#pragma endregion
 
+		frameBuffers[0].clear();
+		frameBuffers[0].resizeFramebuffer(windowState.windowW / 2, windowState.windowH);
+		frameBuffers[1].clear();
+		frameBuffers[1].resizeFramebuffer(windowState.windowW/2, windowState.windowH);
+
+
+		if (!player2joined && input.buttons[pika::Button::Enter].pressed())
+		{
+			player2joined = true;
+			createPlayerEntity(renderer, {1,0,0}, playerModel2);
+
+		}
 
 		if (enemySpawnTimer < 0)
 		{
@@ -497,6 +529,21 @@ struct ThreeDGameExample: public Container
 		}
 
 		//editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
+	
+	#pragma region spot lights
+
+		for (int i = 0; i < spotLights.size(); i++)
+		{
+
+			//auto t = renderer.getSpotLightDirection(spotLights[i]);
+
+			renderer.setSpotLightDirection(spotLights[i], gl3d::fromAnglesToDirection(glm::radians(190.f), 
+				((i%2)*2-1) * clock()*0.0003f + i));
+
+		}
+
+	#pragma endregion
+
 
 	#pragma region player
 		{
@@ -508,7 +555,7 @@ struct ThreeDGameExample: public Container
 				if (!freeCamera)
 				{
 
-					auto updatePlayer = [&](PlayerModel &p)
+					auto updatePlayer = [&](PlayerModel &p, bool differentInput = 0)
 					{
 
 						glm::vec2 dir = {};
@@ -536,7 +583,7 @@ struct ThreeDGameExample: public Container
 						{
 							dir = glm::normalize(dir);
 
-							playerPhysics.desiredRotation = std::atan2(dir.x, dir.y);
+							p.physics.desiredRotation = std::atan2(dir.x, dir.y);
 							
 							p.armAngle = sin(clock()/100.f);
 
@@ -566,7 +613,7 @@ struct ThreeDGameExample: public Container
 						}
 
 						float speed = 3;
-						playerPhysics.position += dir * input.deltaTime * speed;
+						p.physics.position += dir * input.deltaTime * speed;
 
 
 						if (input.buttons[pika::Button::Space].pressed() && attackCulldown <= 0)
@@ -577,7 +624,7 @@ struct ThreeDGameExample: public Container
 
 							for (int i = 0; i < enemies.size(); i++)
 							{
-								float d = glm::distance(playerPhysics.position, enemies[i].physics.position);
+								float d = glm::distance(p.physics.position, enemies[i].physics.position);
 								if (d < 1.5f)
 								{
 									enemies[i].life -= 0.4;
@@ -595,7 +642,7 @@ struct ThreeDGameExample: public Container
 
 									if (d != 0)
 									{
-										dir = (enemies[i].physics.position - playerPhysics.position) / d;
+										dir = (enemies[i].physics.position - p.physics.position) / d;
 									}
 
 									enemies[i].physics.position += dir * 4.0f;
@@ -617,16 +664,16 @@ struct ThreeDGameExample: public Container
 								float limbRotation = p.armAngle;
 
 								renderer.setEntityTransform(p.torso,
-									{{playerPhysics.position.x, 2.50, playerPhysics.position.y}, {0,
-									playerPhysics.rotation, 0}, {0.5,1,0.25}});
+									{{p.physics.position.x, 2.50, p.physics.position.y}, {0,
+									p.physics.rotation, 0}, {0.5,1,0.25}});
 
 								renderer.setEntityTransform(p.head,
-									{{playerPhysics.position.x, 3.0, playerPhysics.position.y}, {0,
-									playerPhysics.rotation, 0}, {0.5,0.5,0.5}});
+									{{p.physics.position.x, 3.0, p.physics.position.y}, {0,
+									p.physics.rotation, 0}, {0.5,0.5,0.5}});
 
 								glm::mat4 legMatrix =
-									glm::translate(glm::vec3{playerPhysics.position.x, 0.75, playerPhysics.position.y}) *
-									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{p.physics.position.x, 0.75, p.physics.position.y}) *
+									glm::rotate(p.physics.rotation, glm::vec3{0,0.75,0}) *
 									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
 									glm::rotate(limbRotation, glm::vec3{1,0,0}) *
 									glm::translate(glm::vec3{-0.25, -0.75 / 2.f, 0}) *
@@ -636,8 +683,8 @@ struct ThreeDGameExample: public Container
 								legTransform.setFromMatrix(legMatrix);
 
 								glm::mat4 legMatrix2 =
-									glm::translate(glm::vec3{playerPhysics.position.x, 0.75, playerPhysics.position.y}) *
-									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{p.physics.position.x, 0.75, p.physics.position.y}) *
+									glm::rotate(p.physics.rotation, glm::vec3{0,0.75,0}) *
 									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
 									glm::rotate(-limbRotation, glm::vec3{1,0,0}) *
 									glm::translate(glm::vec3{0.25, -0.75 / 2.f, 0}) *
@@ -650,8 +697,8 @@ struct ThreeDGameExample: public Container
 
 
 								glm::mat4 armMatrix =
-									glm::translate(glm::vec3{playerPhysics.position.x, 1.75, playerPhysics.position.y}) *
-									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{p.physics.position.x, 1.75, p.physics.position.y}) *
+									glm::rotate(p.physics.rotation, glm::vec3{0,0.75,0}) *
 									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
 									glm::rotate(-limbRotation, glm::vec3{1,0,0}) *
 									glm::translate(glm::vec3{-0.75, -0.75 / 2.f, 0}) *
@@ -660,8 +707,8 @@ struct ThreeDGameExample: public Container
 								armTransform.setFromMatrix(armMatrix);
 
 								glm::mat4 armMatrix2 =
-									glm::translate(glm::vec3{playerPhysics.position.x, 1.75, playerPhysics.position.y}) *
-									glm::rotate(playerPhysics.rotation, glm::vec3{0,0.75,0}) *
+									glm::translate(glm::vec3{p.physics.position.x, 1.75, p.physics.position.y}) *
+									glm::rotate(p.physics.rotation, glm::vec3{0,0.75,0}) *
 									glm::translate(glm::vec3{0, 0.75 / 2.f, 0}) *
 									glm::rotate(limbRotation, glm::vec3{1,0,0}) *
 									glm::translate(glm::vec3{0.75, -0.75 / 2.f, 0}) *
@@ -680,9 +727,26 @@ struct ThreeDGameExample: public Container
 
 							setPos(p);
 						}
+
+						renderer.setPointLightPosition(p.pointLight, glm::vec3(p.physics.position.x,
+							1, p.physics.position.y));
+
+						renderer.setSpotLightPosition(p.spotLight, glm::vec3(p.physics.position.x,
+							1, p.physics.position.y));
+
+						renderer.setSpotLightDirection(p.spotLight,
+							gl3d::fromAnglesToDirection(glm::radians(90.f), -p.physics.rotation
+							+ glm::radians(180.f)));
 					};
 
-					updatePlayer(playerModel);
+					updatePlayer(playerModel1, false);
+
+					if (player2joined)
+					{
+						updatePlayer(playerModel2, true);
+					}
+					
+
 				}
 			}
 
@@ -742,10 +806,14 @@ struct ThreeDGameExample: public Container
 
 			};
 
-			solveRotation(playerPhysics);
+			solveRotation(playerModel1.physics);
+			playerModel1.physics.updateMove();
 
-			//resolveConstrains(playerPhysics);
-			playerPhysics.updateMove();
+			if (player2joined)
+			{
+				solveRotation(playerModel2.physics);
+				playerModel2.physics.updateMove();
+			}
 
 			auto setTransform = [&](McDungeonsGameplay::PhysicsComponent &p, gl3d::Entity &e)
 			{
@@ -758,7 +826,7 @@ struct ThreeDGameExample: public Container
 			};
 
 		#pragma region player position
-			glm::vec3 playerPos = {playerPhysics.position.x, -0.5, playerPhysics.position.y};
+			glm::vec3 playerPos = {playerModel1.physics.position.x, -0.5, playerModel1.physics.position.y};
 			glm::vec3 cameraPos = {};
 			{
 				glm::vec3 cameraViewDir = glm::normalize(glm::vec3(-1, 0.8, 1));
@@ -768,12 +836,12 @@ struct ThreeDGameExample: public Container
 
 			for (auto &e : enemies)
 			{
-				float d = glm::distance(e.physics.position, playerPhysics.position);
+				float d = glm::distance(e.physics.position, playerModel1.physics.position);
 				if (d < 8.f)
 				{
 					if (d > 1.f)
 					{
-						glm::vec2 dir = glm::normalize(playerPhysics.position - e.physics.position);
+						glm::vec2 dir = glm::normalize(playerModel1.physics.position - e.physics.position);
 						float speed = 1.4;
 						e.physics.position += dir * input.deltaTime * speed;
 			
@@ -819,23 +887,6 @@ struct ThreeDGameExample: public Container
 			}
 
 
-#pragma region sword
-	//{
-	//	gl3d::Transform t;
-	//	renderer.getEntityJointTransform(player, "arm.r", t);
-	//	t.scale = glm::vec3(0.5);
-	//
-	//	gl3d::Transform offset;
-	//	offset.rotation.x = glm::radians(90.f);
-	//	//offset.position.y = -1.f;
-	//
-	//	t.setFromMatrix(t.getTransformMatrix() * offset.getTransformMatrix());
-	//
-	//	renderer.setEntityTransform(sword, t);
-	//}
-#pragma endregion
-
-
 			if (!freeCamera)
 			{
 				renderer.camera.position = cameraPos;
@@ -855,7 +906,39 @@ struct ThreeDGameExample: public Container
 
 	#pragma region render3d
 
-		renderer.render(input.deltaTime);
+		if (player2joined && !freeCamera)
+		{
+
+			renderer.frameBuffer = frameBuffers[0].fbo;
+			renderer.updateWindowMetrics(windowState.windowW/2, windowState.windowH);
+			renderer.camera.aspectRatio = (float)(windowState.windowW/2) / windowState.windowH;
+			renderer.render(input.deltaTime);
+
+			renderer.frameBuffer = frameBuffers[1].fbo;
+			//renderer.updateWindowMetrics(windowState.windowW / 2, windowState.windowH);
+			renderer.camera.aspectRatio = (float)(windowState.windowW / 2) / windowState.windowH;
+			renderer.render(0);
+
+			gl2d::Texture t1; t1.id = frameBuffers[0].texture;
+			gl2d::Texture t2; t2.id = frameBuffers[1].texture;
+			renderer2d.renderRectangle({0,0, windowState.windowW / 2, windowState.windowH}, t1);
+			renderer2d.renderRectangle({windowState.windowW / 2,0, windowState.windowW / 2, windowState.windowH}, t2);
+
+			glDisable(GL_DEPTH_TEST);
+			renderer2d.flush();
+
+			//todo constructor (maybe explicit from uint)
+		}
+		else
+		{
+			renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+			renderer.frameBuffer = requestedInfo.requestedFBO.fbo;
+			renderer.render(input.deltaTime);
+		}
+
+
+
+
 		glDisable(GL_DEPTH_TEST);
 	#pragma endregion
 
@@ -868,6 +951,13 @@ struct ThreeDGameExample: public Container
 	void destruct(RequestedContainerInfo &requestedInfo) override
 	{
 		renderer.clearAllRendererResources();
+
+		frameBuffers[0].deleteFramebuffer();
+		frameBuffers[1].deleteFramebuffer();
+
+		renderer2d.cleanup();
+		font.texture.cleanup();
+
 	}
 
 };
