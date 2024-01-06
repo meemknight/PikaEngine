@@ -1,16 +1,5 @@
-#2024-01-04 16:57:38: Created container: IsometricGameEditor
-#2024-01-04 16:59:44: Created container: IsometricGameEditor
-#2024-01-04 16:59:45: Created container: IsometricGameEditor
-#2024-01-04 16:59:47: Destroyed continer: IsometricGameEditor #3
-#2024-01-04 16:59:48: Destroyed continer: IsometricGameEditor #2
-#2024-01-04 17:00:32: Created container: IsometricGameEditor
-#2024-01-04 17:00:33: Destroyed continer: IsometricGameEditor #1
-#2024-01-04 17:01:42: Created container: IsometricGameEditor
-#2024-01-04 17:01:44: Destroyed continer: IsometricGameEditor #5
-#2024-01-04 17:02:41: Created container: IsometricGameEditor
-#2024-01-04 17:02:43: Destroyed continer: IsometricGameEditor #4
-#2024-01-04 17:03:53: Created container: IsometricGameEditor
-#2024-01-04 17:03:57: Destroyed continer: IsometricGameEditor #6
-#2024-01-04 17:05:49: Created container: IsometricGameEditor
-#2024-01-04 17:06:21: Destroyed continer: IsometricGameEditor #7
-#2024-01-04 17:07:43: Destroyed continer: IsometricGameEditor #8
+#2024-01-06 13:16:02[error]: Couldn't allocate memory for constructing container: #1
+#2024-01-06 13:16:06[error]: Couldn't allocate memory for constructing container: #2
+#2024-01-06 13:16:34: Created container: ThreeDGameExample
+#2024-01-06 13:21:37: Reloaded dll
+#2024-01-06 13:22:20: Destroyed continer: ThreeDGameExample #3

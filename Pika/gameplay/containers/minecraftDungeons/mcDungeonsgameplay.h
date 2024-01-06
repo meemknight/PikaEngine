@@ -38,6 +38,7 @@ struct McDungeonsGameplay: public Container
 	{
 		glm::vec2 size = glm::vec2(0.3f, 0.3f);
 		glm::vec2 position = {glm::vec2(0,0)};
+		glm::vec2 lookDirection = {0,-1};
 
 		glm::vec2 lastPos{};
 

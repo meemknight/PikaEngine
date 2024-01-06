@@ -589,6 +589,7 @@ struct ThreeDGameExample: public Container
 						if (dir.x != 0 || dir.y != 0)
 						{
 							dir = glm::normalize(dir);
+							p.physics.lookDirection = dir;
 
 							p.physics.desiredRotation = std::atan2(dir.x, dir.y);
 							
@@ -622,7 +623,9 @@ struct ThreeDGameExample: public Container
 						float speed = 3;
 						p.physics.position += dir * input.deltaTime * speed;
 
-						if (input.buttons[pika::Button::Space].pressed() /*&& attackCulldown <= 0*/)
+						if ((!differentInput && input.buttons[pika::Button::Space].pressed()) ||
+							(differentInput && input.buttons[pika::Button::Enter].pressed())
+							)
 						{
 							//renderer.setEntityAnimationIndex(playerEntity, attack); //attack
 							//renderer.setEntityAnimationSpeed(playerEntity, 1.3);
@@ -630,7 +633,9 @@ struct ThreeDGameExample: public Container
 
 							for (int i = 0; i < enemies.size(); i++)
 							{
-								float d = glm::distance(p.physics.position, enemies[i].physics.position);
+								float d = glm::distance(p.physics.position
+									+ p.physics.lookDirection * 4.5f
+									, enemies[i].physics.position);
 								if (d < 4.5f)
 								{
 									enemies[i].life -= 0.4;
@@ -847,7 +852,7 @@ struct ThreeDGameExample: public Container
 
 				if (!player2joined) { d2 = 10000000000; }
 
-				if (d < 8.f || d2 < 8.f)
+				if (d < 16.f || d2 < 16.f)
 				{
 
 					auto attack = [&](PlayerModel &p, float d)

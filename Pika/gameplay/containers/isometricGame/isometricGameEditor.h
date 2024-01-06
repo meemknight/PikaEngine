@@ -12,6 +12,9 @@
 struct IsometricGameEditor: public Container
 {
 
+	//todo some decorative piece and a hint
+	//alimente care ii scresc viata
+
 	enum Blocks
 	{
 		air = 0,
