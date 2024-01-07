@@ -30,6 +30,7 @@ struct IsometricGameEditor: public Container
 		lever,
 		redstoneTorch,
 		redstoneBlock,
+		chest,
 	};
 
 
@@ -46,6 +47,13 @@ struct IsometricGameEditor: public Container
 
 	glm::ivec3 blockSelector = {};
 
+	static bool pointInBox(glm::vec2 p, glm::vec4 box);
+
+	static bool canPlaceRedstoneOn(int type);
+
+	static bool redstoneWire(int type);
+
+
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
@@ -54,6 +62,8 @@ struct IsometricGameEditor: public Container
 		info.extensionsSuported = {".isomap"};
 
 		info.requestImguiFbo = true;
+
+		//todo option to not allow the user to close the container using the imgui x
 
 		return info;
 	}

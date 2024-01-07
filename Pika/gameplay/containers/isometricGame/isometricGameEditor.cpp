@@ -1,9 +1,20 @@
 #include <containers/isometricGame/isometricGameEditor.h>
 #include <glui/glui.h>
 
-static int blocksCount = 16;
+static int blocksCount = 17;
 
-static bool pointInBox(glm::vec2 p, glm::vec4 box)
+
+bool IsometricGameEditor::redstoneWire(int type)
+{
+	return type == IsometricGameEditor::Blocks::redstone ||
+		type == IsometricGameEditor::Blocks::trapdor ||
+		type == IsometricGameEditor::Blocks::redstoneTorch ||
+		type == IsometricGameEditor::Blocks::redstoneBlock ||
+	type == IsometricGameEditor::Blocks::lever;
+}
+
+
+bool IsometricGameEditor::pointInBox(glm::vec2 p, glm::vec4 box)
 {
 	if
 		(
@@ -19,36 +30,25 @@ static bool pointInBox(glm::vec2 p, glm::vec4 box)
 	}
 }
 
-static bool redstoneWire(int type)
-{
-	return type == IsometricGameEditor::Blocks::redstone ||
-		type == IsometricGameEditor::Blocks::trapdor ||
-		type == IsometricGameEditor::Blocks::redstoneTorch ||
-		type == IsometricGameEditor::Blocks::redstoneBlock ||
-	type == IsometricGameEditor::Blocks::lever;
-}
-
-static bool canPlaceRedstoneOn(int type)
+bool IsometricGameEditor::canPlaceRedstoneOn(int type)
 {
 	return (type >= IsometricGameEditor::Blocks::clay &&
 		type <= IsometricGameEditor::Blocks::woddenPlank)
 		|| type == IsometricGameEditor::Blocks::redstoneBlock;
-		
 }
-
 
 bool IsometricGameEditor::create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 {
 	renderer.create(requestedInfo.requestedFBO.fbo);
 
-	tiles = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "isoTiles/Isometric-Tiles.png", requestedInfo, 32, true);
-	shadow = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "isoTiles/shadow.png", requestedInfo, 32, true);
+	tiles = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "iso/tiles/Isometric-Tiles.png", requestedInfo, 32, true);
+	shadow = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "iso/tiles/shadow.png", requestedInfo, 32, true);
 
 	tilesAtlas = gl2d::TextureAtlasPadding(16, 8, tiles.GetSize().x, tiles.GetSize().y);
 
 	//fileChanged.setFile(mapFile.c_str());
 
-	loadedLevel.setInfo("Level", PIKA_RESOURCES_PATH, {".mcDungeons"});
+	loadedLevel.setInfo("Level", PIKA_RESOURCES_PATH "iso/maps", {".isomap"});
 
 	bool created = 0;
 	if (commandLineArgument.size() > 0)
