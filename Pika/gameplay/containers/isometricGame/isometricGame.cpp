@@ -19,6 +19,16 @@ bool IsometricGame::create(RequestedContainerInfo &requestedInfo, pika::StaticSt
 		requestedInfo, true);
 	playerAtlas = gl2d::TextureAtlas(5, 4);
 
+	itemsSprite = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "iso/tiles/items.png",
+		requestedInfo, true);
+	itemsAtlas = gl2d::TextureAtlas(3, 1);
+
+	itemFrameSprite = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "iso/tiles/ui.png",
+		requestedInfo, true);
+
+
+	font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);
+
 
 	for (int i = 0; i < MAPS_COUNT; i++)
 	{
@@ -137,27 +147,20 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 #pragma endregion
 
 
-#pragma region move
+#pragma region UI1
 
-	float cameraSpeed = input.deltaTime * size * 2.f;
+	glm::vec4 uiBox = {};
+	{
+		glui::Frame f({0, 0, windowState.windowW, windowState.windowH});
+		uiBox = glui::Box().xLeftPerc(0.05).yTopPerc(0.02)
+			.xDimensionPercentage(0.4).yDimensionPercentage(0.2);
 
-	if (input.buttons[pika::Button::A].held())
-	{
-		renderer.currentCamera.position.x -= cameraSpeed;
-	}
-	if (input.buttons[pika::Button::D].held())
-	{
-		renderer.currentCamera.position.x += cameraSpeed;
+		float boxSize = std::min(uiBox.z / 3.f, uiBox.w);
+		uiBox.z = boxSize * 3;
+		uiBox.w = boxSize;
+
 	}
 
-	if (input.buttons[pika::Button::W].held())
-	{
-		renderer.currentCamera.position.y -= cameraSpeed;
-	}
-	if (input.buttons[pika::Button::S].held())
-	{
-		renderer.currentCamera.position.y += cameraSpeed;
-	}
 #pragma endregion
 
 
@@ -175,8 +178,11 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 #pragma region camera
 
-	renderer.currentCamera.follow(calculateBlockPos({map.size.x / 2-1, 1, map.size.z / 2}),
-		100, 0, 0, windowState.windowW, windowState.windowH);
+	//renderer.currentCamera.follow(calculateBlockPos({map.size.x / 2-1, 1, map.size.z / 2}),
+	//	100, 0, 0, windowState.windowW, windowState.windowH);
+
+	renderer.currentCamera.follow(calculateBlockPos({glm::vec3(playerPosition) + playerAnimations.delta}),
+		input.deltaTime*90, 1, 100, windowState.windowW, windowState.windowH);
 
 #pragma endregion
 
@@ -239,7 +245,9 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 							box.z = box.z - box.x;
 							box.w = box.w - box.y;
 
-							if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), box))
+							if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), box)
+								&& !IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), uiBox)
+								)
 							{
 								return true;
 							}
@@ -561,7 +569,6 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				tryBlock(0, 1);
 				tryBlock(0, -1);
 
-
 			}
 
 		}
@@ -597,12 +604,80 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				//flip lever
 				b->secondType = !b->get().y;
 			}
+			else if (b->get().x == IsometricGameEditor::Blocks::redstone)
+			{
+				b->set(0,0);
+				redstoneCount++;
+			}
+			else if (b->get().x == IsometricGameEditor::Blocks::redstoneTorch)
+			{
+				b->set(0, 0);
+				redstoneTorchesCount++;
+			}
 		}
 
 	}
 
 
 #pragma endregion
+
+#pragma region UI2
+
+	renderer.pushCamera();
+	{
+		glui::Frame f(uiBox);
+		renderer.renderRectangle(uiBox, {0.1,0.1,0.1,0.5});
+		
+		float boxSize = uiBox.z/3.f;
+
+		renderer.renderRectangle({uiBox.x, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+			{}, 0.f, itemsAtlas.get(0,0));
+
+		renderer.renderRectangle({uiBox.x + boxSize, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+			{}, 0.f, itemsAtlas.get(1, 0));
+
+		renderer.renderRectangle({uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+			{}, 0.f, itemsAtlas.get(2, 0));
+
+		if (itemSelected != -1)
+		{
+			renderer.renderRectangle({uiBox.x + boxSize * itemSelected, uiBox.y, boxSize, boxSize}, itemFrameSprite);
+		}
+
+		renderer.renderText({uiBox.x + boxSize*0.75, uiBox.y + boxSize * 0.75},
+			std::to_string(redstoneCount).c_str(), font, Colors_White);
+
+		renderer.renderText({uiBox.x + boxSize * 1.75, uiBox.y + boxSize * 0.75},
+			std::to_string(redstoneTorchesCount).c_str(), font, Colors_White);
+
+		renderer.renderText({uiBox.x + boxSize * 2.75, uiBox.y + boxSize * 0.75},
+			std::to_string(foodCount).c_str(), font, Colors_White);
+
+
+		if (input.lMouse.pressed())
+		{
+			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x, uiBox.y, boxSize, boxSize}))
+			{
+				itemSelected = 0;
+			}
+
+			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize, uiBox.y, boxSize, boxSize}))
+			{
+				itemSelected = 1;
+			}
+
+			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}))
+			{
+				itemSelected = 2;
+			}
+		}
+
+		
+	}
+	renderer.popCamera();
+
+#pragma endregion
+
 
 
 

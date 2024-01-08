@@ -25,6 +25,19 @@ struct IsometricGame: public Container
 	gl2d::Texture playerSprite;
 	gl2d::TextureAtlas playerAtlas;
 
+	gl2d::Texture itemsSprite;
+	gl2d::TextureAtlas itemsAtlas;
+
+	gl2d::Font font;
+
+	gl2d::Texture itemFrameSprite;
+
+
+	int redstoneCount = 0;
+	int redstoneTorchesCount = 0;
+	int foodCount = 0;
+	int itemSelected = -1;
+
 	glm::ivec3 playerPosition = {7, 1, 7};
 
 	struct PlayerAnimations
@@ -44,7 +57,7 @@ struct IsometricGame: public Container
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(10);
+		info.defaultHeapMemorySize = pika::MB(20);
 
 
 		info.requestImguiFbo = true;
