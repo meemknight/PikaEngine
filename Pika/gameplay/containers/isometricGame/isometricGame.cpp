@@ -59,10 +59,11 @@ bool IsometricGame::create(RequestedContainerInfo &requestedInfo, pika::StaticSt
 	return true;
 }
 
-static bool canPlayerStay(int type)
+static bool canPlayerStay(int type, int redstone)
 {
 	return type == 0 || type == IsometricGameEditor::Blocks::redstone ||
-		type == IsometricGameEditor::Blocks::lever;
+		type == IsometricGameEditor::Blocks::lever ||
+	 	(type == IsometricGameEditor::Blocks::trapdor && redstone == 1);
 }
 
 bool IsometricGame::update(pika::Input input, pika::WindowState windowState, RequestedContainerInfo &requestedInfo)
@@ -75,6 +76,67 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 	float size = 100;
 	
+	auto getRedstoneStatusUnsafe = [&](glm::ivec3 v) -> RedstoneStatus&
+	{
+		return redstone[v.x * map.size.z * map.size.y + v.y * map.size.z + v.z];
+	};
+
+#pragma region Redstone
+	{
+		redstone.clear();
+		redstone.resize(map.size.x * map.size.y * map.size.z);
+
+		std::vector<glm::ivec3> emitors;
+
+		for (int x = 0; x < map.size.x; x++)
+			for (int y = 0; y < map.size.y; y++)
+				for (int z = 0; z < map.size.z; z++)
+				{
+					auto b = map.getSafe({x,y,z});
+
+					if (b->get().x == IsometricGameEditor::Blocks::redstoneBlock ||
+						b->get().x == IsometricGameEditor::Blocks::redstoneTorch ||
+						(b->get().x == IsometricGameEditor::Blocks::lever && b->get().y == 1)
+						)
+					{
+						emitors.emplace_back(x, y, z);
+						getRedstoneStatusUnsafe({x, y, z}).status = 1;
+					}
+				}
+
+		while (!emitors.empty())
+		{
+			auto emitor = emitors.back();
+			emitors.pop_back();
+
+			auto check = [&](glm::ivec3 pos)
+			{
+				auto b = map.getSafe(pos);
+				if(b)
+				{
+					if (getRedstoneStatusUnsafe(pos).status == 0)
+					{
+						getRedstoneStatusUnsafe(pos).status = 1;
+						if (b->get().x == IsometricGameEditor::Blocks::redstone)
+						{
+							emitors.push_back(pos);
+						}
+					}
+				}
+			};
+
+			check(emitor + glm::ivec3(1, 0, 0));
+			check(emitor + glm::ivec3(-1, 0, 0));
+			check(emitor + glm::ivec3(0, 1, 0));
+			check(emitor + glm::ivec3(0, -1, 0));
+			check(emitor + glm::ivec3(0, 0, 1));
+			check(emitor + glm::ivec3(0, 0, -1));
+		}
+
+	}
+#pragma endregion
+
+
 #pragma region move
 
 	float cameraSpeed = input.deltaTime * size * 2.f;
@@ -99,7 +161,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 #pragma endregion
 
 
-	auto calculateBlockPos = [size](glm::ivec3 in)
+	auto calculateBlockPos = [size](glm::vec3 in)
 	{
 		glm::vec2 position = {};
 
@@ -117,8 +179,6 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 		100, 0, 0, windowState.windowW, windowState.windowH);
 
 #pragma endregion
-
-
 
 
 	glm::ivec3 currentSelectedBlockDelete{-1};
@@ -191,6 +251,9 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 					if (checkPointInBox(x,y,z))
 					{
+						
+						//if (y != 1 && canPlayerStay(map.getSafe({x,y,z}))) {}
+
 						currentSelectedBlockDelete = {x,y,z};
 
 						if (checkPointInBox(x + 1, y, z, true))
@@ -220,7 +283,16 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 		}
 		else if (currentSelectedBlockDelete.y == 1)
 		{
-			currentBlockInteract = currentSelectedBlockDelete;
+			if (canPlayerStay(map.getSafe(currentSelectedBlockDelete)->get().x, 
+				getRedstoneStatusUnsafe(currentSelectedBlockDelete).status)
+				)
+			{
+				currentBlockMove = currentSelectedBlockDelete;
+			}
+			else
+			{
+				currentBlockInteract = currentSelectedBlockDelete;
+			}
 		}
 		else
 		{
@@ -239,17 +311,27 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					glm::vec2 position = calculateBlockPos({x,y,z});
 
 					glm::vec4 color = Colors_White;
+					auto cr = glm::vec4(0.4, 0.2, 0.1, 1.0);
+
 
 					if (b->get().x == IsometricGameEditor::Blocks::redstone)
 					{
-						color = glm::vec4(0.8, 0.2, 0.2, 1.0);
+						if (getRedstoneStatusUnsafe({x,y,z}).status == 1)
+						{
+							color = glm::vec4(0.9, 0.25, 0.25, 1.0);
+							cr = glm::vec4(0.9, 0.25, 0.25, 1.0);
+						}
+						else
+						{
+							color = glm::vec4(0.4, 0.1, 0.1, 1.0);
+							cr = glm::vec4(0.4, 0.1, 0.1, 1.0);
+						}
 					}
 
 					if (b->get().x == IsometricGameEditor::Blocks::redstone || b->get().x == IsometricGameEditor::Blocks::lever
 						|| b->get().x == IsometricGameEditor::Blocks::redstoneTorch
 						)
 					{
-						auto cr = glm::vec4(0.8, 0.2, 0.2, 1.0);
 
 						auto b2 = map.getSafe({x,y,z - 1});
 						if (b2 && IsometricGameEditor::redstoneWire(b2->type))
@@ -279,49 +361,59 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 4));
 						}
 
-//redstone on wall
-
-b2 = map.getSafe({x - 1,y + 1,z});
-if (b2 && IsometricGameEditor::redstoneWire(b2->type))
-{
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 2));
-
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 5));
-}
-
-b2 = map.getSafe({x,y + 1,z - 1});
-if (b2 && IsometricGameEditor::redstoneWire(b2->type))
-{
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 1));
-
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 6));
-}
-
-
-//redstone down
-
-b2 = map.getSafe({x + 1,y - 1,z});
-if (b2 && IsometricGameEditor::redstoneWire(b2->type))
-{
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 3));
-}
-
-b2 = map.getSafe({x,y - 1,z + 1});
-if (b2 && IsometricGameEditor::redstoneWire(b2->type))
-{
-	renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
-		tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 4));
-}
+						//redstone on wall
+						
+						b2 = map.getSafe({x - 1,y + 1,z});
+						if (b2 && IsometricGameEditor::redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 2));
+						
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 5));
+						}
+						
+						b2 = map.getSafe({x,y + 1,z - 1});
+						if (b2 && IsometricGameEditor::redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 1));
+						
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 6));
+						}
+						
+						
+						//redstone down
+						
+						b2 = map.getSafe({x + 1,y - 1,z});
+						if (b2 && IsometricGameEditor::redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 3));
+						}
+						
+						b2 = map.getSafe({x,y - 1,z + 1});
+						if (b2 && IsometricGameEditor::redstoneWire(b2->type))
+						{
+							renderer.renderRectangle({position,size,size}, tiles, cr, {}, 0,
+								tilesAtlas.get(IsometricGameEditor::Blocks::redstone, 4));
+						}
 
 					}
 
-					renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
-						tilesAtlas.get(b->get().x, b->get().y));
+					if (b->get().x == IsometricGameEditor::Blocks::trapdor)
+					{
+						renderer.renderRectangle({position,size,size}, tiles, {1,1,1,1}, {}, 0,
+							tilesAtlas.get(b->get().x, getRedstoneStatusUnsafe({x,y,z}).status)
+						);
+					}
+					else
+					{
+						renderer.renderRectangle({position,size,size}, tiles, color, {}, 0,
+							tilesAtlas.get(b->get().x, b->get().y));
+					}
+
 
 					int advance = 1;
 					for (int y2 = y + 2; y2 < map.size.y; y2++)
@@ -383,6 +475,15 @@ if (b2 && IsometricGameEditor::redstoneWire(b2->type))
 
 		playerAnimations.timer -= input.deltaTime;
 
+		if (path.empty())
+		{
+			playerAnimations.indexY = 0;
+		}
+		else
+		{
+			playerAnimations.indexY = 2;
+		}
+
 		if (playerAnimations.timer <= 0)
 		{
 			playerAnimations.timer += 0.2;
@@ -393,7 +494,7 @@ if (b2 && IsometricGameEditor::redstoneWire(b2->type))
 			}
 		}
 
-		renderer.renderRectangle({calculateBlockPos(playerPosition),size,size}, playerSprite,
+		renderer.renderRectangle({calculateBlockPos(glm::vec3(playerPosition) + playerAnimations.delta),size,size}, playerSprite,
 			Colors_White, {}, 0.f, playerAtlas.get(playerAnimations.indexX, playerAnimations.indexY));
 
 	}
@@ -421,6 +522,8 @@ if (b2 && IsometricGameEditor::redstoneWire(b2->type))
 
 				if (currentBlock == glm::ivec2{playerPosition.x,playerPosition.z})
 				{
+					playerAnimations.lastPosition = currentBlock;
+
 					currentBlock = searcehedPositions[currentBlock];
 
 					while (true)
@@ -439,12 +542,15 @@ if (b2 && IsometricGameEditor::redstoneWire(b2->type))
 				auto tryBlock = [&](int x, int z)
 				{
 					auto b = map.getSafe({currentBlock.x + x, 1, currentBlock.y + z});
-					if (b && canPlayerStay(b->get().x) )
+					if (b && canPlayerStay(b->get().x, 
+						getRedstoneStatusUnsafe({currentBlock.x + x, 1, currentBlock.y + z}).status)
+						)
 					{
 						if (searcehedPositions.find({currentBlock.x + x, currentBlock.y + z})
 							== searcehedPositions.end())
 						{
-							searcehedPositions[glm::ivec2{currentBlock.x + x, currentBlock.y + z}] = glm::ivec2{currentBlock.x, currentBlock.y};
+							searcehedPositions[glm::ivec2{currentBlock.x + x, currentBlock.y + z}] 
+								= glm::ivec2{currentBlock.x, currentBlock.y};
 							positionsToSearch.push_back({currentBlock.x + x, currentBlock.y + z});
 						}
 					}
@@ -464,12 +570,35 @@ if (b2 && IsometricGameEditor::redstoneWire(b2->type))
 	{
 		timerPath -= input.deltaTime;
 
-		if (timerPath < 0)
+		
+		while (timerPath <= 0)
 		{
 			timerPath += 0.2;
 			playerPosition = glm::vec3{path[0].x, 1, path[0].y};
+			playerAnimations.lastPosition = glm::ivec2(playerPosition.x, playerPosition.z);
 			path.erase(path.begin());
 		}
+
+		{
+			glm::vec2 delta = glm::mix(
+				glm::vec2(path[0].x, path[0].y),
+				glm::vec2(playerAnimations.lastPosition),
+				timerPath / 0.2f) - glm::vec2(playerAnimations.lastPosition);
+			playerAnimations.delta = {delta.x, 0, delta.y};
+		}
+
+		//reached end
+		if (path.empty())
+		{
+			auto b = map.getSafe(playerPosition);
+
+			if (b->get().x == IsometricGameEditor::Blocks::lever)
+			{
+				//flip lever
+				b->secondType = !b->get().y;
+			}
+		}
+
 	}
 
 
