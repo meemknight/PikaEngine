@@ -64,14 +64,13 @@ bool IsometricGame::create(RequestedContainerInfo &requestedInfo, pika::StaticSt
 			
 	}
 
-	map = levels[0];
-	
 	return true;
 }
 
 static bool canPlayerStay(int type, int redstone)
 {
 	return type == 0 || type == IsometricGameEditor::Blocks::redstone ||
+		type == IsometricGameEditor::Blocks::redstoneTorch ||
 		type == IsometricGameEditor::Blocks::lever ||
 	 	(type == IsometricGameEditor::Blocks::trapdor && redstone == 1);
 }
@@ -85,13 +84,97 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 #pragma endregion
 
 	float size = 100;
+
+#pragma region Change Level
+	{
+		
+		if (currentLevel == 0)
+		{
+			if(
+				playerPosition == glm::ivec3{0,1,10} ||
+				playerPosition == glm::ivec3{0,1,11}
+				)
+			{currentLevel = 1; playerPosition = glm::ivec3(8, 1, 4);}
+			else
+			if(
+				playerPosition == glm::ivec3{4,1,6} ||
+				playerPosition == glm::ivec3{3,1,6}
+				)
+			{currentLevel = 2; playerPosition = glm::ivec3(3, 1, 7); };
+		}
+		else if (currentLevel == 1)
+		{
+			if (
+				playerPosition == glm::ivec3{0,1,4}
+				){currentLevel = 3; playerPosition = glm::ivec3(8, 1, 2); }
+			else if (playerPosition == glm::ivec3(9, 1, 4) ||
+				playerPosition == glm::ivec3(9, 1, 5)
+				)
+			{
+				currentLevel = 0; playerPosition = glm::ivec3(1, 1, 10);
+			}
+
+		}
+		else if (currentLevel == 2)
+		{
+			if (
+				playerPosition == glm::ivec3{3,1,9} ||
+				playerPosition == glm::ivec3{2,1,9}
+				)
+			{
+				currentLevel = 0; playerPosition = glm::ivec3(4, 1, 7);
+			}
+		}
+		else if (currentLevel == 3)
+		{
+
+			if (
+				playerPosition == glm::ivec3{9,1,2} ||
+				playerPosition == glm::ivec3{9,1,3}
+				)
+			{
+				currentLevel = 1; playerPosition = glm::ivec3(1, 1, 4);
+			}else
+			if (
+				playerPosition == glm::ivec3{1,1,16} ||
+				playerPosition == glm::ivec3{0,1,16} ||
+				playerPosition == glm::ivec3{0,1,15}
+				)
+			{
+				currentLevel = 4; playerPosition = glm::ivec3(13, 1, 3);
+			}
+		}
+		else if (currentLevel == 4)
+		{
+
+			if (
+				playerPosition == glm::ivec3{14,1,3} ||
+				playerPosition == glm::ivec3{14,1,4}
+				)
+			{
+				currentLevel = 3; playerPosition = glm::ivec3(2, 1, 16); //?
+			}
+			else if(playerPosition == glm::ivec3{6,1,14} ||
+				playerPosition == glm::ivec3{5,1,14})
+			{
+				return 0;
+			}
+		}
+
+	}
+#pragma endregion
+
 	
-	auto getRedstoneStatusUnsafe = [&](glm::ivec3 v) -> RedstoneStatus&
+	
+	IsometricGameEditor::Map &map = levels[currentLevel];
+
+#pragma region Redstone
+
+	auto getRedstoneStatusUnsafe = [&](glm::ivec3 v) -> RedstoneStatus &
 	{
 		return redstone[v.x * map.size.z * map.size.y + v.y * map.size.z + v.z];
 	};
 
-#pragma region Redstone
 	{
 		redstone.clear();
 		redstone.resize(map.size.x * map.size.y * map.size.z);
@@ -182,7 +265,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 	//	100, 0, 0, windowState.windowW, windowState.windowH);
 
 	renderer.currentCamera.follow(calculateBlockPos({glm::vec3(playerPosition) + playerAnimations.delta}),
-		input.deltaTime*90, 1, 100, windowState.windowW, windowState.windowH);
+		input.deltaTime*180, 1, 90, windowState.windowW, windowState.windowH);
 
 #pragma endregion
 
@@ -249,7 +332,17 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 								&& !IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), uiBox)
 								)
 							{
-								return true;
+								float manhatan1 = glm::dot((glm::vec2(input.mouseX, input.mouseY) - glm::vec2(box)), glm::vec2(1,1));
+								float manhatan2 = glm::dot((glm::vec2(box) + glm::vec2(box.z, box.w)
+									- glm::vec2(input.mouseX, input.mouseY)), glm::vec2(1, 1));
+
+								if (manhatan1 > size / 4)
+								if (manhatan2 > size / 4)
+								{
+
+									return true;
+								}
+
 							}
 
 						}
@@ -613,6 +706,21 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			{
 				b->set(0, 0);
 				redstoneTorchesCount++;
+			}
+			else if (b->get().x == 0)
+			{
+				if (itemSelected == 0 && redstoneCount)
+				{
+					itemSelected = -1;
+					redstoneCount--;
+					b->set(IsometricGameEditor::Blocks::redstone, 0);
+				}else 
+				if (itemSelected == 1 && redstoneTorchesCount)
+				{
+					itemSelected = -1;
+					redstoneTorchesCount--;
+					b->set(IsometricGameEditor::Blocks::redstoneTorch, 0);
+				}
 			}
 		}
 

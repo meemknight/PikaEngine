@@ -1,2 +1,26 @@
-#2024-01-08 14:41:14: Created container: IsometricGame
-#2024-01-08 14:41:38: Destroyed continer: IsometricGame #1
+#2024-01-08 20:03:06: Created container: IsometricGame
+#2024-01-08 20:07:15: Reloaded dll
+#2024-01-08 20:10:16: Destroyed continer: IsometricGame #1
+#2024-01-08 20:10:24: Created container: IsometricGameEditor
+#2024-01-08 20:10:26: Destroyed continer: IsometricGameEditor #2
+#2024-01-08 20:10:27: Created container: IsometricGameEditor
+#2024-01-08 20:10:36: Destroyed continer: IsometricGameEditor #3
+#2024-01-08 20:10:38: Created container: IsometricGameEditor
+#2024-01-08 20:10:41: Destroyed continer: IsometricGameEditor #4
+#2024-01-08 20:10:42: Created container: IsometricGameEditor
+#2024-01-08 20:10:44: Destroyed continer: IsometricGameEditor #5
+#2024-01-08 20:10:45: Created container: IsometricGameEditor
+#2024-01-08 20:11:37: Destroyed continer: IsometricGameEditor #6
+#2024-01-08 20:11:41: Created container: IsometricGameEditor
+#2024-01-08 20:13:09: Destroyed continer: IsometricGameEditor #7
+#2024-01-08 20:13:28: Created container: IsometricGame
+#2024-01-08 20:14:53: Reloaded dll
+#2024-01-08 20:19:05: Destroyed continer: IsometricGame #8
+#2024-01-08 20:19:19: Created container: IsometricGameEditor
+#2024-01-08 20:19:21: Destroyed continer: IsometricGameEditor #9
+#2024-01-08 20:19:27: Created container: IsometricGameEditor
+#2024-01-08 20:19:50: Destroyed continer: IsometricGameEditor #10
+#2024-01-08 20:19:52: Created container: IsometricGameEditor
+#2024-01-08 20:19:54: Destroyed continer: IsometricGameEditor #11
+#2024-01-08 20:19:55: Created container: IsometricGameEditor
+#2024-01-08 20:25:02: Destroyed continer: IsometricGameEditor #12

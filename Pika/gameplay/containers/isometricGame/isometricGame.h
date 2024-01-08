@@ -37,8 +37,9 @@ struct IsometricGame: public Container
 	int redstoneTorchesCount = 0;
 	int foodCount = 0;
 	int itemSelected = -1;
+	int currentLevel = 0;
 
-	glm::ivec3 playerPosition = {7, 1, 7};
+	glm::ivec3 playerPosition = {13, 1, 3};
 
 	struct PlayerAnimations
 	{
@@ -90,10 +91,7 @@ struct IsometricGame: public Container
 		unsigned char status = {};
 	};
 
-	std::vector<RedstoneStatus> redstone;
-
-	IsometricGameEditor::Map map;
-	
+	std::vector<RedstoneStatus> redstone;	
 
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo) override;
