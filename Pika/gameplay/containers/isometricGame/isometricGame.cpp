@@ -84,34 +84,35 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 #pragma endregion
 
 	float size = 100;
+	
 
 #pragma region Change Level
 	{
-		
+		bool changedRoom = 0;
 		if (currentLevel == 0)
 		{
 			if(
 				playerPosition == glm::ivec3{0,1,10} ||
 				playerPosition == glm::ivec3{0,1,11}
 				)
-			{currentLevel = 1; playerPosition = glm::ivec3(8, 1, 4);}
+			{currentLevel = 1; playerPosition = glm::ivec3(8, 1, 4); changedRoom = true;}
 			else
 			if(
 				playerPosition == glm::ivec3{4,1,6} ||
 				playerPosition == glm::ivec3{3,1,6}
 				)
-			{currentLevel = 2; playerPosition = glm::ivec3(3, 1, 7); };
+			{currentLevel = 2; playerPosition = glm::ivec3(3, 1, 7); changedRoom = true;};
 		}
 		else if (currentLevel == 1)
 		{
 			if (
 				playerPosition == glm::ivec3{0,1,4}
-				){currentLevel = 3; playerPosition = glm::ivec3(8, 1, 2); }
+				){currentLevel = 3; playerPosition = glm::ivec3(8, 1, 2); changedRoom = true;}
 			else if (playerPosition == glm::ivec3(9, 1, 4) ||
 				playerPosition == glm::ivec3(9, 1, 5)
 				)
 			{
-				currentLevel = 0; playerPosition = glm::ivec3(1, 1, 10);
+				currentLevel = 0; playerPosition = glm::ivec3(1, 1, 10); changedRoom = true;
 			}
 
 		}
@@ -122,7 +123,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				playerPosition == glm::ivec3{2,1,9}
 				)
 			{
-				currentLevel = 0; playerPosition = glm::ivec3(4, 1, 7);
+				currentLevel = 0; playerPosition = glm::ivec3(4, 1, 7); changedRoom = true;
 			}
 		}
 		else if (currentLevel == 3)
@@ -133,7 +134,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				playerPosition == glm::ivec3{9,1,3}
 				)
 			{
-				currentLevel = 1; playerPosition = glm::ivec3(1, 1, 4);
+				currentLevel = 1; playerPosition = glm::ivec3(1, 1, 4); changedRoom = true;
 			}else
 			if (
 				playerPosition == glm::ivec3{1,1,16} ||
@@ -141,7 +142,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				playerPosition == glm::ivec3{0,1,15}
 				)
 			{
-				currentLevel = 4; playerPosition = glm::ivec3(13, 1, 3);
+				currentLevel = 4; playerPosition = glm::ivec3(13, 1, 3); changedRoom = true;
 			}
 		}
 		else if (currentLevel == 4)
@@ -152,13 +153,18 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				playerPosition == glm::ivec3{14,1,4}
 				)
 			{
-				currentLevel = 3; playerPosition = glm::ivec3(2, 1, 16); //?
+				currentLevel = 3; playerPosition = glm::ivec3(2, 1, 16);  changedRoom = true;
 			}
 			else if(playerPosition == glm::ivec3{6,1,14} ||
 				playerPosition == glm::ivec3{5,1,14})
 			{
 				return 0;
 			}
+		}
+
+		if (changedRoom)
+		{
+			path = {};
 		}
 
 	}
@@ -535,6 +541,12 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					}
 
 				}
+				
+				if(playerPosition == glm::ivec3(x,y,z))
+				{
+					renderer.renderRectangle({calculateBlockPos(glm::vec3(playerPosition) + playerAnimations.delta),size,size}, playerSprite,
+						Colors_White, {}, 0.f, playerAtlas.get(playerAnimations.indexX, playerAnimations.indexY));
+				}
 
 				//if (currentSelectedBlockDelete == glm::ivec3{x, y, z})
 				//{
@@ -595,16 +607,17 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			}
 		}
 
-		renderer.renderRectangle({calculateBlockPos(glm::vec3(playerPosition) + playerAnimations.delta),size,size}, playerSprite,
-			Colors_White, {}, 0.f, playerAtlas.get(playerAnimations.indexX, playerAnimations.indexY));
+		
 
 	}
 #pragma endregion
 
 #pragma region Move
 
+
 	if (path.empty())
 	{
+
 		timerPath = 0.2;
 
 		if (input.lMouse.pressed() && currentBlockMove.x >= 0)
@@ -645,6 +658,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					auto b = map.getSafe({currentBlock.x + x, 1, currentBlock.y + z});
 					if (b && canPlayerStay(b->get().x, 
 						getRedstoneStatusUnsafe({currentBlock.x + x, 1, currentBlock.y + z}).status)
+						&& map.getSafe({currentBlock.x + x, 0, currentBlock.y + z})->get().x != 0 //not walking on air
 						)
 					{
 						if (searcehedPositions.find({currentBlock.x + x, currentBlock.y + z})
@@ -711,13 +725,13 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			{
 				if (itemSelected == 0 && redstoneCount)
 				{
-					itemSelected = -1;
+					//itemSelected = -1;
 					redstoneCount--;
 					b->set(IsometricGameEditor::Blocks::redstone, 0);
 				}else 
 				if (itemSelected == 1 && redstoneTorchesCount)
 				{
-					itemSelected = -1;
+					//itemSelected = -1;
 					redstoneTorchesCount--;
 					b->set(IsometricGameEditor::Blocks::redstoneTorch, 0);
 				}
@@ -731,6 +745,16 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 #pragma region UI2
 
+	if (itemSelected == 0 && !redstoneCount)
+	{
+		itemSelected = -1;
+	}
+
+	if (itemSelected == 1 && !redstoneTorchesCount)
+	{
+		itemSelected = -1;
+	}
+
 	renderer.pushCamera();
 	{
 		glui::Frame f(uiBox);
@@ -738,12 +762,15 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 		
 		float boxSize = uiBox.z/3.f;
 
+		if (redstoneCount)
 		renderer.renderRectangle({uiBox.x, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
 			{}, 0.f, itemsAtlas.get(0,0));
 
+		if (redstoneTorchesCount)
 		renderer.renderRectangle({uiBox.x + boxSize, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
 			{}, 0.f, itemsAtlas.get(1, 0));
 
+		if (foodCount)
 		renderer.renderRectangle({uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
 			{}, 0.f, itemsAtlas.get(2, 0));
 
@@ -752,31 +779,47 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			renderer.renderRectangle({uiBox.x + boxSize * itemSelected, uiBox.y, boxSize, boxSize}, itemFrameSprite);
 		}
 
+		if (redstoneCount)
 		renderer.renderText({uiBox.x + boxSize*0.75, uiBox.y + boxSize * 0.75},
 			std::to_string(redstoneCount).c_str(), font, Colors_White);
 
+		if (redstoneTorchesCount)
 		renderer.renderText({uiBox.x + boxSize * 1.75, uiBox.y + boxSize * 0.75},
 			std::to_string(redstoneTorchesCount).c_str(), font, Colors_White);
 
+		if (foodCount)
 		renderer.renderText({uiBox.x + boxSize * 2.75, uiBox.y + boxSize * 0.75},
 			std::to_string(foodCount).c_str(), font, Colors_White);
-
 
 		if (input.lMouse.pressed())
 		{
 			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x, uiBox.y, boxSize, boxSize}))
 			{
-				itemSelected = 0;
+				if (itemSelected == 0) 
+				{
+					itemSelected = -1;
+				}
+				else
+				{
+					itemSelected = 0;
+				}
 			}
 
 			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize, uiBox.y, boxSize, boxSize}))
 			{
-				itemSelected = 1;
+				if (itemSelected == 1)
+				{
+					itemSelected = -1;
+				}
+				else
+				{
+					itemSelected = 1;
+				}
 			}
 
 			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}))
 			{
-				itemSelected = 2;
+				itemSelected = 2; //toto eat
 			}
 		}
 
@@ -788,12 +831,11 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 
 
-
-	ImGui::Begin("Game debug");
-
-	ImGui::DragInt3("player position", &playerPosition[0], 1, 0, 20);
-
-	ImGui::End();
+	//ImGui::Begin("Game debug");
+	//
+	//ImGui::DragInt3("player position", &playerPosition[0], 1, 0, 20);
+	//
+	//ImGui::End();
 
 	renderer.flush();
 
