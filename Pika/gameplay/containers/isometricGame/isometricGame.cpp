@@ -71,6 +71,7 @@ static bool canPlayerStay(int type, int redstone)
 {
 	return type == 0 || type == IsometricGameEditor::Blocks::redstone ||
 		type == IsometricGameEditor::Blocks::redstoneTorch ||
+		type == IsometricGameEditor::Blocks::chest ||
 		type == IsometricGameEditor::Blocks::lever ||
 	 	(type == IsometricGameEditor::Blocks::trapdor && redstone == 1);
 }
@@ -658,7 +659,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					auto b = map.getSafe({currentBlock.x + x, 1, currentBlock.y + z});
 					if (b && canPlayerStay(b->get().x, 
 						getRedstoneStatusUnsafe({currentBlock.x + x, 1, currentBlock.y + z}).status)
-						&& map.getSafe({currentBlock.x + x, 0, currentBlock.y + z})->get().x != 0 //not walking on air
+						//&& map.getSafe({currentBlock.x + x, 0, currentBlock.y + z})->get().x != 0 //not walking on air
 						)
 					{
 						if (searcehedPositions.find({currentBlock.x + x, currentBlock.y + z})
@@ -721,6 +722,11 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 				b->set(0, 0);
 				redstoneTorchesCount++;
 			}
+			else if (b->get().x == IsometricGameEditor::Blocks::chest)
+			{
+				b->set(0, 0);
+				foodCount++;
+			}
 			else if (b->get().x == 0)
 			{
 				if (itemSelected == 0 && redstoneCount)
@@ -745,87 +751,92 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 #pragma region UI2
 
-	if (itemSelected == 0 && !redstoneCount)
+	if (1)
 	{
-		itemSelected = -1;
-	}
 
-	if (itemSelected == 1 && !redstoneTorchesCount)
-	{
-		itemSelected = -1;
-	}
-
-	renderer.pushCamera();
-	{
-		glui::Frame f(uiBox);
-		renderer.renderRectangle(uiBox, {0.1,0.1,0.1,0.5});
-		
-		float boxSize = uiBox.z/3.f;
-
-		if (redstoneCount)
-		renderer.renderRectangle({uiBox.x, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
-			{}, 0.f, itemsAtlas.get(0,0));
-
-		if (redstoneTorchesCount)
-		renderer.renderRectangle({uiBox.x + boxSize, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
-			{}, 0.f, itemsAtlas.get(1, 0));
-
-		if (foodCount)
-		renderer.renderRectangle({uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
-			{}, 0.f, itemsAtlas.get(2, 0));
-
-		if (itemSelected != -1)
+		if (itemSelected == 0 && !redstoneCount)
 		{
-			renderer.renderRectangle({uiBox.x + boxSize * itemSelected, uiBox.y, boxSize, boxSize}, itemFrameSprite);
+			itemSelected = -1;
 		}
 
-		if (redstoneCount)
-		renderer.renderText({uiBox.x + boxSize*0.75, uiBox.y + boxSize * 0.75},
-			std::to_string(redstoneCount).c_str(), font, Colors_White);
-
-		if (redstoneTorchesCount)
-		renderer.renderText({uiBox.x + boxSize * 1.75, uiBox.y + boxSize * 0.75},
-			std::to_string(redstoneTorchesCount).c_str(), font, Colors_White);
-
-		if (foodCount)
-		renderer.renderText({uiBox.x + boxSize * 2.75, uiBox.y + boxSize * 0.75},
-			std::to_string(foodCount).c_str(), font, Colors_White);
-
-		if (input.lMouse.pressed())
+		if (itemSelected == 1 && !redstoneTorchesCount)
 		{
-			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x, uiBox.y, boxSize, boxSize}))
-			{
-				if (itemSelected == 0) 
-				{
-					itemSelected = -1;
-				}
-				else
-				{
-					itemSelected = 0;
-				}
-			}
-
-			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize, uiBox.y, boxSize, boxSize}))
-			{
-				if (itemSelected == 1)
-				{
-					itemSelected = -1;
-				}
-				else
-				{
-					itemSelected = 1;
-				}
-			}
-
-			if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}))
-			{
-				itemSelected = 2; //toto eat
-			}
+			itemSelected = -1;
 		}
 
-		
-	}
-	renderer.popCamera();
+		renderer.pushCamera();
+		{
+			glui::Frame f(uiBox);
+			renderer.renderRectangle(uiBox, {0.1,0.1,0.1,0.5});
+
+			float boxSize = uiBox.z / 3.f;
+
+			if (redstoneCount)
+				renderer.renderRectangle({uiBox.x, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+				{}, 0.f, itemsAtlas.get(0, 0));
+
+			if (redstoneTorchesCount)
+				renderer.renderRectangle({uiBox.x + boxSize, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+				{}, 0.f, itemsAtlas.get(1, 0));
+
+			if (foodCount)
+				renderer.renderRectangle({uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}, itemsSprite, {1,1,1,0.9},
+				{}, 0.f, itemsAtlas.get(2, 0));
+
+			if (itemSelected != -1)
+			{
+				renderer.renderRectangle({uiBox.x + boxSize * itemSelected, uiBox.y, boxSize, boxSize}, itemFrameSprite);
+			}
+
+			if (redstoneCount)
+				renderer.renderText({uiBox.x + boxSize * 0.75, uiBox.y + boxSize * 0.75},
+				std::to_string(redstoneCount).c_str(), font, Colors_White);
+
+			if (redstoneTorchesCount)
+				renderer.renderText({uiBox.x + boxSize * 1.75, uiBox.y + boxSize * 0.75},
+				std::to_string(redstoneTorchesCount).c_str(), font, Colors_White);
+
+			if (foodCount)
+				renderer.renderText({uiBox.x + boxSize * 2.75, uiBox.y + boxSize * 0.75},
+				std::to_string(foodCount).c_str(), font, Colors_White);
+
+			if (input.lMouse.pressed())
+			{
+				if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x, uiBox.y, boxSize, boxSize}))
+				{
+					if (itemSelected == 0)
+					{
+						itemSelected = -1;
+					}
+					else
+					{
+						itemSelected = 0;
+					}
+				}
+
+				if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize, uiBox.y, boxSize, boxSize}))
+				{
+					if (itemSelected == 1)
+					{
+						itemSelected = -1;
+					}
+					else
+					{
+						itemSelected = 1;
+					}
+				}
+
+				if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}))
+				{
+					itemSelected = 2; //toto eat
+				}
+			}
+
+
+		}
+		renderer.popCamera();
+
+	};
 
 #pragma endregion
 

@@ -67,6 +67,8 @@ struct IsometricGame: public Container
 	}
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument);
+
+
 	int currentBlock = 0;
 
 	struct Block

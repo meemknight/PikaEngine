@@ -124,6 +124,8 @@ struct McDungeonsGameplay: public Container
 		return worldData[x][y][z];
 	}
 
+	//todo input inspector in container manager (make it both as a function and as a widget)
+
 	bool isInRange(int x, int y, int z)
 	{
 		if (x < 0 || y < 0 || z < 0 || x >= worldSize.x || y >= worldSize.y || z >= worldSize.z)
@@ -962,7 +964,10 @@ struct McDungeonsGameplay: public Container
 			}
 			else
 			{
-				editor.update(requestedInfo.requestedImguiIds, renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
+
+				editor.update(requestedInfo.requestedImguiIds, 
+					renderer, input, 4, requestedInfo, {windowState.windowW,windowState.windowH});
+
 			}
 			
 
