@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
+set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
 
 

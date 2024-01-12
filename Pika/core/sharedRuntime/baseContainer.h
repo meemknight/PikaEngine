@@ -12,7 +12,8 @@
 #include <staticString.h>
 #include <vector>
 #include <stringManipulation/stringManipulation.h>
-
+#include <fstream>
+#include <string_view>
 
 #define READENTIREFILE(x) bool x(const char* name, void* buffer, size_t size)
 typedef READENTIREFILE(readEntireFile_t);
@@ -166,9 +167,10 @@ struct RequestedContainerInfo
 		return 1;
 	}
 
+	//todo change to string
 	bool appendFileBinary(std::string_view name, void *data, size_t s)
 	{
-		std::ofstream f(name, std::ios::binary | std::ios::out | std::ios::app);
+		std::ofstream f(std::string(name), std::ios::binary | std::ios::out | std::ios::app);
 
 		if (!f.is_open()) { return 0; }
 
@@ -213,7 +215,7 @@ struct RequestedContainerInfo
 
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
-			std::ifstream f(name, std::ios::binary);
+			std::ifstream f(std::string(name), std::ios::binary);
 			if (!f.is_open())
 			{
 				succeed = false;
@@ -237,7 +239,7 @@ struct RequestedContainerInfo
 
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
-			std::ifstream f(name, std::ios::binary);
+			std::ifstream f(std::string(name), std::ios::binary);
 
 			if (!f.is_open())
 			{
@@ -262,7 +264,7 @@ struct RequestedContainerInfo
 
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
-			std::ifstream f(name);
+			std::ifstream f{ std::string(name) };
 
 			if (!f.is_open())
 			{
@@ -288,7 +290,7 @@ struct RequestedContainerInfo
 
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
-			std::ifstream f(name, std::ifstream::ate | std::ifstream::binary);
+			std::ifstream f(std::string(name), std::ifstream::ate | std::ifstream::binary);
 			if (!f.is_open())
 			{
 				success = false;
@@ -310,7 +312,7 @@ struct RequestedContainerInfo
 		size = 0;
 		pika::memory::pushCustomAllocatorsToStandard();
 		{
-			std::ifstream f(name, std::ifstream::ate);
+			std::ifstream f(std::string(name), std::ifstream::ate);
 			if (!f.is_open())
 			{
 				success = false;
