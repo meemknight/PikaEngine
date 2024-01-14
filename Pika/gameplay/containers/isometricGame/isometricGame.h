@@ -32,6 +32,7 @@ struct IsometricGame: public Container
 
 	gl2d::Texture itemFrameSprite;
 
+	float life = 1;
 
 	int redstoneCount = 0;
 	int redstoneTorchesCount = 0;
@@ -69,8 +70,6 @@ struct IsometricGame: public Container
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument);
 
 
-	int currentBlock = 0;
-
 	struct Block
 	{
 		unsigned char type;
@@ -100,4 +99,5 @@ struct IsometricGame: public Container
 
 	void destruct(RequestedContainerInfo &requestedInfo) override;
 
+	void saveData(RequestedContainerInfo &requestedInfo);
 };

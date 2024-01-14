@@ -280,7 +280,8 @@ struct RequestedContainerInfo
 
 		return success;
 	}
-
+	
+	//todo version that returns a char vector
 	bool getFileSizeBinary(std::string_view name, size_t &size)
 	{
 		//PIKA_DEVELOPMENT_ONLY_ASSERT(getFileSizePointer, "get file size pointer not assigned");

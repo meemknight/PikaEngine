@@ -6,6 +6,7 @@
 #include <glui/glui.h>
 #include <deque>
 #include <unordered_map>
+#include <safeSave/safeSave.h>
 
 bool IsometricGame::create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 {
@@ -63,6 +64,69 @@ bool IsometricGame::create(RequestedContainerInfo &requestedInfo, pika::StaticSt
 		}
 			
 	}
+
+	size_t s = 0;
+	if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "iso/save.bin", s))
+	{
+		char *buffer = new char[s];
+		
+		if (requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "iso/save.bin", buffer, s))
+		{
+			sfs::SafeSafeKeyValueData data;
+
+			data.loadFromFileData(buffer, s);
+
+
+			bool good = true;
+
+			good = data.getFloat("life", life) == sfs::noError;
+
+			if (good)
+			{
+
+
+				good = data.getInt("redstoneCount", redstoneCount) == sfs::noError;
+				good = data.getInt("redstoneTorchesCount", redstoneTorchesCount) == sfs::noError;
+				good = data.getInt("foodCount", foodCount) == sfs::noError;
+				good = data.getInt("itemSelected", itemSelected) == sfs::noError;
+				good = data.getInt("currentLevel", currentLevel) == sfs::noError;
+				void *ptr = 0;
+				size_t s = 0;
+				good = data.getRawDataPointer("playerPosition", ptr, s) == sfs::noError;
+				good = s == sizeof(playerPosition);
+
+				if (good)
+				{
+					memcpy(&playerPosition, ptr, s);					
+				}
+				else { return 0; }
+
+				for (int i = 0; i < MAPS_COUNT; i++)
+				{
+					void *ptr = 0;
+					size_t s = 0;
+
+					data.getRawDataPointer("map" + std::to_string(i),
+						ptr, s);
+
+					good = s == sizeof(levels[i].mapData[0]) * levels[i].size.x
+						* levels[i].size.y * levels[i].size.z;
+
+					good = s == levels[i].mapData.size() * sizeof(levels[i].mapData[0]);
+
+					if (good)
+					{
+						memcpy(levels[i].mapData.data(), ptr, s);
+					}
+				}
+
+				if (!good) { return 0; }
+			}
+		}
+		
+		delete[] buffer;
+	}
+	
 
 	return true;
 }
@@ -171,7 +235,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 	}
 #pragma endregion
 
-	
+	life -= input.deltaTime * 0.004;
 	
 	IsometricGameEditor::Map &map = levels[currentLevel];
 
@@ -183,6 +247,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 	};
 
 	{
+
 		redstone.clear();
 		redstone.resize(map.size.x * map.size.y * map.size.z);
 
@@ -742,6 +807,8 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					b->set(IsometricGameEditor::Blocks::redstoneTorch, 0);
 				}
 			}
+
+			saveData(requestedInfo);
 		}
 
 	}
@@ -769,6 +836,14 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			glui::Frame f(uiBox);
 			renderer.renderRectangle(uiBox, {0.1,0.1,0.1,0.5});
 
+			{
+				auto healthBox = uiBox;
+				healthBox.y += healthBox.w;
+				healthBox.w *= 0.3;
+				healthBox.z *= life;
+				renderer.renderRectangle(healthBox, {0.9,0.1,0.1,0.5});
+			}
+
 			float boxSize = uiBox.z / 3.f;
 
 			if (redstoneCount)
@@ -787,7 +862,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 			{
 				renderer.renderRectangle({uiBox.x + boxSize * itemSelected, uiBox.y, boxSize, boxSize}, itemFrameSprite);
 			}
-
+			redstone;
 			if (redstoneCount)
 				renderer.renderText({uiBox.x + boxSize * 0.75, uiBox.y + boxSize * 0.75},
 				std::to_string(redstoneCount).c_str(), font, Colors_White);
@@ -828,11 +903,15 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 				if (IsometricGameEditor::pointInBox(glm::vec2(input.mouseX, input.mouseY), {uiBox.x + boxSize * 2, uiBox.y, boxSize, boxSize}))
 				{
-					itemSelected = 2; //toto eat
+					if (foodCount > 0)
+					{
+						foodCount--;
+						life = 1.f;
+					}
 				}
 			}
 
-
+			
 		}
 		renderer.popCamera();
 
@@ -858,5 +937,35 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 void IsometricGame::destruct(RequestedContainerInfo &requestedInfo)
 {
 	renderer.cleanup();
+
+}
+
+void IsometricGame::saveData(RequestedContainerInfo &requestedInfo)
+{
+
+	sfs::SafeSafeKeyValueData data;
+
+	data.setFloat("life", life);
+	data.setInt("redstoneCount", redstoneCount);
+	data.setInt("redstoneTorchesCount", redstoneTorchesCount);
+	data.setInt("foodCount", foodCount);
+	data.setInt("itemSelected", itemSelected);
+	data.setInt("currentLevel", currentLevel);
+
+	data.setRawData("playerPosition", &playerPosition[0], sizeof(playerPosition));
+
+
+	for (int i = 0; i < MAPS_COUNT; i++)
+	{
+		data.setRawData("map" + std::to_string(i),
+			levels[i].mapData.data(),
+			sizeof(levels[i].mapData[0]) * levels[i].size.x
+			* levels[i].size.y * levels[i].size.z
+		);
+	}
+
+	auto fileData = data.formatIntoFileData();
+
+	requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "iso/save.bin", fileData.data(), fileData.size());
 
 }
