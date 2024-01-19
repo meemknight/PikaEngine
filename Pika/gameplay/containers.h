@@ -30,6 +30,8 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "containers/minecraftDungeons/mcDungeonsMenu.h"
 //#include "containers/hollowknight/hollowknight.h"
 
+#include "containers/marioKart/marioKartEditor.h"
+
 #include "containers/threeDGameExample/threeDGameExample.h"
 #include "containers/threeDGameExample/threeDGameMenu.h"
 
@@ -57,6 +59,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(PikaTextEditor) \
 	PIKA_DECLARE_CONTAINER(ThreeDGameExample) \
 	PIKA_DECLARE_CONTAINER(ThreeDGameMenu) \
+	PIKA_DECLARE_CONTAINER(MarioKartEditor) \
 	PIKA_DECLARE_CONTAINER(IsometricGameEditor) \
 	PIKA_DECLARE_CONTAINER(IsometricGame)
 	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \

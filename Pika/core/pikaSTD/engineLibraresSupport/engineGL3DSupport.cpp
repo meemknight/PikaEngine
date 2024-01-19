@@ -515,6 +515,11 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 	ImGui::PushID(imguiId);
 	if (ImGui::Begin("General3DEditor"))
 	{
+		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+		{
+			pika::gl3d::generalSettingsWindow(imguiId, renderer);
+		}
+
 		if (ImGui::CollapsingHeader("Basic settings", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 		{
 			pika::gl3d::generalSettingsWindow(imguiId, renderer);
@@ -627,7 +632,7 @@ void pika::gl3d::General3DEditor::update(int imguiId, ::gl3d::Renderer3D &render
 	ImGui::End();
 	ImGui::PopID();
 
-	pika::gl3d::fpsInput(renderer, input, 4, lastMousePos, info, windowSize);
+	pika::gl3d::fpsInput(renderer, input, moveSpeed, lastMousePos, info, windowSize);
 
 
 }

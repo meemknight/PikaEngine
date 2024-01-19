@@ -237,6 +237,8 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 
 	life -= input.deltaTime * 0.004;
 	
+	if (life <= 0) { return 0; }
+
 	IsometricGameEditor::Map &map = levels[currentLevel];
 
 #pragma region Redstone
@@ -724,7 +726,7 @@ bool IsometricGame::update(pika::Input input, pika::WindowState windowState, Req
 					auto b = map.getSafe({currentBlock.x + x, 1, currentBlock.y + z});
 					if (b && canPlayerStay(b->get().x, 
 						getRedstoneStatusUnsafe({currentBlock.x + x, 1, currentBlock.y + z}).status)
-						//&& map.getSafe({currentBlock.x + x, 0, currentBlock.y + z})->get().x != 0 //not walking on air
+						&& map.getSafe({currentBlock.x + x, 0, currentBlock.y + z})->get().x != 0 //not walking on air
 						)
 					{
 						if (searcehedPositions.find({currentBlock.x + x, currentBlock.y + z})

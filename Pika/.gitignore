@@ -6,3 +6,4 @@ build/
 CMakeSettings.json
 *.snapshot
 engineResources/
+.vs

@@ -53,9 +53,7 @@ struct IsometricGame: public Container
 	}playerAnimations;
 
 	std::vector<glm::ivec2> path;
-	float timerPath = 0.2;
-
-
+	float timerPath = 0;
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
