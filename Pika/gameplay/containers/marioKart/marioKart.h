@@ -52,6 +52,7 @@ struct MarioKart: public Container
 	gl3d::Renderer3D renderer;
 	gl3d::Model worldModel;
 	gl3d::Model sphereModel;
+	gl3d::Model wheelModel;
 	gl3d::Model marioModel;
 	gl3d::Entity worldEntity;
 	gl3d::Entity marioEntity;
@@ -63,6 +64,8 @@ struct MarioKart: public Container
 
 	std::vector<gl3d::Entity> spheres;
 	std::vector<gl3d::Entity> coins;
+
+	gl3d::Entity wheels[4];
 
 	pika::gl3d::General3DEditor editor;
 
@@ -127,6 +130,10 @@ struct MarioKart: public Container
 		sphereModel = renderer.loadModel(PIKA_RESOURCES_PATH "/marioKart/sphere.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
 
+		wheelModel = renderer.loadModel("C:/Users/meemk/Desktop/wheel/wheel2.glb", 
+			gl3d::TextureLoadQuality::maxQuality, 1);
+
+
 		worldEntity = renderer.createEntity(worldModel, {});
 
 
@@ -176,7 +183,10 @@ struct MarioKart: public Container
 
 		}
 
-
+		for (int i = 0; i < 4; i++)
+		{
+			wheels[i] = renderer.createEntity(wheelModel, {}, false);
+		}
 
 		if (markers.size() >= 2)
 		{
@@ -503,7 +513,7 @@ struct MarioKart: public Container
 				//carPosition.y = m1.position.y;
 			}
 
-			glm::vec3 offset(0, 0.4, 0);
+			glm::vec3 offset(0, 0.3, 0);
 
 			float angle = std::atan2(moveDirection.z, -moveDirection.x) - glm::radians(90.f);
 
@@ -513,6 +523,33 @@ struct MarioKart: public Container
 			t.rotation.z = -tilt;
 			renderer.setEntityTransform(carEntity, t);
 			renderer.setEntityTransform(marioEntity, t);
+
+			static float wheelTimer = 0;
+			wheelTimer += input.deltaTime * acceleration;
+
+			t.scale =glm::vec3(0.065);
+			for (int i = 0; i < 4; i++)
+			{
+				//auto t2 = t;
+				glm::vec3 pos[4] = {glm::vec3(8.2, 0, 11.0),
+					glm::vec3(8.2, 0, -11.0),
+					glm::vec3(-8.2, 0, 11.0),
+					glm::vec3(-8.2, 0, -11.0),
+				};
+				
+				auto mat = t.getTransformMatrix();
+				mat = mat * glm::translate(pos[i]);
+				auto t2 = gl3d::Transform{};
+				t2.setFromMatrix(mat);
+				
+				t2.rotation.x = wheelTimer;
+				
+
+				renderer.setEntityTransform(wheels[i], t2);
+
+
+			}
+			
 		}
 
 			
