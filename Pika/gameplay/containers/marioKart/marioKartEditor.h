@@ -26,8 +26,13 @@ struct MarioKartEditor: public Container
 		unsigned char isAir = 0;
 	};
 
+	glm::vec3 carPosition = {};
+	glm::vec3 moveDirection = glm::normalize(glm::vec3{0,0,-1});
+	int carMarker = 0;
+
 	std::vector<RoadMarker> markers;
 	int currentMarker = 0;
+	glm::vec2 markerDelta = {};
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -48,7 +53,11 @@ struct MarioKartEditor: public Container
 	gl3d::Model worldModel;
 	gl3d::Model sphereModel;
 	gl3d::Entity worldEntity;
+	gl3d::Model carModel;
+	gl3d::Entity carEntity;
 	bool first = 1;
+	float carPos = 0;
+
 
 	std::vector<gl3d::Entity> spheres;
 
@@ -93,16 +102,22 @@ struct MarioKartEditor: public Container
 		renderer.camera.farPlane = 250;
 
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
-		worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/N64 Royal Raceway.obj",
+		//worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/N64 Royal Raceway.obj",
+		//	gl3d::TextureLoadQuality::maxQuality, 1);
+		worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/MarioRaceEnv.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
-
 		
+		carModel = renderer.loadModel("C:/Users/meemk/Desktop/car/Standard Kart.obj",
+			gl3d::TextureLoadQuality::maxQuality, 1.f);
+
 		//todo error by gl3d when creating an entity with no model loaded
 		sphereModel = renderer.loadModel(PIKA_RESOURCES_PATH "/marioKart/sphere.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
 
 		worldEntity = renderer.createEntity(worldModel, {});
 
+
+		carEntity = renderer.createEntity(carModel);
 
 		size_t size = 0;
 		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin", size))
@@ -122,7 +137,12 @@ struct MarioKartEditor: public Container
 
 		}
 
-
+		if (markers.size() >= 2)
+		{
+			auto pos = markers[0].position;
+			carPosition = pos;
+		}
+		//
 
 		return true;
 	}
@@ -149,6 +169,23 @@ struct MarioKartEditor: public Container
 			::pika::pikaImgui::removeFocusToCurrentWindow();
 		}
 
+		auto getLeft = [&](RoadMarker &m)
+		{
+			glm::vec3 cross = {1,0,0};
+			cross = glm::vec3(glm::rotate(m.tilt, glm::vec3{0,0,1}) * glm::vec4(cross, 1));
+			cross = glm::vec3(glm::rotate(m.angle, glm::vec3{0,1,0}) * glm::vec4(cross, 1));
+			cross = glm::normalize(cross);
+			return m.position - cross * m.size;
+		};
+
+		auto getRight = [&](RoadMarker &m)
+		{
+			glm::vec3 cross = {1,0,0};
+			cross = glm::vec3(glm::rotate(m.tilt, glm::vec3{0,0,1}) * glm::vec4(cross, 1));
+			cross = glm::vec3(glm::rotate(m.angle, glm::vec3{0,1,0}) * glm::vec4(cross, 1));
+			cross = glm::normalize(cross);
+			return m.position + cross * m.size;
+		};
 
 	#pragma region spheres
 
@@ -191,18 +228,14 @@ struct MarioKartEditor: public Container
 			renderer.setEntityMeshMaterialValues(spheres[currentSphere], 0, mat);
 			renderer.setEntityTransform(spheres[currentSphere++], {t});
 
-			glm::vec3 cross = {1,0,0};
-			cross = glm::vec3(glm::rotate(m.tilt, glm::vec3{0,0,1}) * glm::vec4(cross, 1));
-			cross = glm::vec3(glm::rotate(m.angle, glm::vec3{0,1,0}) * glm::vec4(cross, 1));
-			cross = glm::normalize(cross);
-
 			t.scale = glm::vec3(0.1);
 
-			t.position = m.position + cross * m.size;
+			t.position = getRight(m);
 			renderer.setEntityMeshMaterialValues(spheres[currentSphere], 0, mat);
 			renderer.setEntityTransform(spheres[currentSphere++], {t});
 
-			t.position = m.position - cross * m.size;
+			t.position = getLeft(m);
+			mat.kd.b = 1;
 			renderer.setEntityMeshMaterialValues(spheres[currentSphere], 0, mat);
 			renderer.setEntityTransform(spheres[currentSphere++], {t});
 
@@ -211,6 +244,159 @@ struct MarioKartEditor: public Container
 
 	#pragma endregion
 
+	#pragma region car
+
+		if (markers.size() >= 2)
+		{
+			
+			float moveForward = 0;
+			if (input.buttons[pika::Button::Up].held())
+			{
+				moveForward = 1;
+			}
+			if (input.buttons[pika::Button::Down].held())
+			{
+				moveForward -= 1;
+			}
+
+			auto isLeft2 = [](glm::vec2 a, glm::vec2 b, glm::vec2 c)
+			{
+				return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+			};
+
+			auto isLeft = [&](glm::vec3 a, glm::vec3 b, glm::vec3 c)
+			{
+				return isLeft2({a.x,a.z}, {b.x,b.z}, {c.x, c.z});
+			};
+
+			if (moveForward)
+			{
+				carPosition.y = 0;
+
+				float leftRight = 0;
+				if (input.buttons[pika::Button::Left].held())
+				{
+					leftRight = 1;
+				}
+				if (input.buttons[pika::Button::Right].held())
+				{
+					leftRight -= 1;
+				}
+
+				if (leftRight)
+				{
+					moveDirection = 
+						glm::rotate(input.deltaTime * leftRight, glm::vec3{0,1,0}) * glm::vec4(moveDirection, 1);
+
+					moveDirection = glm::normalize(moveDirection);
+				}
+
+
+
+				//auto oldPos = carPosition;
+				//carPosition += 
+				auto move = moveDirection * input.deltaTime * moveForward * 2.f;
+				
+				//glm::vec2 newDelta = markerDelta + glm::vec2(move.x, move.y);
+
+				auto m1 = markers[carMarker];
+				auto m2 = markers[(carMarker + 1)%markers.size()];
+
+				if (!isLeft(getLeft(m2), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+				{
+					carMarker++;
+					carMarker = carMarker % markers.size();
+				}
+				else if (isLeft(getLeft(m1), getRight(m1), carPosition + glm::vec3(move.x, 0, move.z)))
+				{
+					carMarker--;
+					if (carMarker < 0) { carMarker = markers.size() - 1; }
+				}
+
+				if (!isLeft(getLeft(m1), getLeft(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+				{
+
+				}
+				else if (isLeft(getRight(m1), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+				{
+
+				}
+				else
+				{
+					carPosition += glm::vec3(move.x, 0, move.z);
+				}
+
+
+				
+
+				//float dist1 = glm::distance(glm::vec2(m1.position.x, m1.position.z), 
+				//	glm::vec2(carPosition.x, carPosition.z));
+				//
+				//float dist2 = glm::distance(glm::vec2(m2.position.x, m2.position.z),
+				//	glm::vec2(carPosition.x, carPosition.z));
+
+
+
+				//carPosition = markers[carMarker].position;
+				//carPosition.x += newDelta.x;
+				//carPosition.z += newDelta.y;
+
+				//for (int i = 0; i < markers.size(); i++)
+				//{
+				//
+				//	auto m1 = markers[i];
+				//	auto m2 = markers[(i+1)%markers.size()];
+				//	
+				//
+				//	//check point in box;
+				//
+				//	auto a1 = getLeft(m1);
+				//	auto a2 = getRight(m1);
+				//	auto a3 = getRight(m2);
+				//	auto a4 = getLeft(m2);
+				//
+				//
+				//
+				//}
+
+
+
+			}
+
+			auto m1 = markers[carMarker];
+			auto m2 = markers[(carMarker + 1) % markers.size()];
+
+			float tilt = 0;
+			{
+				glm::vec3 roadLine = m2.position - m1.position;
+				glm::vec3 p = carPosition - m1.position; p.y = 0;
+				p.y = 0;
+				roadLine.y = 0;
+
+				auto projPoint = glm::dot(p, roadLine) / glm::length(roadLine);
+
+				float l = glm::length(projPoint);
+
+				float final = l / glm::length(roadLine);
+
+				carPosition.y = glm::mix(m1.position.y, m2.position.y, glm::clamp(final, 0.f, 1.f));
+				tilt = glm::mix(m1.tilt, m2.tilt, glm::clamp(final, 0.f, 1.f));
+				//carPosition.y = m1.position.y;
+			}
+
+			glm::vec3 offset(0, 0.4, 0);
+
+			float angle = std::atan2(moveDirection.z, -moveDirection.x) - glm::radians(90.f);
+
+			gl3d::Transform t;
+			t.position = carPosition + offset;
+			t.rotation.y = angle;
+			t.rotation.z = -tilt;
+			renderer.setEntityTransform(carEntity, t);
+		}
+
+
+	#pragma endregion
 			
 
 
@@ -286,8 +472,16 @@ struct MarioKartEditor: public Container
 
 
 			}
+
+			if (ImGui::CollapsingHeader("Car", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Text("Current marker: %d", carMarker);
+			}
+		
 		}
 		ImGui::End();
+
+
 		ImGui::PopID();
 
 
