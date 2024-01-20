@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl3D --Vlad Luta -- 
-//built on 2023-03-07
+//built on 2024-01-20
 ////////////////////////////////////////////////
 
 
@@ -19,7 +19,10 @@
 
 #define GL3D_REMOVE_IOSTREAM 1 //you can remove this if neded to. It is just used for the default errorcallback
 #define GL3D_REMOVE_FSTREAM 1 //you can remove this if neded to. It is used for the default file callback, supply your own function for file oppening so the library still works :))
+#define GL3D_REMOVE_ASSERTS 0 //you can remove asserts in production
 
+
+#define GL3D_OPTIMIZE_CACHED_SEARCH 1 //this was used by the dev to test some things, if you are using the library just keep it to 1.
 
 #if GL3D_REMOVE_IOSTREAM == 0
 #include <iostream> 
@@ -53,11 +56,13 @@
 namespace gl3d
 {
 	//todo optimization also hold the last found position
+	//todo why id isn't unsigned?
 
 #define CREATE_RENDERER_OBJECT_HANDLE(x)	\
 	struct x								\
 	{										\
 		int id_ = {};						\
+		int lastFoundPos_ = {};				\
 		x (int id=0):id_(id){};				\
 	}
 
@@ -218,6 +223,9 @@ namespace gl3d
 
 };
 
+
+#if GL3D_REMOVE_ASSERTS == 0
+
 #define gl3dAssert(expression) (void)(											\
 			(!!(expression)) ||													\
 			(gl3d::assertFunc(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
@@ -227,6 +235,16 @@ namespace gl3d
 			(!!(expression)) ||														\
 			(gl3d::assertFunc(#expression, __FILE__, (unsigned)(__LINE__), comment), 0)\
 		)
+
+#else 
+
+#define gl3dAssert(expression) 
+
+#define gl3dAssertComment(expression, comment) 
+
+#endif
+
+
 
 #pragma endregion
 
@@ -34087,6 +34105,7 @@ namespace gl3d
 
 		bool normalMap = 1; 
 		bool useSSAO = 1;
+		bool useTheHbaoImplementation = 1;
 		
 		//todo split stuff into separate things
 		bool bloom = 1;
@@ -34908,6 +34927,8 @@ namespace gl3d
 		Camera camera;
 		SkyBox skyBox;
 
+		int tonemapper = 1; //todo add enum, todo save data
+
 		//debug stuff todo
 		void renderModelNormals(Model o, glm::vec3 position, glm::vec3 rotation = {},
 			glm::vec3 scale = { 1,1,1 }, float normalSize = 0.5, glm::vec3 normalColor = {0.7, 0.7, 0.1});
@@ -34970,13 +34991,13 @@ namespace gl3d
 			void renderSkyBox(Camera &c, SkyBox &s); //todo remove this later
 			void renderSkyBoxBefore(Camera& c, SkyBox& s);
 
-			int getMaterialIndex(Material m);
-			int getModelIndex(Model o);
-			int getTextureIndex(Texture t);
-			int getEntityIndex(Entity t);
-			int getSpotLightIndex(SpotLight l);
-			int getPointLightIndex(PointLight l);
-			int getDirectionalLightIndex(DirectionalLight l);
+			int getMaterialIndex(Material &m);
+			int getModelIndex(Model &o);
+			int getTextureIndex(Texture &t);
+			int getEntityIndex(Entity &e);
+			int getSpotLightIndex(SpotLight &l);
+			int getPointLightIndex(PointLight &l);
+			int getDirectionalLightIndex(DirectionalLight &l);
 
 			//material
 			std::vector<MaterialValues> materials;
@@ -35145,6 +35166,7 @@ namespace gl3d
 				GLint u_texture;
 				GLint u_exposure;
 				GLint u_tresshold;
+				GLint u_tonemapper;
 			}filterShader;
 
 			struct
@@ -35191,7 +35213,7 @@ namespace gl3d
 			GLint u_useSSAO;	//post process shader
 			GLint u_ssaoExponent;	//post process shader
 			GLint u_ssao;	//post process shader
-
+			GLint u_tonemapper; //post process shader
 
 			GLint u_toBlurcolorInput;
 			GLint u_horizontal;

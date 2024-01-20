@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////
 //gl3D --Vlad Luta -- 
-//built on 2023-03-07
+//built on 2024-01-20
 ////////////////////////////////////////////////
 
 #include "gl3d.h"
@@ -32068,7 +32068,7 @@ namespace gl3d
 "tmpvar_1 = pow (u_ambient, vec3(2.2, 2.2, 2.2));\n"
 "if ((u_skyBoxPresent != 0)) {\n"
 "vec4 tmpvar_2;\n"
-"tmpvar_2 = textureLod (u_skybox, v_texCoords, 2.0);\n"
+"tmpvar_2 = texture (u_skybox, v_texCoords);\n"
 "a_outColor.w = tmpvar_2.w;\n"
 "a_outColor.xyz = (tmpvar_2.xyz * tmpvar_1);\n"
 "} else {\n"
@@ -32450,12 +32450,12 @@ namespace gl3d
 "noperspective in vec2 v_texCoords;\n"
 "uniform sampler2D u_colorTexture;\n"
 "uniform sampler2D u_bloomTexture;\n"
-"uniform sampler2D u_bloomNotBluredTexture;\n"
 "uniform float u_bloomIntensity;\n"
 "uniform float u_exposure;\n"
 "uniform int u_useSSAO;\n"
 "uniform float u_ssaoExponent;\n"
 "uniform sampler2D u_ssao;\n"
+"uniform int u_tonemapper = 0;\n"
 "void main ()\n"
 "{\n"
 "float ssaof_1;\n"
@@ -32467,7 +32467,13 @@ namespace gl3d
 "} else {\n"
 "ssaof_1 = 1.0;\n"
 "};\n"
-"a_color.xyz = ((texture (u_bloomTexture, v_texCoords).xyz * u_bloomIntensity) + ((texture (u_bloomNotBluredTexture, v_texCoords).xyz + tmpvar_2.xyz) * ssaof_1));\n"
+"a_color.xyz = ((texture (u_bloomTexture, v_texCoords).xyz * u_bloomIntensity) + (tmpvar_2.xyz * ssaof_1));\n"
+"if ((u_tonemapper == 0)) {\n"
+"a_color.xyz = (vec3(1.0, 1.0, 1.0) - exp((\n"
+"-(a_color.xyz)\n"
+"* u_exposure)));\n"
+"} else {\n"
+"if ((u_tonemapper == 1)) {\n"
 "vec3 color_3;\n"
 "color_3 = (a_color.xyz * u_exposure);\n"
 "mat3 tmpvar_4;\n"
@@ -32499,7 +32505,200 @@ namespace gl3d
 "vec3 tmpvar_6;\n"
 "tmpvar_6 = clamp (color_3, 0.0, 1.0);\n"
 "color_3 = tmpvar_6;\n"
-"a_color.xyz = pow (tmpvar_6, vec3(0.4545454, 0.4545454, 0.4545454));\n"
+"a_color.xyz = tmpvar_6;\n"
+"} else {\n"
+"if ((u_tonemapper == 2)) {\n"
+"vec3 ICh_7;\n"
+"vec3 XYZ_8;\n"
+"XYZ_8 = (mat3(0.4124564, 0.2126729, 0.0193339, 0.3575761, 0.7151522, 0.119192, 0.1804375, 0.072175, 0.9503041) * (a_color.xyz * u_exposure));\n"
+"XYZ_8 = (XYZ_8 * 140.0);\n"
+"XYZ_8.xy = ((vec2(1.15, 0.66) * XYZ_8.xy) - (vec2(0.15, -0.34) * XYZ_8.zx));\n"
+"vec3 x_9;\n"
+"x_9 = ((mat3(0.41479, -0.20151, -0.0166008, 0.579999, 1.12065, 0.2648, 0.014648, 0.0531008, 0.66848) * XYZ_8) / 10000.0);\n"
+"x_9 = (sign(x_9) * pow (abs(x_9), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_9 = (sign(x_9) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_9)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_9)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"vec3 tmpvar_10;\n"
+"tmpvar_10 = (mat3(0.0, 3.524, 0.199076, 1.0, -4.06671, 1.0968, 0.0, 0.542708, -1.29588) * x_9);\n"
+"vec3 x_11;\n"
+"x_11 = (sign(tmpvar_10.xxx) * pow (abs(tmpvar_10.xxx), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_11 = ((sign(x_11) * pow (\n"
+"((abs(x_11) - 0.8359375) / (18.85156 - (18.6875 * abs(x_11))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"float tmpvar_12;\n"
+"tmpvar_12 = (x_11.x / 140.0);\n"
+"float tmpvar_13;\n"
+"tmpvar_13 = sqrt(dot (tmpvar_10.yz, tmpvar_10.yz));\n"
+"float tmpvar_14;\n"
+"float tmpvar_15;\n"
+"tmpvar_15 = (min (abs(\n"
+"(tmpvar_10.z / tmpvar_10.y)\n"
+"), 1.0) / max (abs(\n"
+"(tmpvar_10.z / tmpvar_10.y)\n"
+"), 1.0));\n"
+"float tmpvar_16;\n"
+"tmpvar_16 = (tmpvar_15 * tmpvar_15);\n"
+"tmpvar_16 = (((\n"
+"((((\n"
+"((((-0.01213232 * tmpvar_16) + 0.05368138) * tmpvar_16) - 0.1173503)\n"
+"* tmpvar_16) + 0.1938925) * tmpvar_16) - 0.3326756)\n"
+"* tmpvar_16) + 0.9999793) * tmpvar_15);\n"
+"tmpvar_16 = (tmpvar_16 + (float(\n"
+"(abs((tmpvar_10.z / tmpvar_10.y)) > 1.0)\n"
+") * (\n"
+"(tmpvar_16 * -2.0)\n"
+"+ 1.570796)));\n"
+"tmpvar_14 = (tmpvar_16 * sign((tmpvar_10.z / tmpvar_10.y)));\n"
+"if ((abs(tmpvar_10.y) > (1e-8 * abs(tmpvar_10.z)))) {\n"
+"if ((tmpvar_10.y < 0.0)) {\n"
+"if ((tmpvar_10.z >= 0.0)) {\n"
+"tmpvar_14 += 3.141593;\n"
+"} else {\n"
+"tmpvar_14 = (tmpvar_14 - 3.141593);\n"
+"};\n"
+"};\n"
+"} else {\n"
+"tmpvar_14 = (sign(tmpvar_10.z) * 1.570796);\n"
+"};\n"
+"vec3 tmpvar_17;\n"
+"tmpvar_17.x = tmpvar_12;\n"
+"tmpvar_17.y = tmpvar_13;\n"
+"tmpvar_17.z = tmpvar_14;\n"
+"ICh_7.yz = tmpvar_17.yz;\n"
+"float tmpvar_18;\n"
+"tmpvar_18 = (1.04 * pow ((tmpvar_12 / \n"
+"(tmpvar_12 + 0.71)\n"
+"), 1.4));\n"
+"ICh_7.x = clamp (((tmpvar_18 * tmpvar_18) / (tmpvar_18 + 0.01)), 0.0, 1.0);\n"
+"vec3 XYZ_19;\n"
+"vec3 Iab_20;\n"
+"vec3 x_21;\n"
+"x_21 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_21 = (sign(x_21) * pow (abs(x_21), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_21 = (sign(x_21) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_21)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_21)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_20.x = x_21.x;\n"
+"Iab_20.y = (tmpvar_13 * cos(tmpvar_14));\n"
+"Iab_20.z = (tmpvar_13 * sin(tmpvar_14));\n"
+"vec3 tmpvar_22;\n"
+"tmpvar_22 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_20);\n"
+"vec3 x_23;\n"
+"x_23 = (sign(tmpvar_22) * pow (abs(tmpvar_22), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_23 = ((sign(x_23) * pow (\n"
+"((abs(x_23) - 0.8359375) / (18.85156 - (18.6875 * abs(x_23))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_24;\n"
+"tmpvar_24 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_23);\n"
+"XYZ_19.yz = tmpvar_24.yz;\n"
+"XYZ_19.x = ((tmpvar_24.x + (0.15 * tmpvar_24.z)) / 1.15);\n"
+"XYZ_19.y = ((tmpvar_24.y + (-0.34 * XYZ_19.x)) / 0.66);\n"
+"vec3 tmpvar_25;\n"
+"tmpvar_25 = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_19 / 140.0));\n"
+"bvec3 tmpvar_26;\n"
+"tmpvar_26 = greaterThanEqual (tmpvar_25, vec3(0.0, 0.0, 0.0));\n"
+"bool tmpvar_27;\n"
+"if (((tmpvar_26.x && tmpvar_26.y) && tmpvar_26.z)) {\n"
+"bvec3 tmpvar_28;\n"
+"tmpvar_28 = lessThanEqual (tmpvar_25, vec3(1.0, 1.0, 1.0));\n"
+"tmpvar_27 = ((tmpvar_28.x && tmpvar_28.y) && tmpvar_28.z);\n"
+"} else {\n"
+"tmpvar_27 = bool(0);\n"
+"};\n"
+"if (!(tmpvar_27)) {\n"
+"float i_29;\n"
+"float C_30;\n"
+"C_30 = ICh_7.y;\n"
+"ICh_7.y = (tmpvar_13 - (0.5 * tmpvar_13));\n"
+"i_29 = 0.25;\n"
+"while (true) {\n"
+"if ((i_29 < 0.00390625)) {\n"
+"break;\n"
+"};\n"
+"vec3 XYZ_31;\n"
+"vec3 Iab_32;\n"
+"vec3 x_33;\n"
+"x_33 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_33 = (sign(x_33) * pow (abs(x_33), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_33 = (sign(x_33) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_33)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_33)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_32.x = x_33.x;\n"
+"Iab_32.y = (ICh_7.y * cos(ICh_7.z));\n"
+"Iab_32.z = (ICh_7.y * sin(ICh_7.z));\n"
+"vec3 tmpvar_34;\n"
+"tmpvar_34 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_32);\n"
+"vec3 x_35;\n"
+"x_35 = (sign(tmpvar_34) * pow (abs(tmpvar_34), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_35 = ((sign(x_35) * pow (\n"
+"((abs(x_35) - 0.8359375) / (18.85156 - (18.6875 * abs(x_35))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_36;\n"
+"tmpvar_36 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_35);\n"
+"XYZ_31.yz = tmpvar_36.yz;\n"
+"XYZ_31.x = ((tmpvar_36.x + (0.15 * tmpvar_36.z)) / 1.15);\n"
+"XYZ_31.y = ((tmpvar_36.y + (-0.34 * XYZ_31.x)) / 0.66);\n"
+"vec3 tmpvar_37;\n"
+"tmpvar_37 = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_31 / 140.0));\n"
+"bvec3 tmpvar_38;\n"
+"tmpvar_38 = greaterThanEqual (tmpvar_37, vec3(0.0, 0.0, 0.0));\n"
+"bool tmpvar_39;\n"
+"if (((tmpvar_38.x && tmpvar_38.y) && tmpvar_38.z)) {\n"
+"bvec3 tmpvar_40;\n"
+"tmpvar_40 = lessThanEqual (tmpvar_37, vec3(1.0, 1.0, 1.0));\n"
+"tmpvar_39 = ((tmpvar_40.x && tmpvar_40.y) && tmpvar_40.z);\n"
+"} else {\n"
+"tmpvar_39 = bool(0);\n"
+"};\n"
+"float tmpvar_41;\n"
+"if (tmpvar_39) {\n"
+"tmpvar_41 = i_29;\n"
+"} else {\n"
+"tmpvar_41 = -(i_29);\n"
+"};\n"
+"ICh_7.y = (ICh_7.y + (tmpvar_41 * C_30));\n"
+"i_29 = (i_29 * 0.5);\n"
+"};\n"
+"};\n"
+"vec3 XYZ_42;\n"
+"vec3 Iab_43;\n"
+"vec3 x_44;\n"
+"x_44 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_44 = (sign(x_44) * pow (abs(x_44), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_44 = (sign(x_44) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_44)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_44)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_43.x = x_44.x;\n"
+"Iab_43.y = (ICh_7.y * cos(tmpvar_14));\n"
+"Iab_43.z = (ICh_7.y * sin(tmpvar_14));\n"
+"vec3 tmpvar_45;\n"
+"tmpvar_45 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_43);\n"
+"vec3 x_46;\n"
+"x_46 = (sign(tmpvar_45) * pow (abs(tmpvar_45), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_46 = ((sign(x_46) * pow (\n"
+"((abs(x_46) - 0.8359375) / (18.85156 - (18.6875 * abs(x_46))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_47;\n"
+"tmpvar_47 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_46);\n"
+"XYZ_42.yz = tmpvar_47.yz;\n"
+"XYZ_42.x = ((tmpvar_47.x + (0.15 * tmpvar_47.z)) / 1.15);\n"
+"XYZ_42.y = ((tmpvar_47.y + (-0.34 * XYZ_42.x)) / 0.66);\n"
+"a_color.xyz = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_42 / 140.0));\n"
+"};\n"
+"};\n"
+"};\n"
+"a_color.xyz = clamp ( (lessThan (a_color.xyz, vec3(0.0031308, 0.0031308, 0.0031308)), (a_color.xyz * vec3(12.92, 12.92, 12.92)), (\n"
+"(vec3(1.055, 1.055, 1.055) * pow (a_color.xyz, vec3(0.4166667, 0.4166667, 0.4166667)))\n"
+"- vec3(0.055, 0.055, 0.055))), 0.0, 1.0);\n"
 "a_color.w = tmpvar_2.w;\n"
 "}\n"},
 
@@ -32656,46 +32855,248 @@ namespace gl3d
 "uniform sampler2D u_texture;\n"
 "uniform float u_exposure;\n"
 "uniform float u_tresshold;\n"
+"uniform int u_tonemapper;\n"
 "void main ()\n"
 "{\n"
-"vec3 color_1;\n"
-"color_1 = (texture (u_texture, v_texCoords).xyz * u_exposure);\n"
-"mat3 tmpvar_2;\n"
-"tmpvar_2[0].x = 0.59719;\n"
-"tmpvar_2[1].x = 0.35458;\n"
-"tmpvar_2[2].x = 0.04823;\n"
-"tmpvar_2[0].y = 0.076;\n"
-"tmpvar_2[1].y = 0.90834;\n"
-"tmpvar_2[2].y = 0.01566;\n"
-"tmpvar_2[0].z = 0.0284;\n"
-"tmpvar_2[1].z = 0.13383;\n"
-"tmpvar_2[2].z = 0.83777;\n"
-"color_1 = (tmpvar_2 * color_1);\n"
-"mat3 tmpvar_3;\n"
-"tmpvar_3[0].x = 1.60475;\n"
-"tmpvar_3[1].x = -0.53108;\n"
-"tmpvar_3[2].x = -0.07367;\n"
-"tmpvar_3[0].y = -0.10208;\n"
-"tmpvar_3[1].y = 1.10813;\n"
-"tmpvar_3[2].y = -0.00605;\n"
-"tmpvar_3[0].z = -0.00327;\n"
-"tmpvar_3[1].z = -0.07276;\n"
-"tmpvar_3[2].z = 1.07602;\n"
-"color_1 = (tmpvar_3 * ((\n"
-"(color_1 * (color_1 + 0.0245786))\n"
+"vec3 hdrCorrectedColor_1;\n"
+"vec3 tmpvar_2;\n"
+"tmpvar_2 = texture (u_texture, v_texCoords).xyz;\n"
+"hdrCorrectedColor_1 = tmpvar_2;\n"
+"if ((u_tonemapper == 0)) {\n"
+"hdrCorrectedColor_1 = (vec3(1.0, 1.0, 1.0) - exp((\n"
+"-(tmpvar_2)\n"
+"* u_exposure)));\n"
+"} else {\n"
+"if ((u_tonemapper == 1)) {\n"
+"vec3 color_3;\n"
+"color_3 = (hdrCorrectedColor_1 * u_exposure);\n"
+"mat3 tmpvar_4;\n"
+"tmpvar_4[0].x = 0.59719;\n"
+"tmpvar_4[1].x = 0.35458;\n"
+"tmpvar_4[2].x = 0.04823;\n"
+"tmpvar_4[0].y = 0.076;\n"
+"tmpvar_4[1].y = 0.90834;\n"
+"tmpvar_4[2].y = 0.01566;\n"
+"tmpvar_4[0].z = 0.0284;\n"
+"tmpvar_4[1].z = 0.13383;\n"
+"tmpvar_4[2].z = 0.83777;\n"
+"color_3 = (tmpvar_4 * color_3);\n"
+"mat3 tmpvar_5;\n"
+"tmpvar_5[0].x = 1.60475;\n"
+"tmpvar_5[1].x = -0.53108;\n"
+"tmpvar_5[2].x = -0.07367;\n"
+"tmpvar_5[0].y = -0.10208;\n"
+"tmpvar_5[1].y = 1.10813;\n"
+"tmpvar_5[2].y = -0.00605;\n"
+"tmpvar_5[0].z = -0.00327;\n"
+"tmpvar_5[1].z = -0.07276;\n"
+"tmpvar_5[2].z = 1.07602;\n"
+"color_3 = (tmpvar_5 * ((\n"
+"(color_3 * (color_3 + 0.0245786))\n"
 "- 9.0537e-5) / (\n"
-"(color_1 * ((0.983729 * color_1) + 0.432951))\n"
+"(color_3 * ((0.983729 * color_3) + 0.432951))\n"
 "+ 0.238081)));\n"
-"vec3 tmpvar_4;\n"
-"tmpvar_4 = clamp (color_1, 0.0, 1.0);\n"
-"color_1 = tmpvar_4;\n"
-"float tmpvar_5;\n"
-"tmpvar_5 = dot (tmpvar_4, vec3(0.2126, 0.7152, 0.0722));\n"
-"if ((tmpvar_5 > u_tresshold)) {\n"
-"vec4 tmpvar_6;\n"
-"tmpvar_6.w = 1.0;\n"
-"tmpvar_6.xyz = tmpvar_4;\n"
-"a_outBloom = tmpvar_6;\n"
+"vec3 tmpvar_6;\n"
+"tmpvar_6 = clamp (color_3, 0.0, 1.0);\n"
+"color_3 = tmpvar_6;\n"
+"hdrCorrectedColor_1 = tmpvar_6;\n"
+"} else {\n"
+"if ((u_tonemapper == 2)) {\n"
+"vec3 ICh_7;\n"
+"vec3 XYZ_8;\n"
+"XYZ_8 = (mat3(0.4124564, 0.2126729, 0.0193339, 0.3575761, 0.7151522, 0.119192, 0.1804375, 0.072175, 0.9503041) * (hdrCorrectedColor_1 * u_exposure));\n"
+"XYZ_8 = (XYZ_8 * 140.0);\n"
+"XYZ_8.xy = ((vec2(1.15, 0.66) * XYZ_8.xy) - (vec2(0.15, -0.34) * XYZ_8.zx));\n"
+"vec3 x_9;\n"
+"x_9 = ((mat3(0.41479, -0.20151, -0.0166008, 0.579999, 1.12065, 0.2648, 0.014648, 0.0531008, 0.66848) * XYZ_8) / 10000.0);\n"
+"x_9 = (sign(x_9) * pow (abs(x_9), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_9 = (sign(x_9) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_9)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_9)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"vec3 tmpvar_10;\n"
+"tmpvar_10 = (mat3(0.0, 3.524, 0.199076, 1.0, -4.06671, 1.0968, 0.0, 0.542708, -1.29588) * x_9);\n"
+"vec3 x_11;\n"
+"x_11 = (sign(tmpvar_10.xxx) * pow (abs(tmpvar_10.xxx), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_11 = ((sign(x_11) * pow (\n"
+"((abs(x_11) - 0.8359375) / (18.85156 - (18.6875 * abs(x_11))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"float tmpvar_12;\n"
+"tmpvar_12 = (x_11.x / 140.0);\n"
+"float tmpvar_13;\n"
+"tmpvar_13 = sqrt(dot (tmpvar_10.yz, tmpvar_10.yz));\n"
+"float tmpvar_14;\n"
+"float tmpvar_15;\n"
+"tmpvar_15 = (min (abs(\n"
+"(tmpvar_10.z / tmpvar_10.y)\n"
+"), 1.0) / max (abs(\n"
+"(tmpvar_10.z / tmpvar_10.y)\n"
+"), 1.0));\n"
+"float tmpvar_16;\n"
+"tmpvar_16 = (tmpvar_15 * tmpvar_15);\n"
+"tmpvar_16 = (((\n"
+"((((\n"
+"((((-0.01213232 * tmpvar_16) + 0.05368138) * tmpvar_16) - 0.1173503)\n"
+"* tmpvar_16) + 0.1938925) * tmpvar_16) - 0.3326756)\n"
+"* tmpvar_16) + 0.9999793) * tmpvar_15);\n"
+"tmpvar_16 = (tmpvar_16 + (float(\n"
+"(abs((tmpvar_10.z / tmpvar_10.y)) > 1.0)\n"
+") * (\n"
+"(tmpvar_16 * -2.0)\n"
+"+ 1.570796)));\n"
+"tmpvar_14 = (tmpvar_16 * sign((tmpvar_10.z / tmpvar_10.y)));\n"
+"if ((abs(tmpvar_10.y) > (1e-8 * abs(tmpvar_10.z)))) {\n"
+"if ((tmpvar_10.y < 0.0)) {\n"
+"if ((tmpvar_10.z >= 0.0)) {\n"
+"tmpvar_14 += 3.141593;\n"
+"} else {\n"
+"tmpvar_14 = (tmpvar_14 - 3.141593);\n"
+"};\n"
+"};\n"
+"} else {\n"
+"tmpvar_14 = (sign(tmpvar_10.z) * 1.570796);\n"
+"};\n"
+"vec3 tmpvar_17;\n"
+"tmpvar_17.x = tmpvar_12;\n"
+"tmpvar_17.y = tmpvar_13;\n"
+"tmpvar_17.z = tmpvar_14;\n"
+"ICh_7.yz = tmpvar_17.yz;\n"
+"float tmpvar_18;\n"
+"tmpvar_18 = (1.04 * pow ((tmpvar_12 / \n"
+"(tmpvar_12 + 0.71)\n"
+"), 1.4));\n"
+"ICh_7.x = clamp (((tmpvar_18 * tmpvar_18) / (tmpvar_18 + 0.01)), 0.0, 1.0);\n"
+"vec3 XYZ_19;\n"
+"vec3 Iab_20;\n"
+"vec3 x_21;\n"
+"x_21 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_21 = (sign(x_21) * pow (abs(x_21), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_21 = (sign(x_21) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_21)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_21)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_20.x = x_21.x;\n"
+"Iab_20.y = (tmpvar_13 * cos(tmpvar_14));\n"
+"Iab_20.z = (tmpvar_13 * sin(tmpvar_14));\n"
+"vec3 tmpvar_22;\n"
+"tmpvar_22 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_20);\n"
+"vec3 x_23;\n"
+"x_23 = (sign(tmpvar_22) * pow (abs(tmpvar_22), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_23 = ((sign(x_23) * pow (\n"
+"((abs(x_23) - 0.8359375) / (18.85156 - (18.6875 * abs(x_23))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_24;\n"
+"tmpvar_24 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_23);\n"
+"XYZ_19.yz = tmpvar_24.yz;\n"
+"XYZ_19.x = ((tmpvar_24.x + (0.15 * tmpvar_24.z)) / 1.15);\n"
+"XYZ_19.y = ((tmpvar_24.y + (-0.34 * XYZ_19.x)) / 0.66);\n"
+"vec3 tmpvar_25;\n"
+"tmpvar_25 = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_19 / 140.0));\n"
+"bvec3 tmpvar_26;\n"
+"tmpvar_26 = greaterThanEqual (tmpvar_25, vec3(0.0, 0.0, 0.0));\n"
+"bool tmpvar_27;\n"
+"if (((tmpvar_26.x && tmpvar_26.y) && tmpvar_26.z)) {\n"
+"bvec3 tmpvar_28;\n"
+"tmpvar_28 = lessThanEqual (tmpvar_25, vec3(1.0, 1.0, 1.0));\n"
+"tmpvar_27 = ((tmpvar_28.x && tmpvar_28.y) && tmpvar_28.z);\n"
+"} else {\n"
+"tmpvar_27 = bool(0);\n"
+"};\n"
+"if (!(tmpvar_27)) {\n"
+"float i_29;\n"
+"float C_30;\n"
+"C_30 = ICh_7.y;\n"
+"ICh_7.y = (tmpvar_13 - (0.5 * tmpvar_13));\n"
+"i_29 = 0.25;\n"
+"while (true) {\n"
+"if ((i_29 < 0.00390625)) {\n"
+"break;\n"
+"};\n"
+"vec3 XYZ_31;\n"
+"vec3 Iab_32;\n"
+"vec3 x_33;\n"
+"x_33 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_33 = (sign(x_33) * pow (abs(x_33), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_33 = (sign(x_33) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_33)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_33)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_32.x = x_33.x;\n"
+"Iab_32.y = (ICh_7.y * cos(ICh_7.z));\n"
+"Iab_32.z = (ICh_7.y * sin(ICh_7.z));\n"
+"vec3 tmpvar_34;\n"
+"tmpvar_34 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_32);\n"
+"vec3 x_35;\n"
+"x_35 = (sign(tmpvar_34) * pow (abs(tmpvar_34), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_35 = ((sign(x_35) * pow (\n"
+"((abs(x_35) - 0.8359375) / (18.85156 - (18.6875 * abs(x_35))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_36;\n"
+"tmpvar_36 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_35);\n"
+"XYZ_31.yz = tmpvar_36.yz;\n"
+"XYZ_31.x = ((tmpvar_36.x + (0.15 * tmpvar_36.z)) / 1.15);\n"
+"XYZ_31.y = ((tmpvar_36.y + (-0.34 * XYZ_31.x)) / 0.66);\n"
+"vec3 tmpvar_37;\n"
+"tmpvar_37 = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_31 / 140.0));\n"
+"bvec3 tmpvar_38;\n"
+"tmpvar_38 = greaterThanEqual (tmpvar_37, vec3(0.0, 0.0, 0.0));\n"
+"bool tmpvar_39;\n"
+"if (((tmpvar_38.x && tmpvar_38.y) && tmpvar_38.z)) {\n"
+"bvec3 tmpvar_40;\n"
+"tmpvar_40 = lessThanEqual (tmpvar_37, vec3(1.0, 1.0, 1.0));\n"
+"tmpvar_39 = ((tmpvar_40.x && tmpvar_40.y) && tmpvar_40.z);\n"
+"} else {\n"
+"tmpvar_39 = bool(0);\n"
+"};\n"
+"float tmpvar_41;\n"
+"if (tmpvar_39) {\n"
+"tmpvar_41 = i_29;\n"
+"} else {\n"
+"tmpvar_41 = -(i_29);\n"
+"};\n"
+"ICh_7.y = (ICh_7.y + (tmpvar_41 * C_30));\n"
+"i_29 = (i_29 * 0.5);\n"
+"};\n"
+"};\n"
+"vec3 XYZ_42;\n"
+"vec3 Iab_43;\n"
+"vec3 x_44;\n"
+"x_44 = (vec3((ICh_7.x * 140.0)) / 10000.0);\n"
+"x_44 = (sign(x_44) * pow (abs(x_44), vec3(0.1593018, 0.1593018, 0.1593018)));\n"
+"x_44 = (sign(x_44) * pow ((\n"
+"(0.8359375 + (18.85156 * abs(x_44)))\n"
+"/ \n"
+"(1.0 + (18.6875 * abs(x_44)))\n"
+"), vec3(134.0344, 134.0344, 134.0344)));\n"
+"Iab_43.x = x_44.x;\n"
+"Iab_43.y = (ICh_7.y * cos(tmpvar_14));\n"
+"Iab_43.z = (ICh_7.y * sin(tmpvar_14));\n"
+"vec3 tmpvar_45;\n"
+"tmpvar_45 = (mat3(1.0, 1.0, 1.0, 0.2772, 0.0, 0.0426, 0.1161, 0.0, -0.7538) * Iab_43);\n"
+"vec3 x_46;\n"
+"x_46 = (sign(tmpvar_45) * pow (abs(tmpvar_45), vec3(0.007460773, 0.007460773, 0.007460773)));\n"
+"x_46 = ((sign(x_46) * pow (\n"
+"((abs(x_46) - 0.8359375) / (18.85156 - (18.6875 * abs(x_46))))\n"
+", vec3(6.277395, 6.277395, 6.277395))) * 10000.0);\n"
+"vec3 tmpvar_47;\n"
+"tmpvar_47 = (mat3(1.92423, 0.35032, -0.09098, -1.00479, 0.72648, -0.31273, 0.03765, -0.06538, 1.52277) * x_46);\n"
+"XYZ_42.yz = tmpvar_47.yz;\n"
+"XYZ_42.x = ((tmpvar_47.x + (0.15 * tmpvar_47.z)) / 1.15);\n"
+"XYZ_42.y = ((tmpvar_47.y + (-0.34 * XYZ_42.x)) / 0.66);\n"
+"hdrCorrectedColor_1 = (mat3(3.240454, -0.969266, 0.0556434, -1.537138, 1.876011, -0.2040259, -0.4985314, 0.041556, 1.057225) * (XYZ_42 / 140.0));\n"
+"};\n"
+"};\n"
+"};\n"
+"float tmpvar_48;\n"
+"tmpvar_48 = dot (hdrCorrectedColor_1, vec3(0.2126, 0.7152, 0.0722));\n"
+"if ((tmpvar_48 > u_tresshold)) {\n"
+"vec4 tmpvar_49;\n"
+"tmpvar_49.w = 1.0;\n"
+"tmpvar_49.xyz = hdrCorrectedColor_1;\n"
+"a_outBloom = tmpvar_49;\n"
 "} else {\n"
 "a_outBloom = vec4(0.0, 0.0, 0.0, 1.0);\n"
 "};\n"
@@ -33636,7 +34037,7 @@ namespace gl3d
 "}\n"
 "void main()\n"
 "{\n"
-"int materialIndex = texture(u_materialIndex, v_texCoords).r;\n"
+"int materialIndex = textureLod(u_materialIndex, v_texCoords, 0).r;\n"
 "if(materialIndex == 0)\n"
 "{\n"
 "if(u_transparentPass != 0)\n"
@@ -33806,15 +34207,16 @@ namespace gl3d
 "* ambientOcclution; \n"
 "if(u_transparentPass != 0)\n"
 "{\n"
-"a_outColor = vec4(color.rgb + emissive.rgb, albedoAlpha.a);\n"
-"a_outBloom = vec4(emissive.rgb, albedoAlpha.a);\n"
+"float a = albedoAlpha.a;\n"
+"a = 1-a;\n"
+"a *= dot(viewDir, normal);\n"
+"a = 1-a;\n"
+"a_outColor = vec4(color.rgb + emissive.rgb, a);\n"
+"a_outBloom = vec4(emissive.rgb, a);\n"
 "}else\n"
 "{\n"
 "a_outColor = vec4(color.rgb + emissive.rgb, 1);\n"
 "a_outBloom = vec4(emissive.rgb, 1);\n"
-"}\n"
-"if(u_hasLastFrameTexture!=0)\n"
-"{\n"
 "}\n"
 "}\n"},
 
@@ -33935,7 +34337,7 @@ namespace gl3d
 "}else\n"
 "{\n"
 "float alphaData = texture2D(sampler2D(albedoSampler), v_texCoord).a;\n"
-"if(alphaData*255 < 1)\n"
+"if(alphaData*255 < 250)\n"
 "discard;\n"
 "}\n"
 "vec3 noMappedNorals = normalize(v_normals);\n"
@@ -34488,7 +34890,7 @@ namespace gl3d
 	GLint createShaderFromFile(const char* name, GLenum shaderType, ErrorReporter &errorReporter, FileOpener &fileOpener)
 	{
 		bool err = 0;
-		auto fileContent = fileOpener(name, err);
+		auto fileContent = fileOpener((std::string("../../../src/") + name).c_str(), err);
 
 		if (err)
 		{
@@ -36425,6 +36827,9 @@ namespace gl3d
 
 		Material m;
 		m.id_ = id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		m.lastFoundPos_ = internal.materialIndexes.size()-1;
+	#endif
 		return m;
 
 	}
@@ -36446,6 +36851,7 @@ namespace gl3d
 	gl3d::Material createMaterialFromLoadedData(gl3d::Renderer3D &renderer, 
 		objl::Material &mat, const std::string &path, GLuint frameBuffer, int quality)
 	{
+		//todo mat.ke also mat. emissive texture
 		auto m = renderer.createMaterial(quality, mat.Kd, mat.roughness,
 			mat.metallic, mat.ao, 0, mat.name);
 
@@ -37152,6 +37558,9 @@ namespace gl3d
 		internal.graphicModels.push_back(returnModel);
 		Model m;
 		m.id_ = id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		m.lastFoundPos_ = internal.graphicModelsIndexes.size() - 1;
+	#endif
 		return m;
 	}
 
@@ -37252,8 +37661,7 @@ namespace gl3d
 				}else
 				{
 					//if no material loaded for this object create a new default one
-					gm.material = createMaterial(quality, glm::vec4{ 0.8f,0.8f,0.8f, 1.0f }, 0.5f, 0.f, 1.f, 0.f,
-						"default material");
+					gm.material = createMaterial(quality, glm::vec4{ 0.8f,0.8f,0.8f, 1.0f }, 0.5f, 0.f, 1.f, 0.f, "default material");
 				}
 				
 				gm.ownMaterial = true;
@@ -37381,7 +37789,13 @@ namespace gl3d
 
 		internal.perFrameFlags.shouldUpdatePointShadows = true;
 
-		return { id };
+		PointLight pl = {};
+		pl.id_ = id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		pl.lastFoundPos_ = internal.pointLightIndexes.size() - 1;
+	#endif
+
+		return { pl };
 	}
 
 	void Renderer3D::detletePointLight(PointLight& l)
@@ -37576,7 +37990,13 @@ namespace gl3d
 
 		internal.perFrameFlags.shouldUpdateDirectionalShadows = true;
 
-		return { id };
+		DirectionalLight dl = {};
+		dl.id_ = id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		dl.lastFoundPos_ = internal.directionalLightIndexes.size() - 1;
+	#endif
+
+		return {dl};
 	}
 
 	void Renderer3D::deleteDirectionalLight(DirectionalLight& l)
@@ -37751,7 +38171,13 @@ namespace gl3d
 		internal.spotLightIndexes.push_back(id);
 		internal.spotLights.push_back(light);
 
-		return { id };
+		SpotLight sl = {};
+		sl.id_ = id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		sl.lastFoundPos_ = internal.spotLightIndexes.size() - 1;
+	#endif
+
+		return {sl};
 	}
 
 	//todo check
@@ -38001,7 +38427,10 @@ namespace gl3d
 
 		Entity e;
 		e.id_ = id;
-		
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		e.lastFoundPos_ = internal.entitiesIndexes.size() - 1;
+	#endif
+
 		setEntityModel(e, m);
 		
 		return e;
@@ -38052,7 +38481,11 @@ namespace gl3d
 
 		Entity ret;
 		ret.id_ = id;
-		return ret;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		ret.lastFoundPos_ = internal.entitiesIndexes.size() - 1;
+	#endif
+
+		return {ret};
 	}
 
 	void Renderer3D::setEntityModel(Entity& e, Model m)
@@ -38852,6 +39285,7 @@ namespace gl3d
 		}
 
 		return directionalShadows.frustumSplits[cascadeIndex];
+		// TODO: insert return statement here
 	}
 
 	bool &Renderer3D::chromaticAberationEnabeled()
@@ -39430,116 +39864,82 @@ namespace gl3d
 
 	}
 
-	int Renderer3D::InternalStruct::getMaterialIndex(Material m)
+	template<class T>
+	bool tryCachedPosition(T &t, std::vector<int> &indexes)
 	{
-		int id = m.id_;
-		if (id <= 0) { return -1; }
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
 
-		auto found = std::find(materialIndexes.begin(), materialIndexes.end(), id);
-		if (found == materialIndexes.end())
+		if (t.lastFoundPos_ < indexes.size())
 		{
-			gl3dAssertComment(found != materialIndexes.end(), "invalid material");
-			return -1;
+			auto id = indexes[t.lastFoundPos_];
+			if (id == t.id_)
+			{
+				return true;
+			}
 		}
-		id = found - materialIndexes.begin();
-
-		return id;
+	#endif
+		return 0;
 	}
 
-	int Renderer3D::InternalStruct::getModelIndex(Model o)
+	template<class T>
+	int getIndex(T &t, std::vector<int> &indexes, const char *errMessage)
 	{
-		int id = o.id_;
-		if (id <= 0) { return -1; }
-
-		auto found = std::find(graphicModelsIndexes.begin(), graphicModelsIndexes.end(), id);
-		if (found == graphicModelsIndexes.end())
+		if (tryCachedPosition(t, indexes))
 		{
-			gl3dAssertComment(found != graphicModelsIndexes.end(), "invalid object");
-			return -1;
+			return t.lastFoundPos_;
 		}
-		id = found - graphicModelsIndexes.begin();
-	
-		return id;
-	}
 
-	int Renderer3D::InternalStruct::getTextureIndex(Texture t)
-	{
 		int id = t.id_;
 		if (id <= 0) { return -1; }
 
-		auto found = std::find(loadedTexturesIndexes.begin(), loadedTexturesIndexes.end(), id);
-		if (found == loadedTexturesIndexes.end())
+		auto found = std::find(indexes.begin(), indexes.end(), id);
+		if (found == indexes.end())
 		{
-			gl3dAssertComment(found != loadedTexturesIndexes.end(), "invalid texture");
+			gl3dAssertComment(found != indexes.end(), errMessage);
 			return -1;
 		}
-		id = found - loadedTexturesIndexes.begin();
+		int pos = found - indexes.begin();
 
-		return id;
+	#if GL3D_OPTIMIZE_CACHED_SEARCH != 0
+		t.lastFoundPos_ = pos;
+	#endif
+
+		return pos;
 	}
 
-	int Renderer3D::InternalStruct::getEntityIndex(Entity t)
+	int Renderer3D::InternalStruct::getMaterialIndex(Material &m)
 	{
-		int id = t.id_;
-		if (id <= 0) { return -1; }
-
-		auto found = std::find(entitiesIndexes.begin(), entitiesIndexes.end(), id);
-		if (found == entitiesIndexes.end())
-		{
-			gl3dAssertComment(found != entitiesIndexes.end(), "invalid entity");
-			return -1;
-		}
-		id = found - entitiesIndexes.begin();
-
-		return id;
+		return getIndex(m, materialIndexes, "invalid material");
 	}
 
-	int Renderer3D::InternalStruct::getSpotLightIndex(SpotLight l)
+	int Renderer3D::InternalStruct::getModelIndex(Model &o)
 	{
-		int id = l.id_;
-		if (id <= 0) { return -1; }
-
-		auto found = std::find(spotLightIndexes.begin(), spotLightIndexes.end(), id);
-		if (found == spotLightIndexes.end())
-		{
-			gl3dAssertComment(found != spotLightIndexes.end(), "invalid spot light");
-			return -1;
-		}
-		id = found - spotLightIndexes.begin();
-
-		return id;
+		return getIndex(o, graphicModelsIndexes, "invalid model");
 	}
 
-	int Renderer3D::InternalStruct::getPointLightIndex(PointLight l)
+	int Renderer3D::InternalStruct::getTextureIndex(Texture &t)
 	{
-		int id = l.id_;
-		if (id <= 0) { return -1; }
-
-		auto found = std::find(pointLightIndexes.begin(), pointLightIndexes.end(), id);
-		if (found == pointLightIndexes.end())
-		{
-			gl3dAssertComment(found != pointLightIndexes.end(), "invalid point light");
-			return -1;
-		}
-		id = found - pointLightIndexes.begin();
-
-		return id;
+		return getIndex(t, loadedTexturesIndexes, "invalid texture");
 	}
 
-	int Renderer3D::InternalStruct::getDirectionalLightIndex(DirectionalLight l)
+	int Renderer3D::InternalStruct::getEntityIndex(Entity &e)
 	{
-		int id = l.id_;
-		if (id <= 0) { return -1; }
+		return getIndex(e, entitiesIndexes, "invalid entity");
+	}
 
-		auto found = std::find(directionalLightIndexes.begin(), directionalLightIndexes.end(), id);
-		if (found == directionalLightIndexes.end())
-		{
-			gl3dAssertComment(found != directionalLightIndexes.end(), "invalid directional light");
-			return -1;
-		}
-		id = found - directionalLightIndexes.begin();
+	int Renderer3D::InternalStruct::getSpotLightIndex(SpotLight &l)
+	{
+		return getIndex(l, spotLightIndexes, "invalid enspot lighttity");
+	}
 
-		return id;
+	int Renderer3D::InternalStruct::getPointLightIndex(PointLight &l)
+	{
+		return getIndex(l, pointLightIndexes, "invalid point light");
+	}
+
+	int Renderer3D::InternalStruct::getDirectionalLightIndex(DirectionalLight &l)
+	{
+		return getIndex(l, directionalLightIndexes, "invalid directional light");
 	}
 
 	bool Renderer3D::InternalStruct::getMaterialData(Material m, MaterialValues* gpuMaterial, std::string* name, TextureDataForMaterial* textureData)
@@ -39842,6 +40242,7 @@ namespace gl3d
 		auto projectionMatrix		= camera.getProjectionMatrix();
 		auto worldProjectionMatrix	= projectionMatrix * worldToViewMatrix;
 
+		//todo pass last and new camera matrix to the ssr to better calculate the ssr color
 		#pragma region check camera changes
 
 			bool cameraChanged = false;
@@ -40177,6 +40578,65 @@ namespace gl3d
 				}
 
 			}
+		#pragma endregion
+
+
+		#pragma region setup bindless textures
+			//todo cache stuff?
+			for (int i = 0; i < internal.materials.size(); i++)
+			{
+				auto &textures = internal.materialTexturesData[i];
+
+				auto &material = internal.materials[i];
+
+				auto albedoData = internal.getTextureIndex(textures.albedoTexture);
+				if (albedoData >= 0)
+				{
+					material.albedoSampler = internal.loadedTexturesBindlessHandle[albedoData];
+				}
+				else
+				{
+					material.albedoSampler = 0;
+				}
+
+				auto emmisiveData = internal.getTextureIndex(textures.emissiveTexture);
+				if (emmisiveData >= 0)
+				{
+					material.emmissiveSampler = internal.loadedTexturesBindlessHandle[emmisiveData];
+				}
+				else
+				{
+					material.emmissiveSampler = 0;
+				}
+
+				auto materialData = internal.getTextureIndex(textures.pbrTexture.texture);
+				if (materialData >= 0)
+				{
+					material.rmaSampler = internal.loadedTexturesBindlessHandle[materialData];
+					material.rmaLoaded = textures.pbrTexture.RMA_loadedTextures;
+				}
+				else
+				{
+					material.rmaSampler = 0;
+					material.rmaLoaded = 0;
+				}
+
+			}
+
+		#pragma endregion
+
+
+		#pragma region send material data
+			//material buffer //todo lazyness or sthing, don't forget to also change it on clearing all data
+			if (internal.materials.size())
+			{
+				glBindBuffer(GL_SHADER_STORAGE_BUFFER, internal.lightShader.materialBlockBuffer);
+				glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialValues) * internal.materials.size()
+					, &internal.materials[0], GL_STREAM_DRAW);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, internal::MaterialBlockBinding,
+					internal.lightShader.materialBlockBuffer);
+			}
+
 		#pragma endregion
 
 
@@ -40913,50 +41373,6 @@ namespace gl3d
 		#pragma endregion
 
 
-		#pragma region setup bindless textures
-			//todo cache stuff?
-			for (int i=0; i< internal.materials.size(); i++)
-			{
-				auto &textures = internal.materialTexturesData[i];
-
-				auto& material = internal.materials[i];
-
-				auto albedoData = internal.getTextureIndex(textures.albedoTexture);
-				if (albedoData >= 0)
-				{
-					material.albedoSampler = internal.loadedTexturesBindlessHandle[albedoData];
-				}
-				else
-				{
-					material.albedoSampler = 0;
-				}
-				
-				auto emmisiveData = internal.getTextureIndex(textures.emissiveTexture);
-				if (emmisiveData >= 0)
-				{
-					material.emmissiveSampler = internal.loadedTexturesBindlessHandle[emmisiveData];
-				}
-				else
-				{
-					material.emmissiveSampler = 0;
-				}
-
-				auto materialData = internal.getTextureIndex(textures.pbrTexture.texture);
-				if (materialData >= 0)
-				{
-					material.rmaSampler = internal.loadedTexturesBindlessHandle[materialData];
-					material.rmaLoaded = textures.pbrTexture.RMA_loadedTextures;
-				}
-				else
-				{
-					material.rmaSampler = 0;
-					material.rmaLoaded = 0;
-				}
-
-			}
-
-		#pragma endregion
-
 		#pragma region clear gbuffer
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, internal.gBuffer.gBuffer);
@@ -41093,19 +41509,7 @@ namespace gl3d
 		}
 		#pragma endregion 
 
-	#pragma region send material data
-		//material buffer //todo lazyness or sthing, don't forget to also change it on clearing all data
-		if (internal.materials.size())
-		{
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, internal.lightShader.materialBlockBuffer);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(MaterialValues) *internal.materials.size()
-				, &internal.materials[0], GL_STREAM_DRAW);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, internal::MaterialBlockBinding,
-				internal.lightShader.materialBlockBuffer);
-		}
-		
-	#pragma endregion
-
+		//todo check if all shaders are loaded of not return 0 on init func
 		auto gBufferRender = [&](bool transparentPhaze)
 		{
 			#pragma region stuff to be bound for rendering the geometry
@@ -41466,7 +41870,7 @@ namespace gl3d
 		if (internal.lightShader.useSSAO)
 		{
 
-			if (1)
+			if (internal.lightShader.useTheHbaoImplementation)
 			{
 				//ssao
 
@@ -41572,6 +41976,8 @@ namespace gl3d
 				internal.lightShader.lightPassUniformBlockCpuData.exposure);
 			glUniform1f(postProcess.filterShader.u_tresshold,
 				internal.lightShader.lightPassUniformBlockCpuData.bloomTresshold);
+			glUniform1i(postProcess.filterShader.u_tonemapper,
+				tonemapper);
 			glUniform1i(postProcess.filterShader.u_texture, 0);
 
 			glActiveTexture(GL_TEXTURE0);
@@ -41806,6 +42212,9 @@ namespace gl3d
 		}
 
 		glUseProgram(postProcess.postProcessShader.id);
+
+
+		glUniform1i(postProcess.u_tonemapper, tonemapper);
 
 		//color data
 		glUniform1i(postProcess.u_colorTexture, 0);
@@ -42360,7 +42769,7 @@ namespace gl3d
 		u_useSSAO = getUniform(postProcessShader.id, "u_useSSAO", errorReporter);
 		u_ssaoExponent = getUniform(postProcessShader.id, "u_ssaoExponent", errorReporter);
 		u_ssao = getUniform(postProcessShader.id, "u_ssao", errorReporter);
-
+		u_tonemapper = getUniform(postProcessShader.id, "u_tonemapper", errorReporter);
 
 		gausianBLurShader.loadShaderProgramFromFile("shaders/drawQuads.vert", "shaders/postProcess/gausianBlur.frag", errorReporter, fileOpener);
 		u_toBlurcolorInput = getUniform(gausianBLurShader.id, "u_toBlurcolorInput", errorReporter);
@@ -42372,6 +42781,7 @@ namespace gl3d
 		filterShader.u_exposure = getUniform(filterShader.shader.id, "u_exposure", errorReporter);
 		filterShader.u_texture = getUniform(filterShader.shader.id, "u_texture", errorReporter);
 		filterShader.u_tresshold = getUniform(filterShader.shader.id, "u_tresshold", errorReporter);
+		filterShader.u_tonemapper = getUniform(filterShader.shader.id, "u_tonemapper", errorReporter);
 
 		addMips.shader.loadShaderProgramFromFile("shaders/drawQuads.vert", "shaders/postProcess/addMips.frag", errorReporter, fileOpener);
 		addMips.u_mip = getUniform(addMips.shader.id, "u_mip", errorReporter);

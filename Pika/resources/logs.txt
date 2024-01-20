@@ -1,13 +1,3 @@
-#2024-01-20 03:02:36: Reloaded dll
-#2024-01-20 03:02:40: Created container: MarioKart
-#2024-01-20 03:03:01: Destroyed continer: MarioKart #1
-#2024-01-20 03:07:09: Created container: MarioKart
-#2024-01-20 03:07:25: Destroyed continer: MarioKart #2
-#2024-01-20 03:17:26[warning]: Couldn't reloaded dll
-#2024-01-20 03:17:27: Reloaded dll
-#2024-01-20 03:17:31: Created container: MarioKart
-#2024-01-20 03:19:11[warning]: Couldn't reloaded dll
-#2024-01-20 03:19:14: Reloaded dll
-#2024-01-20 03:20:25: Destroyed continer: MarioKart #3
-#2024-01-20 03:36:44: Created container: MarioKart
-#2024-01-20 03:37:09: Destroyed continer: MarioKart #4
+#2024-01-20 04:45:54: Created container: MarioKart
+#2024-01-20 04:46:53: Reloaded dll
+#2024-01-20 04:47:30: Destroyed continer: MarioKart #1

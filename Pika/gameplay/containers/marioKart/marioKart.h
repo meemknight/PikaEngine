@@ -22,6 +22,18 @@ struct MarioKart: public Container
 	int currentMarker = 0;
 	glm::vec2 markerDelta = {};
 
+	float acceleration = 0;
+
+	bool freeCamera = 0;
+	bool showGuides = 0;
+	
+	std::vector<float> coinTimers;
+	int score = 0;
+
+
+	gl2d::Font font;
+	gl2d::Renderer2D renderer2d;
+
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
@@ -45,18 +57,18 @@ struct MarioKart: public Container
 	gl3d::Entity marioEntity;
 	gl3d::Model carModel;
 	gl3d::Entity carEntity;
-	bool first = 1;
-	float carPos = 0;
+	gl3d::Model coinModel;
 
+	float spinTimer = 0;
 
 	std::vector<gl3d::Entity> spheres;
+	std::vector<gl3d::Entity> coins;
 
 	pika::gl3d::General3DEditor editor;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-
-		//todo add hbao
+		renderer2d.create(requestedInfo.requestedFBO.fbo);
 
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
@@ -64,9 +76,12 @@ struct MarioKart: public Container
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
 		renderer.frustumCulling = false;
+		renderer.tonemapper = 2;
 
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
 		
+
+		font = pika::gl2d::loadFont(PIKA_RESOURCES_PATH "mcDungeons/CommodorePixeled.ttf", requestedInfo);
 
 		//const char *names[6] =
 		//{PIKA_RESOURCES_PATH "/skyBoxes/ocean/right.jpg",
@@ -84,6 +99,8 @@ struct MarioKart: public Container
 		renderer.skyBox.color = glm::vec3(240.f / 255.f);
 
 		editor.loadFromFile(renderer, PIKA_RESOURCES_PATH "/marioKart/settings.gl3d", requestedInfo);
+		renderer.internal.lightShader.useTheHbaoImplementation = true;
+
 
 		renderer.createDirectionalLight({-0.155,-0.907,0.391}, glm::vec3{270.f/255.f});
 		renderer.getDirectionalShadowCascadesFrustumSplit(0) = 0.10;
@@ -103,6 +120,9 @@ struct MarioKart: public Container
 		marioModel = renderer.loadModel("C:/Users/meemk/Desktop/mario/mario2.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1.f);
 		
+		coinModel = renderer.loadModel("C:/Users/meemk/Desktop/coin/coin.obj",
+			gl3d::TextureLoadQuality::maxQuality, 1.f);
+
 		//todo error by gl3d when creating an entity with no model loaded
 		sphereModel = renderer.loadModel(PIKA_RESOURCES_PATH "/marioKart/sphere.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
@@ -110,8 +130,8 @@ struct MarioKart: public Container
 		worldEntity = renderer.createEntity(worldModel, {});
 
 
-		carEntity = renderer.createEntity(carModel);
-		marioEntity = renderer.createEntity(marioModel);
+		carEntity = renderer.createEntity(carModel, {}, false);
+		marioEntity = renderer.createEntity(marioModel, {}, false);
 
 		size_t size = 0;
 		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin", size))
@@ -131,10 +151,41 @@ struct MarioKart: public Container
 
 		}
 
+		size = 0;
+		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/coins.bin", size))
+		{
+
+			if (size % sizeof(glm::vec3) == 0 && size)
+			{
+				std::vector<glm::vec3> positions;
+				positions.resize(size / sizeof(glm::vec3));
+
+				requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "/marioKart/coins.bin",
+					positions.data(), size);
+
+				for (auto &p : positions)
+				{
+					coins.push_back(renderer.createEntity(coinModel, gl3d::Transform{p}, false));
+					coinTimers.push_back(0);
+				}
+			}
+			else
+			{
+				requestedInfo.consoleWrite("Error, Mario kart coins file corrupted\n");
+			}
+
+		}
+
+
+
 		if (markers.size() >= 2)
 		{
 			auto pos = markers[0].position;
 			carPosition = pos;
+		}
+		else
+		{
+			return false;
 		}
 		//
 
@@ -145,6 +196,8 @@ struct MarioKart: public Container
 		RequestedContainerInfo &requestedInfo)
 	{
 	#pragma region init stuff
+		renderer2d.updateWindowMetrics(windowState.windowW, windowState.windowH);
+
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
@@ -195,7 +248,7 @@ struct MarioKart: public Container
 			spheres.push_back(renderer.createEntity(sphereModel, {}, false));
 		}
 		
-		if (0)
+		if (showGuides)
 		{
 			int currentSphere = 0;
 			for (auto m : markers)
@@ -251,22 +304,68 @@ struct MarioKart: public Container
 
 	#pragma endregion
 
+	#pragma region coins
+
+		spinTimer += input.deltaTime * 3.f;
+
+		if (spinTimer > 2 * 3.141592)
+		{
+			spinTimer -= 2 * 3.141592;
+		}
+
+		int coinCount = 0;
+		for (auto &c : coins)
+		{
+			auto t = renderer.getEntityTransform(c);
+			t.rotation.y = spinTimer;
+			renderer.setEntityTransform(c, t);
+
+			if (coinTimers[coinCount] > 0)
+			{
+				coinTimers[coinCount] -= input.deltaTime;
+				if (coinTimers[coinCount] <= 0)
+				{
+					coinTimers[coinCount] = 0;
+					renderer.setEntityVisible(c, true);
+				}
+			}
+			else
+			{
+				if (glm::distance(carPosition, t.position) < 2.f)
+				{
+					coinTimers[coinCount] = 10;
+					renderer.setEntityVisible(c, false);
+					score++;
+				}
+			}
+
+
+			coinCount++;
+		}
+
+	#pragma endregion
+
+
 	#pragma region car
 
 		float tilt = 0;
 
 		if (markers.size() >= 2)
 		{
-			
+
 			float moveForward = 0;
-			if (input.buttons[pika::Button::Up].held())
+			if (input.buttons[pika::Button::Up].held() || (input.buttons[pika::Button::W].held() && !freeCamera))
 			{
 				moveForward = 1;
 			}
-			if (input.buttons[pika::Button::Down].held())
+			if (input.buttons[pika::Button::Down].held() || (input.buttons[pika::Button::S].held() && !freeCamera))
 			{
 				moveForward -= 1;
 			}
+
+			acceleration += moveForward * input.deltaTime * 3.f;
+
+			acceleration = glm::clamp(acceleration, -10.f, 20.f);
 
 			auto isLeft2 = [](glm::vec2 a, glm::vec2 b, glm::vec2 c)
 			{
@@ -278,16 +377,30 @@ struct MarioKart: public Container
 				return isLeft2({a.x,a.z}, {b.x,b.z}, {c.x, c.z});
 			};
 
-			if (moveForward)
+			if (!moveForward)
+			{
+				if (acceleration > 0)
+				{
+					acceleration -= input.deltaTime;
+					if (acceleration < 0) { acceleration = 0; }
+				}
+				else if (acceleration < 0)
+				{
+					acceleration += input.deltaTime;
+					if (acceleration > 0) { acceleration = 0; }
+				}
+			}
+
+			if (acceleration)
 			{
 				carPosition.y = 0;
 
 				float leftRight = 0;
-				if (input.buttons[pika::Button::Left].held())
+				if (input.buttons[pika::Button::Left].held() || (input.buttons[pika::Button::A].held() && !freeCamera))
 				{
 					leftRight = 1;
 				}
-				if (input.buttons[pika::Button::Right].held())
+				if (input.buttons[pika::Button::Right].held() || (input.buttons[pika::Button::D].held() && !freeCamera))
 				{
 					leftRight -= 1;
 				}
@@ -301,41 +414,39 @@ struct MarioKart: public Container
 				}
 
 
-
 				//auto oldPos = carPosition;
 				//carPosition += 
-				auto move = moveDirection * input.deltaTime * moveForward * 8.f;
+				auto move = moveDirection * input.deltaTime * acceleration;
 				
 				//glm::vec2 newDelta = markerDelta + glm::vec2(move.x, move.y);
 
 				auto m1 = markers[carMarker];
-				auto m2 = markers[(carMarker + 1)%markers.size()];
-
-				if (!isLeft(getLeft(m2), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
-				{
-					carMarker++;
-					carMarker = carMarker % markers.size();
-				}
-				else if (isLeft(getLeft(m1), getRight(m1), carPosition + glm::vec3(move.x, 0, move.z)))
-				{
-					carMarker--;
-					if (carMarker < 0) { carMarker = markers.size() - 1; }
-				}
+				auto m2 = markers[(carMarker + 1) % markers.size()];
 
 				if (!isLeft(getLeft(m1), getLeft(m2), carPosition + glm::vec3(move.x, 0, move.z)))
 				{
-
+					acceleration = -acceleration*0.2;
 				}
 				else if (isLeft(getRight(m1), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
 				{
-
+					acceleration = -acceleration * 0.2;
 				}
 				else
 				{
+
+					if (!isLeft(getLeft(m2), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+					{
+						carMarker++;
+						carMarker = carMarker % markers.size();
+					}
+					else if (isLeft(getLeft(m1), getRight(m1), carPosition + glm::vec3(move.x, 0, move.z)))
+					{
+						carMarker--;
+						if (carMarker < 0) { carMarker = markers.size() - 1; }
+					}
+
 					carPosition += glm::vec3(move.x, 0, move.z);
 				}
-
-
 				
 
 				//float dist1 = glm::distance(glm::vec2(m1.position.x, m1.position.z), 
@@ -404,22 +515,40 @@ struct MarioKart: public Container
 			renderer.setEntityTransform(marioEntity, t);
 		}
 
-		renderer.camera.position = carPosition + glm::vec3(0, 4.5, 0) - moveDirection * 5.5f;
+			
+		if (input.buttons[pika::Button::P].pressed())
+		{
+			freeCamera = !freeCamera;
+		}
+		if (input.buttons[pika::Button::O].pressed())
+		{
+			showGuides = !showGuides;
+		}
 
-		renderer.camera.up = glm::vec3(glm::rotate(-tilt*2.f, glm::vec3(0, 0, 1)) * glm::vec4(0, 1, 0, 1));
 
-		renderer.camera.viewDirection = glm::normalize(moveDirection + glm::vec3(0, -0.5, 0));
+		if (freeCamera)
+		{
+			editor.update(requestedInfo.requestedImguiIds, renderer, input, cameraSpeed, requestedInfo, {windowState.windowW,windowState.windowH});
+		}
+		else
+		{
+			renderer.camera.position = carPosition + glm::vec3(0, 4.5, 0) - moveDirection * 5.5f;
+			renderer.camera.up = glm::vec3(glm::rotate(-tilt * 2.f, glm::vec3(0, 0, 1)) * glm::vec4(0, 1, 0, 1));
+			renderer.camera.viewDirection = glm::normalize(moveDirection + glm::vec3(0, -0.5, 0));
+		}
+	
 
 
 	#pragma endregion
 			
-		//editor.update(requestedInfo.requestedImguiIds, renderer, input, cameraSpeed, requestedInfo, {windowState.windowW,windowState.windowH});
-
-
 
 
 		renderer.render(input.deltaTime);
 		glDisable(GL_DEPTH_TEST);
+
+		renderer2d.renderText({100, 50}, std::to_string(score).c_str(), font, Colors_White);
+
+		renderer2d.flush();
 
 
 		return true;

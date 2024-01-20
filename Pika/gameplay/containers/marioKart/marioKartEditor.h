@@ -34,6 +34,9 @@ struct MarioKartEditor: public Container
 	int currentMarker = 0;
 	glm::vec2 markerDelta = {};
 
+	int currentCoin = 0;
+
+
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
@@ -55,12 +58,14 @@ struct MarioKartEditor: public Container
 	gl3d::Entity worldEntity;
 	gl3d::Model carModel;
 	gl3d::Entity carEntity;
-	bool first = 1;
-	float carPos = 0;
+	gl3d::Model coinModel;
 
 
 	std::vector<gl3d::Entity> spheres;
 
+	std::vector<gl3d::Entity> coins;
+
+	
 	pika::gl3d::General3DEditor editor;
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
@@ -110,6 +115,10 @@ struct MarioKartEditor: public Container
 		carModel = renderer.loadModel("C:/Users/meemk/Desktop/car/Standard Kart.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1.f);
 
+		coinModel = renderer.loadModel("C:/Users/meemk/Desktop/coin/coin.obj",
+			gl3d::TextureLoadQuality::maxQuality, 1.f);
+		
+
 		//todo error by gl3d when creating an entity with no model loaded
 		sphereModel = renderer.loadModel(PIKA_RESOURCES_PATH "/marioKart/sphere.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
@@ -117,7 +126,7 @@ struct MarioKartEditor: public Container
 		worldEntity = renderer.createEntity(worldModel, {});
 
 
-		carEntity = renderer.createEntity(carModel);
+		carEntity = renderer.createEntity(carModel, {}, false);
 
 		size_t size = 0;
 		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin", size))
@@ -143,6 +152,32 @@ struct MarioKartEditor: public Container
 			carPosition = pos;
 		}
 		//
+
+		size = 0;
+		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/coins.bin", size))
+		{
+
+			if (size % sizeof(glm::vec3) == 0 && size)
+			{
+				std::vector<glm::vec3> positions;
+				positions.resize(size / sizeof(glm::vec3));
+
+				requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "/marioKart/coins.bin",
+					positions.data(), size);
+
+				for (auto &p : positions)
+				{
+					coins.push_back(renderer.createEntity(coinModel, gl3d::Transform{p}, false));
+				}
+			}
+			else
+			{
+				requestedInfo.consoleWrite("Error, Mario kart coins file corrupted\n");
+			}
+
+		}
+
+
 
 		return true;
 	}
@@ -399,7 +434,6 @@ struct MarioKartEditor: public Container
 	#pragma endregion
 			
 
-
 		ImGui::PushID(requestedInfo.requestedImguiIds);
 		if (ImGui::Begin("General3DEditor"))
 		{
@@ -444,6 +478,14 @@ struct MarioKartEditor: public Container
 					m.isAir = isAir;
 
 					ImGui::Separator();
+
+					if (ImGui::Button("Remove Current Marker"))
+					{
+						markers.erase(markers.begin() + currentMarker);
+					}
+
+					ImGui::Separator();
+
 				}
 
 				if (ImGui::Button("Add Marker"))
@@ -455,19 +497,67 @@ struct MarioKartEditor: public Container
 					currentMarker = markers.size() - 1;
 				}
 
-				if (ImGui::Button("Remove Current Marker"))
-				{
-					markers.erase(markers.begin() + currentMarker);
-				}
-
 
 				ImGui::Separator();
+
+				ImGui::Text("Coins: %d", int(coins.size()));
+
+				if (!coins.empty())
+				{
+					ImGui::InputInt("CurrentCoin: ", &currentCoin);
+
+					currentCoin = std::clamp(currentCoin, 0, int(coins.size() - 1));
+
+					glm::vec3 p = renderer.getEntityTransform(coins[currentCoin]).position;
+
+					ImGui::Separator();
+
+					ImGui::DragFloat3("Coin position: ", &p[0], 0.02);
+
+					renderer.setEntityTransform(coins[currentCoin], gl3d::Transform{p});
+
+					ImGui::Separator();
+
+					if (ImGui::Button("Remove Current Coin"))
+					{
+						coins.erase(coins.begin() + currentCoin);
+					}
+					ImGui::Separator();
+
+				}
+
+				if (ImGui::Button("Add Coin"))
+				{
+					coins.push_back(renderer.createEntity(coinModel, gl3d::Transform{renderer.camera.position},
+						false));
+					currentCoin = coins.size() - 1;
+				}
+				
+
+				ImGui::Separator();
+
 
 
 				if (ImGui::Button("Save"))
 				{
 					requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin",
 						markers.data(), markers.size() * sizeof(RoadMarker));
+
+
+					std::vector<glm::vec3> coinsPositions;
+
+					for (auto &c : coins)
+					{
+						auto t = renderer.getEntityTransform(c);
+
+						coinsPositions.push_back(t.position);
+
+						requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "/marioKart/coins.bin",
+							coinsPositions.data(), coinsPositions.size() * sizeof(glm::vec3));
+					}
+
+
+
 				}
 
 
