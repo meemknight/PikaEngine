@@ -14,9 +14,7 @@
 struct MarioKart: public Container
 {
 
-	glm::vec3 carPosition = {};
-	glm::vec3 moveDirection = glm::normalize(glm::vec3{0,0,-1});
-	int carMarker = 0;
+
 
 	std::vector<MarioKartEditor::RoadMarker> markers;
 	int currentMarker = 0;
@@ -33,6 +31,26 @@ struct MarioKart: public Container
 
 	gl2d::Font font;
 	gl2d::Renderer2D renderer2d;
+
+
+	struct Pilot
+	{
+		gl3d::Entity car;
+		gl3d::Entity character;
+		gl3d::Entity wheels[4];
+		glm::vec3 carPosition = {};
+		glm::vec3 moveDirection = glm::normalize(glm::vec3{0,0,-1});
+		int carMarker = 0;
+	};
+
+	struct GameplayData
+	{
+		int gameplayPhaze = 0; //0 = animation
+		float animationTimer = 9.f;
+
+	}gameplayData;
+
+	Pilot player;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -54,10 +72,10 @@ struct MarioKart: public Container
 	gl3d::Model sphereModel;
 	gl3d::Model wheelModel;
 	gl3d::Model marioModel;
+	gl3d::Model bowserModel;
+	gl3d::Model booModel;
 	gl3d::Entity worldEntity;
-	gl3d::Entity marioEntity;
 	gl3d::Model carModel;
-	gl3d::Entity carEntity;
 	gl3d::Model coinModel;
 
 	float spinTimer = 0;
@@ -65,7 +83,6 @@ struct MarioKart: public Container
 	std::vector<gl3d::Entity> spheres;
 	std::vector<gl3d::Entity> coins;
 
-	gl3d::Entity wheels[4];
 
 	pika::gl3d::General3DEditor editor;
 
@@ -114,13 +131,19 @@ struct MarioKart: public Container
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj");
 		//worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/N64 Royal Raceway.obj",
 		//	gl3d::TextureLoadQuality::maxQuality, 1);
-		worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/MarioRaceEnv.obj",
+		worldModel = renderer.loadModel("C:/Users/meemk/Desktop/map2/MarioRaceEnv2.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1);
 		
 		carModel = renderer.loadModel("C:/Users/meemk/Desktop/car/Standard Kart.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1.f);
 
 		marioModel = renderer.loadModel("C:/Users/meemk/Desktop/mario/mario2.obj",
+			gl3d::TextureLoadQuality::maxQuality, 1.f);
+
+		bowserModel = renderer.loadModel("C:/Users/meemk/Desktop/Bowser/bowser.obj",
+			gl3d::TextureLoadQuality::maxQuality, 1.f);
+
+		booModel = renderer.loadModel("C:/Users/meemk/Desktop/Boo/boo.obj",
 			gl3d::TextureLoadQuality::maxQuality, 1.f);
 		
 		coinModel = renderer.loadModel("C:/Users/meemk/Desktop/coin/coin.obj",
@@ -137,8 +160,8 @@ struct MarioKart: public Container
 		worldEntity = renderer.createEntity(worldModel, {});
 
 
-		carEntity = renderer.createEntity(carModel, {}, false);
-		marioEntity = renderer.createEntity(marioModel, {}, false);
+		player.car = renderer.createEntity(carModel, {}, false);
+		player.character = renderer.createEntity(marioModel, {}, false);
 
 		size_t size = 0;
 		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin", size))
@@ -185,13 +208,13 @@ struct MarioKart: public Container
 
 		for (int i = 0; i < 4; i++)
 		{
-			wheels[i] = renderer.createEntity(wheelModel, {}, false);
+			player.wheels[i] = renderer.createEntity(wheelModel, {}, false);
 		}
 
 		if (markers.size() >= 2)
 		{
 			auto pos = markers[0].position;
-			carPosition = pos;
+			player.carPosition = pos;
 		}
 		else
 		{
@@ -341,7 +364,7 @@ struct MarioKart: public Container
 			}
 			else
 			{
-				if (glm::distance(carPosition, t.position) < 2.f)
+				if (glm::distance(player.carPosition, t.position) < 1.f)
 				{
 					coinTimers[coinCount] = 10;
 					renderer.setEntityVisible(c, false);
@@ -360,7 +383,8 @@ struct MarioKart: public Container
 
 		float tilt = 0;
 
-		if (markers.size() >= 2)
+		//input
+		if (markers.size() >= 2 && gameplayData.gameplayPhaze == 1)
 		{
 
 			float moveForward = 0;
@@ -403,7 +427,7 @@ struct MarioKart: public Container
 
 			if (acceleration)
 			{
-				carPosition.y = 0;
+				player.carPosition.y = 0;
 
 				float leftRight = 0;
 				if (input.buttons[pika::Button::Left].held() || (input.buttons[pika::Button::A].held() && !freeCamera))
@@ -417,45 +441,46 @@ struct MarioKart: public Container
 
 				if (leftRight)
 				{
-					moveDirection = 
-						glm::rotate(input.deltaTime * leftRight * 2.f, glm::vec3{0,1,0}) * glm::vec4(moveDirection, 1);
+					player.moveDirection =
+						glm::rotate(input.deltaTime * leftRight * 2.f, glm::vec3{0,1,0}) * 
+						glm::vec4(player.moveDirection, 1);
 
-					moveDirection = glm::normalize(moveDirection);
+					player.moveDirection = glm::normalize(player.moveDirection);
 				}
 
 
 				//auto oldPos = carPosition;
 				//carPosition += 
-				auto move = moveDirection * input.deltaTime * acceleration;
+				auto move = player.moveDirection * input.deltaTime * acceleration;
 				
 				//glm::vec2 newDelta = markerDelta + glm::vec2(move.x, move.y);
 
-				auto m1 = markers[carMarker];
-				auto m2 = markers[(carMarker + 1) % markers.size()];
+				auto m1 = markers[player.carMarker];
+				auto m2 = markers[(player.carMarker + 1) % markers.size()];
 
-				if (!isLeft(getLeft(m1), getLeft(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+				if (!isLeft(getLeft(m1), getLeft(m2), player.carPosition + glm::vec3(move.x, 0, move.z)))
 				{
 					acceleration = -acceleration*0.2;
 				}
-				else if (isLeft(getRight(m1), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+				else if (isLeft(getRight(m1), getRight(m2), player.carPosition + glm::vec3(move.x, 0, move.z)))
 				{
 					acceleration = -acceleration * 0.2;
 				}
 				else
 				{
 
-					if (!isLeft(getLeft(m2), getRight(m2), carPosition + glm::vec3(move.x, 0, move.z)))
+					if (!isLeft(getLeft(m2), getRight(m2), player.carPosition + glm::vec3(move.x, 0, move.z)))
 					{
-						carMarker++;
-						carMarker = carMarker % markers.size();
+						player.carMarker++;
+						player.carMarker = player.carMarker % markers.size();
 					}
-					else if (isLeft(getLeft(m1), getRight(m1), carPosition + glm::vec3(move.x, 0, move.z)))
+					else if (isLeft(getLeft(m1), getRight(m1), player.carPosition + glm::vec3(move.x, 0, move.z)))
 					{
-						carMarker--;
-						if (carMarker < 0) { carMarker = markers.size() - 1; }
+						player.carMarker--;
+						if (player.carMarker < 0) { player.carMarker = markers.size() - 1; }
 					}
 
-					carPosition += glm::vec3(move.x, 0, move.z);
+					player.carPosition += glm::vec3(move.x, 0, move.z);
 				}
 				
 
@@ -493,62 +518,69 @@ struct MarioKart: public Container
 
 			}
 
-			auto m1 = markers[carMarker];
-			auto m2 = markers[(carMarker + 1) % markers.size()];
 
+			auto updateCar = [&](Pilot &pilot)
 			{
-				glm::vec3 roadLine = m2.position - m1.position;
-				glm::vec3 p = carPosition - m1.position; p.y = 0;
-				p.y = 0;
-				roadLine.y = 0;
+				auto m1 = markers[pilot.carMarker];
+				auto m2 = markers[(pilot.carMarker + 1) % markers.size()];
 
-				auto projPoint = glm::dot(p, roadLine) / glm::length(roadLine);
+				{
+					glm::vec3 roadLine = m2.position - m1.position;
+					glm::vec3 p = pilot.carPosition - m1.position; p.y = 0;
+					p.y = 0;
+					roadLine.y = 0;
 
-				float l = glm::length(projPoint);
+					auto projPoint = glm::dot(p, roadLine) / glm::length(roadLine);
 
-				float final = l / glm::length(roadLine);
+					float l = glm::length(projPoint);
 
-				carPosition.y = glm::mix(m1.position.y, m2.position.y, glm::clamp(final, 0.f, 1.f));
-				tilt = glm::mix(m1.tilt, m2.tilt, glm::clamp(final, 0.f, 1.f));
-				//carPosition.y = m1.position.y;
-			}
+					float final = l / glm::length(roadLine);
 
-			glm::vec3 offset(0, 0.3, 0);
+					pilot.carPosition.y = glm::mix(m1.position.y, m2.position.y, glm::clamp(final, 0.f, 1.f));
+					tilt = glm::mix(m1.tilt, m2.tilt, glm::clamp(final, 0.f, 1.f));
+					//carPosition.y = m1.position.y;
+				}
 
-			float angle = std::atan2(moveDirection.z, -moveDirection.x) - glm::radians(90.f);
+				glm::vec3 offset(0, 0.18, 0);
 
-			gl3d::Transform t;
-			t.position = carPosition + offset;
-			t.rotation.y = angle;
-			t.rotation.z = -tilt;
-			renderer.setEntityTransform(carEntity, t);
-			renderer.setEntityTransform(marioEntity, t);
+				float angle = std::atan2(pilot.moveDirection.z, -pilot.moveDirection.x) - glm::radians(90.f);
 
-			static float wheelTimer = 0;
-			wheelTimer += input.deltaTime * acceleration;
+				gl3d::Transform t;
+				t.position = pilot.carPosition + offset;
+				t.rotation.y = angle;
+				t.rotation.z = -tilt;
+				t.scale = glm::vec3(0.30);
+				renderer.setEntityTransform(pilot.car, t);
+				renderer.setEntityTransform(pilot.character, t);
 
-			t.scale =glm::vec3(0.065);
-			for (int i = 0; i < 4; i++)
-			{
-				//auto t2 = t;
-				glm::vec3 pos[4] = {glm::vec3(8.2, 0, 11.0),
-					glm::vec3(8.2, 0, -11.0),
-					glm::vec3(-8.2, 0, 11.0),
-					glm::vec3(-8.2, 0, -11.0),
-				};
-				
-				auto mat = t.getTransformMatrix();
-				mat = mat * glm::translate(pos[i]);
-				auto t2 = gl3d::Transform{};
-				t2.setFromMatrix(mat);
-				
-				t2.rotation.x = wheelTimer;
-				
+				static float wheelTimer = 0;
+				wheelTimer += input.deltaTime * acceleration;
 
-				renderer.setEntityTransform(wheels[i], t2);
+				t.scale *= glm::vec3(0.065);
+				for (int i = 0; i < 4; i++)
+				{
+					//auto t2 = t;
+					glm::vec3 pos[4] = {glm::vec3(8.2, 0, 11.0),
+						glm::vec3(8.2, 0, -11.0),
+						glm::vec3(-8.2, 0, 11.0),
+						glm::vec3(-8.2, 0, -11.0),
+					};
+
+					auto mat = t.getTransformMatrix();
+					mat = mat * glm::translate(pos[i]);
+					auto t2 = gl3d::Transform{};
+					t2.setFromMatrix(mat);
+
+					t2.rotation.x = wheelTimer;
 
 
-			}
+					renderer.setEntityTransform(pilot.wheels[i], t2);
+
+
+				}
+			};
+
+			updateCar(player);
 			
 		}
 
@@ -562,16 +594,59 @@ struct MarioKart: public Container
 			showGuides = !showGuides;
 		}
 
-
-		if (freeCamera)
+		if (gameplayData.gameplayPhaze == 0)
 		{
-			editor.update(requestedInfo.requestedImguiIds, renderer, input, cameraSpeed, requestedInfo, {windowState.windowW,windowState.windowH});
+			gameplayData.animationTimer -= input.deltaTime;
+
+			if (gameplayData.animationTimer <= 0)
+			{
+				gameplayData.gameplayPhaze = 1;
+			}
+			else
+			{
+				if (gameplayData.animationTimer > 6.f)
+				{
+					float normalized = glm::clamp((gameplayData.animationTimer-6.f) / 3.f, 0.f, 1.f);
+					renderer.camera.position = glm::mix(glm::vec3(8.9, 18.26, -2), glm::vec3(0, 20, -10),
+						1 - normalized);
+					renderer.camera.viewDirection = glm::normalize(glm::vec3{-0.963, 0.0186, 0.266});
+				}else if (gameplayData.animationTimer > 3.f)
+				{
+					float normalized = glm::clamp((gameplayData.animationTimer - 3.f) / 3.f, 0.f, 1.f);
+					renderer.camera.position = glm::mix(glm::vec3(13, 18, -64), glm::vec3(35, 19, -55),
+						1 - normalized);
+					renderer.camera.viewDirection = glm::normalize(glm::vec3{0.980, -0.0136, 0.142});
+				}
+				else
+				{
+					float normalized = glm::clamp((gameplayData.animationTimer) / 3.f, 0.f, 1.f);
+					renderer.camera.position = glm::mix(glm::vec3(38,20,32), glm::vec3(46,17,28),
+						1 - normalized);
+					renderer.camera.viewDirection = glm::normalize(glm::vec3{0.158, -0.161, -0.974});
+				}
+
+				
+			}
+
+			//8.9 18.26, -2    -> -3, 24, -11
+			//view: -0.963, 0.0186, 0.266
+
+			//13, 10, -64 ->  45, 19, -53
+			//view: 0.975, -0.0905, 0.201
 		}
 		else
 		{
-			renderer.camera.position = carPosition + glm::vec3(0, 4.5, 0) - moveDirection * 5.5f;
-			renderer.camera.up = glm::vec3(glm::rotate(-tilt * 2.f, glm::vec3(0, 0, 1)) * glm::vec4(0, 1, 0, 1));
-			renderer.camera.viewDirection = glm::normalize(moveDirection + glm::vec3(0, -0.5, 0));
+			if (freeCamera)
+			{
+				editor.update(requestedInfo.requestedImguiIds, renderer, input, cameraSpeed, requestedInfo, {windowState.windowW,windowState.windowH});
+			}
+			else
+			{
+				renderer.camera.position = player.carPosition + glm::vec3(0, 1.5, 0) - player.moveDirection *
+					(1.5f + glm::clamp(acceleration / 15.f, 0.f, 1.f) * 1.0f);
+				renderer.camera.up = glm::vec3(glm::rotate(-tilt * 2.f, glm::vec3(0, 0, 1)) * glm::vec4(0, 1, 0, 1));
+				renderer.camera.viewDirection = glm::normalize(player.moveDirection + glm::vec3(0, -0.4, 0));
+			}
 		}
 	
 

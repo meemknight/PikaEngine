@@ -567,6 +567,12 @@ struct MarioKartEditor: public Container
 			{
 				ImGui::Text("Current marker: %d", carMarker);
 			}
+
+			ImGui::Text("Camera Position: %f, %f, %f", renderer.camera.position.x, renderer.camera.position.y,
+				renderer.camera.position.z);
+
+			ImGui::Text("Camera View: %f, %f, %f", renderer.camera.viewDirection.x, renderer.camera.viewDirection.y,
+				renderer.camera.viewDirection.z);
 		
 		}
 		ImGui::End();
