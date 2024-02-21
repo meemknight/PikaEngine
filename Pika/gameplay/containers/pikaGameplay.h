@@ -64,6 +64,20 @@ struct Gameplay : public Container
 	{
 		//todo keep window on top stuff
 
+
+
+
+
+		if (input.buttons[pika::Button::A].released())
+		{
+			//.. A button was released
+		}
+
+
+
+
+
+
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		if (pika::shortcut(input, "Ctrl + S"))
@@ -82,7 +96,6 @@ struct Gameplay : public Container
 		}
 
 		requestedInfo.consoleWrite(input.typedInput);
-
 
 		if (input.buttons[pika::Button::P].held())
 		{

@@ -25,6 +25,6 @@ void main()
 
 	//color.rgb = vec3(length(color.rgb));
 
-	color = texture2D(u_sampler, v_texture);
-	color.a = 1;
+	//color = texture2D(u_sampler, v_texture);
+	//color.a = 1;
 }

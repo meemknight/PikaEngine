@@ -253,14 +253,11 @@ struct GameplayRenderer
 				}
 		}
 
-		
-
 
 	}
 
 	void followPlayer(mario::Player &p, pika::Input &input, pika::WindowState &windowState)
 	{
-		//todo update gl2d this function
 		renderer.currentCamera.follow(p.position.getCenter(), input.deltaTime * 3, 0.0001, 0.2, windowState.windowW, windowState.windowH);
 
 
@@ -271,7 +268,7 @@ struct GameplayRenderer
 		glm::vec4 pos(p.position.position, 1, 1);
 		//pos.y -= 1 / 8.f;
 		pos.x -= 1 / 8.f;
-		renderer.renderRectangle(pos, marioTexture,
+		renderer.renderRectangle(pos, marioTexture, Colors_White, {}, 0.f, 
 			p.movingRight ? glm::vec4(0, 1, 1, 0) : glm::vec4(1, 1, 0, 0));
 	}
 

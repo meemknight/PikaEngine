@@ -41,6 +41,8 @@ struct MarioKart: public Container
 		glm::vec3 carPosition = {};
 		glm::vec3 moveDirection = glm::normalize(glm::vec3{0,0,-1});
 		int carMarker = 0;
+		float randomSpeed = 1;
+		float randomSpeedTimer = (rand()%10)/5.f;
 	};
 
 	struct GameplayData
@@ -51,6 +53,11 @@ struct MarioKart: public Container
 	}gameplayData;
 
 	Pilot player;
+
+	Pilot bowser;
+	Pilot boo;
+
+
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -163,6 +170,12 @@ struct MarioKart: public Container
 		player.car = renderer.createEntity(carModel, {}, false);
 		player.character = renderer.createEntity(marioModel, {}, false);
 
+		bowser.car = renderer.createEntity(carModel, {}, false);
+		bowser.character = renderer.createEntity(bowserModel, {}, false);
+
+		boo.car = renderer.createEntity(carModel, {}, false);
+		boo.character = renderer.createEntity(booModel, {}, false);
+
 		size_t size = 0;
 		if (requestedInfo.getFileSizeBinary(PIKA_RESOURCES_PATH "/marioKart/markers.bin", size))
 		{
@@ -209,12 +222,20 @@ struct MarioKart: public Container
 		for (int i = 0; i < 4; i++)
 		{
 			player.wheels[i] = renderer.createEntity(wheelModel, {}, false);
+			bowser.wheels[i] = renderer.createEntity(wheelModel, {}, false);
+			boo.wheels[i] = renderer.createEntity(wheelModel, {}, false);
 		}
 
 		if (markers.size() >= 2)
 		{
 			auto pos = markers[0].position;
 			player.carPosition = pos;
+
+
+			auto leftVector = -glm::normalize(glm::cross(markers[1].position - markers[0].position, glm::vec3(0, 1, 0)));
+
+			bowser.carPosition = pos + leftVector * 1.f;
+			boo.carPosition = pos - leftVector * 1.f;
 		}
 		else
 		{
@@ -384,7 +405,7 @@ struct MarioKart: public Container
 		float tilt = 0;
 
 		//input
-		if (markers.size() >= 2 && gameplayData.gameplayPhaze == 1)
+		if (markers.size() >= 2)
 		{
 
 			float moveForward = 0;
@@ -410,6 +431,12 @@ struct MarioKart: public Container
 			{
 				return isLeft2({a.x,a.z}, {b.x,b.z}, {c.x, c.z});
 			};
+
+			if (gameplayData.gameplayPhaze != 1)
+			{
+				moveForward = 0;
+				acceleration = 0;
+			}
 
 			if (!moveForward)
 			{
@@ -519,14 +546,76 @@ struct MarioKart: public Container
 			}
 
 
-			auto updateCar = [&](Pilot &pilot)
+			auto updateCar = [&](Pilot &pilot, bool enemy, float enemySpeed = 0)
 			{
 				auto m1 = markers[pilot.carMarker];
 				auto m2 = markers[(pilot.carMarker + 1) % markers.size()];
 
+				if (enemy)
+				{
+
+					pilot.randomSpeedTimer -= input.deltaTime;
+					if (pilot.randomSpeedTimer < 0)
+					{
+						pilot.randomSpeedTimer = (rand() % 20) / 5.f;
+						pilot.randomSpeed = rand() % 5 + 6;
+					}
+
+
+					if (enemySpeed)
+					{
+						glm::vec3 roadLine = m2.position - m1.position;
+						glm::vec3 p = pilot.carPosition - m1.position;
+						p.y = 0;
+						roadLine.y = 0;
+						auto projPoint = glm::dot(p, roadLine) / glm::length(roadLine);
+						float l = glm::length(projPoint);
+						float final = l / glm::length(roadLine);
+
+						glm::vec3 direction = glm::normalize(roadLine);
+						//pilot.moveDirection = direction;
+
+
+						//auto oldPos = carPosition;
+						//carPosition += 
+						auto move = direction * enemySpeed;
+
+						//glm::vec2 newDelta = markerDelta + glm::vec2(move.x, move.y);
+
+						auto m1 = markers[pilot.carMarker];
+						auto m2 = markers[(pilot.carMarker + 1) % markers.size()];
+
+						if (!isLeft(getLeft(m1), getLeft(m2), pilot.carPosition + glm::vec3(move.x, 0, move.z)))
+						{
+							acceleration = -acceleration * 0.2;
+						}
+						else if (isLeft(getRight(m1), getRight(m2), pilot.carPosition + glm::vec3(move.x, 0, move.z)))
+						{
+							acceleration = -acceleration * 0.2;
+						}
+						else
+						{
+
+							if (!isLeft(getLeft(m2), getRight(m2), pilot.carPosition + glm::vec3(move.x, 0, move.z)))
+							{
+								pilot.carMarker++;
+								pilot.carMarker = pilot.carMarker % markers.size();
+							}
+							else if (isLeft(getLeft(m1), getRight(m1), pilot.carPosition + glm::vec3(move.x, 0, move.z)))
+							{
+								pilot.carMarker--;
+								if (pilot.carMarker < 0) { pilot.carMarker = markers.size() - 1; }
+							}
+
+							pilot.carPosition += glm::vec3(move.x, 0, move.z);
+						}
+					}
+
+				}
+
 				{
 					glm::vec3 roadLine = m2.position - m1.position;
-					glm::vec3 p = pilot.carPosition - m1.position; p.y = 0;
+					glm::vec3 p = pilot.carPosition - m1.position;
 					p.y = 0;
 					roadLine.y = 0;
 
@@ -554,7 +643,14 @@ struct MarioKart: public Container
 				renderer.setEntityTransform(pilot.character, t);
 
 				static float wheelTimer = 0;
-				wheelTimer += input.deltaTime * acceleration;
+				if (enemy)
+				{
+					wheelTimer += input.deltaTime * enemySpeed;
+				}
+				else
+				{
+					wheelTimer += input.deltaTime * acceleration;
+				}
 
 				t.scale *= glm::vec3(0.065);
 				for (int i = 0; i < 4; i++)
@@ -580,9 +676,14 @@ struct MarioKart: public Container
 				}
 			};
 
-			updateCar(player);
-			
+
+
+			updateCar(player, false);
+			updateCar(bowser, true, (gameplayData.gameplayPhaze == 1) * input.deltaTime * bowser.randomSpeed);
+			updateCar(boo, true, (gameplayData.gameplayPhaze == 1) * input.deltaTime * boo.randomSpeed);
+
 		}
+
 
 			
 		if (input.buttons[pika::Button::P].pressed())

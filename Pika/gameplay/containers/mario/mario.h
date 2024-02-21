@@ -132,8 +132,8 @@ struct Mario: public Container
 		renderer.update(input, windowState, simulator);
 		renderer.followPlayer(player, input, windowState);
 		renderer.drawPlayer(player);
-		//renderer.render();
-
+		
+		
 		renderer.renderer.flushFBO(fbo);
 		renderer.renderer.pushCamera();
 		renderer.renderer.pushShader(postProcessShader);
@@ -141,6 +141,9 @@ struct Mario: public Container
 		renderer.renderer.flush();
 		renderer.renderer.popShader();
 		renderer.renderer.popCamera();
+
+		renderer.render();
+
 
 		return true;
 	}

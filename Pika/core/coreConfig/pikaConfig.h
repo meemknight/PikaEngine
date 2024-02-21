@@ -28,7 +28,7 @@
 #define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionDevelopment
 //#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::assertFunctionToLog
 //#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION pika::assert::terminate
-//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION //remove all asserts in production
+//#define PIKA_INTERNAL_CURRENT_ASSERT_FUNCTION //remove all asserts in production (I don't recommand this)
 
 
 
