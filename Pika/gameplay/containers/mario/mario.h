@@ -33,6 +33,8 @@ struct Mario: public Container
 
 		info.requestImguiFbo = true; //todo this should not affect the compatibility of input recording
 
+		info.openOnApplicationStartup = true;
+
 		return info;
 	}
 

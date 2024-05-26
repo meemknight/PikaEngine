@@ -761,7 +761,6 @@ bool pika::ContainerManager::reloadDll(pika::LoadedDll &loadedDll, pika::PikaWin
 					}
 					else
 					{
-						
 						size_t id = *(size_t *)container.pointer;
 
 						freeContainerStuff(container);

@@ -301,11 +301,7 @@ struct Holloknight: public Container
 
 		}
 
-		//for (int i = 0; i < 10; i++)
-		//{
-		//	blocks[i].create(world, {1 + sin(i) * 5, -1.5 * i, 1,1}, 0, b2BodyType::b2_dynamicBody);
-		//}
-
+	
 		character.physicalBody.create(world, {10, 2, 0.6f,1}, 0, b2BodyType::b2_dynamicBody);
 		character.spriteDimensions = glm::vec4{0,0,1,1};
 		character.physicalBody.dynamicBody->SetFixedRotation(true);
@@ -590,6 +586,14 @@ struct Holloknight: public Container
 	#pragma region imgui
 		{
 			ImGui::Begin("Game Editor");
+
+			if (ImGui::Button("Spawn"))
+			{
+				for (int i = 0; i < 10; i++)
+				{
+					blocks[i].create(world, {1 + sin(i) * 5, -1.5 * i, 1,1}, 0, b2BodyType::b2_dynamicBody);
+				}
+			}
 
 			ImGui::DragFloat2("Camera pos", &renderer.currentCamera.position[0], 0.001);
 			ImGui::DragFloat("Camera zoom", &renderer.currentCamera.zoom, 0.5, 10, 1000);

@@ -663,7 +663,6 @@ struct McDungeonsGameplay: public Container
 			renderer.setEntityModel(entity, model);
 		}
 
-
 	#pragma region gameplay
 
 	#pragma region player
