@@ -1,6 +1,2 @@
-#2024-05-26 17:19:13: Created container: Bezie
-#2024-05-26 17:19:25[warning]: Couldn't reloaded dll
-#2024-05-26 17:19:26: Reloaded dll
-#2024-05-26 17:25:00[warning]: Couldn't reloaded dll
-#2024-05-26 17:25:01: Reloaded dll
-#2024-05-26 17:26:48: Destroyed continer: Bezie #1
+#2024-06-09 13:26:30: Created container: MarioNeuralTrainer
+#2024-06-09 13:35:34: Destroyed continer: MarioNeuralTrainer #1

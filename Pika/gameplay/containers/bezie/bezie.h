@@ -214,20 +214,20 @@ struct Bezie : public Container
 			t = renderer3D.getEntityTransform(sphereEntity);
 			float beziePoint = anim;
 
-			//for (int i = 0; i < 100; i++)
-			//{
-			//	auto rez = bezie(pg1, pg2, pg3, pg4, i / 100.f);
-			//
-			//	auto closeness = (rez.x - anim);
-			//
-			//	if (closeness < 0.01)
-			//	{
-			//		beziePoint = rez.y;
-			//		graphPoint = rez;
-			//	}
-			//}
-			beziePoint = bezie(pg1, pg2, pg3, pg4, anim).y;
-			graphPoint = bezie(pg1, pg2, pg3, pg4, anim);
+			for (int i = 0; i < 100; i++)
+			{
+				auto rez = bezie(pg1, pg2, pg3, pg4, i / 100.f);
+			
+				auto closeness = (rez.x - anim);
+			
+				if (closeness < 0.01)
+				{
+					beziePoint = rez.y;
+					graphPoint = rez;
+				}
+			}
+			//beziePoint = bezie(pg1, pg2, pg3, pg4, anim).y;
+			//graphPoint = bezie(pg1, pg2, pg3, pg4, anim);
 
 			t.position = bezie(point1, point2, point3, point4, beziePoint);
 			renderer3D.setEntityTransform(sphereEntity, t);

@@ -136,7 +136,7 @@ struct GameplaySimulation
 
 		//phisics
 		{
-			player.moveVelocityX(5 * deltaTime * player.input);
+			player.move({18 * deltaTime * player.input, 0});
 
 			player.applyGravity(200.f * deltaTime);
 
@@ -287,8 +287,8 @@ struct GameplayRenderer
 
 };
 
-static constexpr int visionSizeX = 6;
-static constexpr int visionSizeY = 9;
+static constexpr int visionSizeX = 7;
+static constexpr int visionSizeY = 15;
 
 static constexpr int visionTotal = visionSizeX * visionSizeY;
 

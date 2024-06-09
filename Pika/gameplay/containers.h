@@ -22,9 +22,9 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "pluggins/sushiViewer/sushiViewer.h"
 
 #include "containers/mario/mario.h"
-//#include "containers/mario/marioEditor.h"
-//#include "containers/mario/marioNeuralVizualizer.h"
-//#include "containers/mario/marioNeuralTrainer.h"
+#include "containers/mario/marioEditor.h"
+#include "containers/mario/marioNeuralVizualizer.h"
+#include "containers/mario/marioNeuralTrainer.h"
 #include "containers/minecraftDungeons/mcDungeonsEditor.h"
 #include "containers/minecraftDungeons/mcDungeonsgameplay.h"
 #include "containers/minecraftDungeons/mcDungeonsMenu.h"
@@ -50,7 +50,6 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
 	//PIKA_DECLARE_CONTAINER(Gameplay) 
 
-
 #else
 
 #define PIKA_ALL_CONTAINERS() \
@@ -68,13 +67,14 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(Mario) \
 	PIKA_DECLARE_CONTAINER(Holloknight)\
 	PIKA_DECLARE_CONTAINER(Bezie)\
-	PIKA_DECLARE_CONTAINER(IsometricGame)
+	PIKA_DECLARE_CONTAINER(IsometricGame) \
+	PIKA_DECLARE_CONTAINER(MarioEditor) \
+	PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
+	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) 
 	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
 	//PIKA_DECLARE_CONTAINER(McDungeonsEditor)
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu)
 
-	//PIKA_DECLARE_CONTAINER(MarioEditor) \
-	//PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
-	//PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) \
+	
 
 #endif

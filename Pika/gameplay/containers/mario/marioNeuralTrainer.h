@@ -18,6 +18,7 @@ struct MarioNeuralTrainer: public Container
 	mario::GameplaySimulation simulator;
 	pika::pikaImgui::FileSelector currentMap;
 	pika::pikaImgui::FileSelector rezFile;
+	pika::pikaImgui::FileSelector graphFile;
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
@@ -64,6 +65,28 @@ struct MarioNeuralTrainer: public Container
 			requestedInfo.writeEntireFileBinary(rezFile.file, &deadSimulations[0].network, sizeof(deadSimulations[0].network));
 		}
 
+		if (graphFile.file[0] != '\0' && save)
+		{
+
+			::pika::memory::pushCustomAllocatorsToStandard();
+			{
+				std::ofstream file(graphFile.file);
+
+				if (file.is_open())
+				{
+					for (auto &g : generations)
+					{
+						file << g.leastFit << " " << g.averageFit << " " << g.fitest << "\n";
+					}
+				};
+
+				file.close();
+			}
+			::pika::memory::popCustomAllocatorsToStandard();
+
+		}
+
+		//we keep the first people unchanged
 		std::vector<SimulationNetwork> fittest;
 		fittest.push_back(deadSimulations[0]);
 		fittest.push_back(deadSimulations[1]);
@@ -79,10 +102,23 @@ struct MarioNeuralTrainer: public Container
 			simulations.push_back(i); 
 		}
 
-		while (simulations.size() < 1000)
+		//we also add some of the less fit people
+		for (int i = 0; i < 20; i++)
 		{
-			int a = mario::getRandomInt(rng, 0, 4);
-			int b = mario::getRandomInt(rng, 0, 4);
+			float a = mario::getRandomFloat(rng, 0, 1);
+			float b = mario::getRandomFloat(rng, 0, 1);
+
+			a *= b; //we bias the people to keep the fitter ones
+
+			fittest.push_back(deadSimulations[5 + a * (deadSimulations.size()/2)]);
+		}
+
+		int size = fittest.size() - 1;
+
+		while (simulations.size() < 10000)
+		{
+			int a = mario::getRandomInt(rng, 0, size);
+			int b = mario::getRandomInt(rng, 0, size);
 
 			SimulationNetwork newNetwork = fittest[a];
 			newNetwork.network.combine(rng, fittest[b].network);
@@ -91,7 +127,7 @@ struct MarioNeuralTrainer: public Container
 			newNetwork.player.p.position.position = {1,1};
 			newNetwork.player.p.lastPos = {1,1};
 
-
+			//combine the 2 individuals
 			if (mario::getRandomChance(rng, 0.25))
 			{
 				int type = mario::getRandomInt(rng, 0, 100);
@@ -133,6 +169,7 @@ struct MarioNeuralTrainer: public Container
 		currentMap.setInfo("Training map", PIKA_RESOURCES_PATH "/mario", {".mario"});
 
 		rezFile.setInfo("Neural network file", PIKA_RESOURCES_PATH "/mario", {".neural"});
+		graphFile.setInfo("Graph File", PIKA_RESOURCES_PATH "/mario", {".txt"});
 
 
 		if (commandLineArgument.size() != 0)
@@ -170,6 +207,14 @@ struct MarioNeuralTrainer: public Container
 		return v - (int)v;
 	}
 
+	struct Generation
+	{
+		float fitest = 0;
+		float leastFit = 0;
+		float averageFit = 0;
+	};
+
+	std::vector<Generation> generations;
 
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
@@ -182,9 +227,15 @@ struct MarioNeuralTrainer: public Container
 		float maxFit = 0;
 		for (int i = 0; i < simulations.size(); i++)
 		{
-			if (simulations[i].player.p.position.position.x - simulations[i].player.jumpCount / 10.f > maxFit)
+			//if (simulations[i].player.p.position.position.x - simulations[i].player.jumpCount / 10.f > maxFit)
+			//{
+			//	maxFit = simulations[i].player.p.position.position.x - simulations[i].player.jumpCount/10.f;
+			//	maxIndex = i;
+			//}
+
+			if (simulations[i].player.maxFit > maxFit)
 			{
-				maxFit = simulations[i].player.p.position.position.x - simulations[i].player.jumpCount/10.f;
+				maxFit = simulations[i].player.maxFit;
 				maxIndex = i;
 			}
 		}
@@ -211,7 +262,7 @@ struct MarioNeuralTrainer: public Container
 
 		if (fast)
 		{
-			newDelta = 1.f / 50.f;
+			newDelta = 1.f / 20.f;
 		}
 
 		for (int i = 0; i < simulations.size(); i++)
@@ -231,6 +282,32 @@ struct MarioNeuralTrainer: public Container
 
 		if (simulations.empty()) 
 		{
+
+			Generation result = {};
+
+			result.fitest = 0;
+			result.leastFit = 999999999999;
+			result.averageFit = 0;
+
+			for (auto &g : deadSimulations)
+			{
+				if (g.player.maxFit > result.fitest)
+				{
+					result.fitest = g.player.maxFit;
+				}
+
+				if (g.player.maxFit < result.leastFit)
+				{
+					result.leastFit = g.player.maxFit;
+				}
+
+				result.averageFit += g.player.maxFit;
+			}
+
+			result.averageFit /= deadSimulations.size();
+
+			generations.push_back(result);
+
 			recreateGenerations(requestedInfo);
 		}
 
@@ -260,7 +337,8 @@ struct MarioNeuralTrainer: public Container
 			ImGui::Checkbox("fixed framerate", &fast);
 
 			rezFile.run(2);
-			ImGui::SameLine();
+			graphFile.run(3);
+			//ImGui::SameLine();
 			ImGui::Checkbox("save", &save);
 
 		}

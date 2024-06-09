@@ -23,8 +23,10 @@ void main()
 	newSamplePoint /= 2;
 	color = v_color * texture2D(u_sampler, newSamplePoint);
 
+	
+
 	//color.rgb = vec3(length(color.rgb));
 
-	//color = texture2D(u_sampler, v_texture);
-	//color.a = 1;
+	color = texture2D(u_sampler, v_texture);
+	color.a = 1;
 }

@@ -373,7 +373,7 @@ void getVision(char vision[visionSizeX * visionSizeY], mario::GameplaySimulation
 			auto b = simulator.
 				getMapBlockSafe(
 				x + p.p.position.getCenter().x - 1,
-				y + p.p.position.getCenter().y - visionSizeY + 4);
+				y + p.p.position.getCenter().y - visionSizeY + 10);
 
 			vision[x + y * visionSizeX] = b.isCollidable();
 		}
@@ -459,7 +459,7 @@ void renderNeuralNetwork(gl2d::Renderer2D &renderer, char vision[mario::visionSi
 	renderer.renderRectangle(
 		glm::vec4(
 		1,
-		mario::visionSizeY - 4,
+		mario::visionSizeY - 10,
 		PLAYER_SIZE) *
 		(float)blockSizePreview, {0,0,1,0.5});
 
