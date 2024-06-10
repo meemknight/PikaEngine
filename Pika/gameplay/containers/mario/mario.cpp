@@ -383,10 +383,10 @@ void getVision(char vision[visionSizeX * visionSizeY], mario::GameplaySimulation
 bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::GameplaySimulation &simulator, mario::NeuralNetork
 	&network)
 {
-	if (p.p.position.position.x - p.maxFit > 0.2)
+	if (p.p.position.position.x - p.maxPosition > 0.2)
 	{
 
-		p.maxFit = p.p.position.position.x;
+		p.maxPosition = p.p.position.position.x;
 		p.killTimer = 0;
 	}
 	else
@@ -397,6 +397,8 @@ bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::Gamepl
 				return 0;
 		}
 	}
+
+	p.maxFit = p.maxPosition - p.jumpCount * 5;
 
 	//simulator.moveDelta = 1;
 	//simulator.jump = 0;
@@ -409,6 +411,7 @@ bool performNeuralSimulation(PlayerSimulation &p, float deltaTime, mario::Gamepl
 	if (simulator.jump && p.p.grounded)
 	{
 		p.jumpCount++;
+		//p.maxFit -= 1;
 	}
 
 	if (!simulator.updateFrame(deltaTime, p.p))
@@ -456,6 +459,7 @@ void renderNeuralNetwork(gl2d::Renderer2D &renderer, char vision[mario::visionSi
 			//}
 		}
 	}
+
 	renderer.renderRectangle(
 		glm::vec4(
 		1,
@@ -463,45 +467,130 @@ void renderNeuralNetwork(gl2d::Renderer2D &renderer, char vision[mario::visionSi
 		PLAYER_SIZE) *
 		(float)blockSizePreview, {0,0,1,0.5});
 
-	glm::vec2 upkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+	glm::vec2 upkeyPositions(mario::visionSizeX * blockSizePreview * 4,
 		mario::visionSizeY * blockSizePreview * 0.5 - blockSizePreview * 2);
 
-	glm::vec2 leftkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+	glm::vec2 leftkeyPositions(mario::visionSizeX * blockSizePreview * 4,
 		mario::visionSizeY * blockSizePreview * 0.5);
 
-	glm::vec2 rightkeyPositions(mario::visionSizeX * blockSizePreview * 3,
+	glm::vec2 rightkeyPositions(mario::visionSizeX * blockSizePreview * 4,
 		mario::visionSizeY * blockSizePreview * 0.5 + blockSizePreview * 2);
 
+	glm::vec2 firstNeuronPositions(mario::visionSizeX * blockSizePreview * 1.5,
+		mario::visionSizeY * blockSizePreview * 0.5 - blockSizePreview * 5);
+
+	glm::vec2 secondNeuronPositions(mario::visionSizeX * blockSizePreview * 2.5,
+		mario::visionSizeY * blockSizePreview * 0.5 - blockSizePreview * 5);
+	
 
 	for (int i = 0; i < 3; i++)
 	{
-		for (int j = 0; j < mario::visionTotal; j++)
+		for (int j = 0; j < mario::subLayerSize; j++)
 		{
-
-			if (network.weights[i][j] != 0)
+	
+			if (network.weights3[i][j] != 0)
 			{
 				glm::vec4 color;
-				if (network.weights[i][j] > 0)
+				if (network.weights3[i][j] > 0)
 				{
-					color = glm::vec4(0, 1, 0, network.weights[i][j] / 1.5);
+					color = glm::vec4(0, 1, 0, network.weights3[i][j] / 1.5);
 				}
 				else
 				{
-					color = glm::vec4(1, 0, 0, network.weights[i][j] / -1.5);
+					color = glm::vec4(1, 0, 0, network.weights3[i][j] / -1.5);
+				}
+	
+				color.w = glm::clamp(color.w, 0.1f, 1.f);
+	
+				glm::vec2 positions[] = {upkeyPositions, leftkeyPositions, rightkeyPositions};
+	
+				renderLine(
+					secondNeuronPositions + glm::vec2{0, 10 * j * blockSizePreview / mario::subLayerSize},
+					positions[i] + glm::vec2(blockSizePreview) / 2.f,
+					color);
+	
+			}
+		}
+	}
+
+	for (int i = 0; i < mario::subLayerSize; i++)
+	{
+		for (int j = 0; j < mario::subLayerSize; j++)
+		{
+
+			if (network.weights2[i][j] != 0)
+			{
+				glm::vec4 color;
+				if (network.weights2[i][j] > 0)
+				{
+					color = glm::vec4(0, 1, 0, network.weights2[i][j] / 1.5);
+				}
+				else
+				{
+					color = glm::vec4(1, 0, 0, network.weights2[i][j] / -1.5);
 				}
 
 				color.w = glm::clamp(color.w, 0.1f, 1.f);
 
-				glm::vec2 positions[] = {upkeyPositions, leftkeyPositions, rightkeyPositions};
 
-				renderLine((glm::vec2(j % mario::visionSizeX, j / mario::visionSizeX) + glm::vec2(0.5, 0.5)) * (float)blockSizePreview, positions[i] + glm::vec2(blockSizePreview) / 2.f,
+				renderLine(
+					firstNeuronPositions + glm::vec2{0, 10 * j * blockSizePreview / mario::subLayerSize},
+					secondNeuronPositions + glm::vec2{0, 10 * i * blockSizePreview / mario::subLayerSize},
 					color);
 
 			}
-
-
 		}
 	}
+
+	for (int i = 0; i < mario::subLayerSize; i++)
+	{
+		for (int j = 0; j < mario::visionTotal; j++)
+		{
+
+			if (network.weights1[i][j] != 0)
+			{
+				glm::vec4 color;
+				if (network.weights1[i][j] > 0)
+				{
+					color = glm::vec4(0, 1, 0, network.weights1[i][j] / 1.5);
+				}
+				else
+				{
+					color = glm::vec4(1, 0, 0, network.weights1[i][j] / -1.5);
+				}
+
+				color.w = glm::clamp(color.w, 0.1f, 1.f);
+
+
+				renderLine(
+					(glm::vec2(j % mario::visionSizeX, j / mario::visionSizeX) + glm::vec2(0.5, 0.5)) * (float)blockSizePreview,
+					firstNeuronPositions + glm::vec2{0, 10 * i * blockSizePreview / mario::subLayerSize},
+					color);
+
+			}
+		}
+	}
+
+
+
+	for (int i = 0; i < mario::subLayerSize; i++)
+	{
+		renderer.renderRectangle(
+			glm::vec4(firstNeuronPositions + glm::vec2{0, 10 * i * blockSizePreview/ mario::subLayerSize}, 
+			blockSizePreview/2, blockSizePreview/2)
+			, {1,0,1,0.5});
+	}
+
+
+	for (int i = 0; i < mario::subLayerSize; i++)
+	{
+		renderer.renderRectangle(
+			glm::vec4(secondNeuronPositions + glm::vec2{0, 10 * i * blockSizePreview / mario::subLayerSize},
+			blockSizePreview / 2, blockSizePreview / 2)
+			, {1,0,1,0.5});
+	}
+
+
 
 	renderer.renderRectangle(
 		glm::vec4(upkeyPositions, blockSizePreview, blockSizePreview)

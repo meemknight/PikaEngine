@@ -289,6 +289,7 @@ struct GameplayRenderer
 
 static constexpr int visionSizeX = 7;
 static constexpr int visionSizeY = 15;
+static constexpr int subLayerSize = 15;
 
 static constexpr int visionTotal = visionSizeX * visionSizeY;
 
@@ -301,15 +302,15 @@ inline float getRandomFloat(std::mt19937 &rng, float min, float max)
 inline int getRandomInt(std::mt19937 &rng, int min, int max)
 {
 	std::uniform_int_distribution<int> dist(min, max);
-	return dist(rng);
+	int rez = dist(rng);
+	return rez;
 }
 
 inline bool getRandomChance(std::mt19937 &rng, float chance)
 {
-	int chanceI = glm::clamp(chance, 0.f, 1.f) * 100000;
-	int pick = getRandomInt(rng, 0, 100000);
+	float rez = getRandomFloat(rng, 0, 1);
 
-	if (pick > chanceI)
+	if (rez > chance)
 	{
 		return 0;
 	}
@@ -317,29 +318,112 @@ inline bool getRandomChance(std::mt19937 &rng, float chance)
 	{
 		return 1;
 	}
+
+	//int chanceI = glm::clamp(chance, 0.f, 1.f) * 10000;
+	//int pick = getRandomInt(rng, 0, 10000);
+	//
+	//if (pick > chanceI)
+	//{
+	//	return 0;
+	//}
+	//else
+	//{
+	//	return 1;
+	//}
 }
 
 struct NeuralNetork
 {
-	float weights[3][visionTotal] = {};
+
+
+
+	float weights1[subLayerSize][visionTotal] = {};
+	float weights2[subLayerSize][subLayerSize] = {};
+	float weights3[3][subLayerSize] = {};
+
+
+	float activationFunction(float a)
+	{
+		float sigmoid = 1.f / (1 + std::expf(-a));
+		return (sigmoid * 2.f) - 1.f;
+	}
 
 	void compute(int &moveDirection, bool &jump, char input[visionTotal])
 	{
+
 		float rezult[3] = {};
-		for (int i = 0; i < 3; i++)
+		//for (int i = 0; i < 3; i++)
+		//{
+		//	for (int j = 0; j < visionTotal; j++)
+		//	{
+		//		if (input[j] > 0)
+		//		{
+		//			rezult[i] += weights[i][j];
+		//		}
+		//		else
+		//		{
+		//			rezult[i] -= weights[i][j];
+		//		}
+		//	}
+		//}
+
+
+		//first layer
+		float resultFirstLayer[subLayerSize] = {};
+
+		for (int i = 0; i < subLayerSize; i++)
 		{
+
+			float rez = 0;
 			for (int j = 0; j < visionTotal; j++)
 			{
 				if (input[j] > 0)
 				{
-					rezult[i] += weights[i][j];
+					rez += weights1[i][j];
 				}
 				else
 				{
-					rezult[i] -= weights[i][j];
+					rez -= weights1[i][j];
 				}
 			}
+			rez = activationFunction(rez);
+			resultFirstLayer[i] = rez;
 		}
+
+		resultFirstLayer[subLayerSize - 1] = 1;
+
+		//second layer
+		float resultSecondLayer[subLayerSize] = {};
+		for (int i = 0; i < subLayerSize; i++)
+		{
+
+			float rez = 0;
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				rez += resultFirstLayer[j] * weights2[i][j];
+			}
+
+			rez = activationFunction(rez);
+			resultSecondLayer[i] = rez;
+		}
+
+
+		resultSecondLayer[subLayerSize - 1] = 1;
+
+		//final layer
+		for (int i = 0; i < 3; i++)
+		{
+			float rez = 0;
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				rez += resultSecondLayer[j] * weights3[i][j];
+			}
+
+			rezult[i] = activationFunction(rez);
+
+		}
+
+
 
 		float dir = rezult[2] - rezult[1];
 		if (std::abs(dir) < 0.2) { moveDirection = 0; }
@@ -352,7 +436,7 @@ struct NeuralNetork
 			moveDirection = -1;
 		}
 
-		if (rezult[0] > 1)
+		if (rezult[0] > 0)
 		{
 			jump = 1;
 		}
@@ -363,103 +447,253 @@ struct NeuralNetork
 
 	}
 
-	void addRandomNeuron(std::mt19937 &rng)
+	void addRandomConnection(std::mt19937 &rng)
 	{
-		std::vector<glm::ivec2> positions;
-		positions.reserve(visionTotal*3);
-		for (int i = 0; i < 3; i++)
+		std::vector<glm::ivec2> positions1;
+		positions1.reserve(visionTotal* subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
 			for (int j = 0; j < visionTotal; j++)
 			{
-				if (weights[i][j] == 0)
+				if (weights1[i][j] == 0)
 				{
-					positions.push_back({i,j});
+					positions1.push_back({i,j});
 				}
 			}
 
-		if (!positions.empty())
+		std::vector<glm::ivec2> positions2;
+		positions2.reserve(subLayerSize * subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights2[i][j] == 0)
+				{
+					positions2.push_back({i,j});
+				}
+			}
+
+		std::vector<glm::ivec2> positions3;
+		positions3.reserve(3 * subLayerSize);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights3[i][j] == 0)
+				{
+					positions3.push_back({i,j});
+				}
+			}
+
+
+		if (!positions1.empty() && getRandomChance(rng, 0.6))
 		{
-			auto index = getRandomInt(rng, 0, positions.size() - 1);
-			weights[positions[index].x][positions[index].y] = getRandomFloat(rng, -1.5, 1.5);
+			auto index = getRandomInt(rng, 0, positions1.size() - 1);
+			weights1[positions1[index].x][positions1[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+
+		if (!positions2.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions2.size() - 1);
+			weights2[positions2[index].x][positions2[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+
+		if (!positions3.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions3.size() - 1);
+			weights3[positions3[index].x][positions3[index].y] = getRandomFloat(rng, -1.5, 1.5);
 		}
 	}
+
 	
-	void removeRandomNeuron(std::mt19937 &rng)
+	void removeRandomWeight(std::mt19937 &rng)
 	{
-		std::vector<glm::ivec2> positions;
-		positions.reserve(visionTotal * 3);
-		for (int i = 0; i < 3; i++)
+		std::vector<glm::ivec2> positions1;
+		positions1.reserve(visionTotal * subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
 			for (int j = 0; j < visionTotal; j++)
 			{
-				if (weights[i][j] != 0)
+				if (weights1[i][j] != 0)
 				{
-					positions.push_back({i,j});
+					positions1.push_back({i,j});
 				}
 			}
 
-		if (!positions.empty())
+		std::vector<glm::ivec2> positions2;
+		positions2.reserve(subLayerSize * subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights2[i][j] != 0)
+				{
+					positions2.push_back({i,j});
+				}
+			}
+
+		std::vector<glm::ivec2> positions3;
+		positions3.reserve(3 * subLayerSize);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights3[i][j] != 0)
+				{
+					positions3.push_back({i,j});
+				}
+			}
+
+		if (!positions1.empty() && getRandomChance(rng, 0.6))
 		{
-			auto index = getRandomInt(rng, 0, positions.size() - 1);
-			weights[positions[index].x][positions[index].y] = 0;
+			auto index = getRandomInt(rng, 0, positions1.size() - 1);
+			weights1[positions1[index].x][positions1[index].y] = 0;
 		}
+
+		if (!positions2.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions2.size() - 1);
+			weights2[positions2[index].x][positions2[index].y] = 0;
+		}
+
+		if (!positions3.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions3.size() - 1);
+			weights3[positions3[index].x][positions3[index].y] = 0;
+		}
+
 	}
 
-	void changeRandomNeuron(std::mt19937 &rng)
+	void changeRandomWeight(std::mt19937 &rng)
 	{
-		std::vector<glm::ivec2> positions;
-		positions.reserve(visionTotal * 3);
-		for (int i = 0; i < 3; i++)
+		std::vector<glm::ivec2> positions1;
+		positions1.reserve(visionTotal * subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
 			for (int j = 0; j < visionTotal; j++)
 			{
-				if (weights[i][j] != 0)
+				if (weights1[i][j] != 0)
 				{
-					positions.push_back({i,j});
+					positions1.push_back({i,j});
 				}
 			}
 
-		if (!positions.empty())
+		std::vector<glm::ivec2> positions2;
+		positions2.reserve(subLayerSize * subLayerSize);
+		for (int i = 0; i < subLayerSize; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights2[i][j] != 0)
+				{
+					positions2.push_back({i,j});
+				}
+			}
+
+		std::vector<glm::ivec2> positions3;
+		positions3.reserve(3 * subLayerSize);
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < subLayerSize; j++)
+			{
+				if (weights3[i][j] != 0)
+				{
+					positions3.push_back({i,j});
+				}
+			}
+
+		if (!positions1.empty() && getRandomChance(rng, 0.6))
 		{
-			auto index = getRandomInt(rng, 0, positions.size() - 1);
-			weights[positions[index].x][positions[index].y] = getRandomFloat(rng, -1.5, 1.5);
+			auto index = getRandomInt(rng, 0, positions1.size() - 1);
+			weights1[positions1[index].x][positions1[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+
+		if (!positions2.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions2.size() - 1);
+			weights2[positions2[index].x][positions2[index].y] = getRandomFloat(rng, -1.5, 1.5);
+		}
+
+		if (!positions3.empty() && getRandomChance(rng, 0.2))
+		{
+			auto index = getRandomInt(rng, 0, positions3.size() - 1);
+			weights3[positions3[index].x][positions3[index].y] = getRandomFloat(rng, -1.5, 1.5);
 		}
 	}
 
 	void combine(std::mt19937 &rng, NeuralNetork &other)
 	{
-		std::vector<glm::ivec2> positions;
+		//std::vector<glm::ivec2> positions;
+		//for (int i = 0; i < 3; i++)
+		//	for (int j = 0; j < visionTotal; j++)
+		//	{
+		//		if (weights[i][j] != other.weights[i][j])
+		//		{
+		//			positions.push_back({i,j});
+		//		}
+		//	}
+		//
+		//float chance = getRandomFloat(rng, 0, 1);
+		//
+		//for (auto p : positions)
+		//{
+		//	bool combine = getRandomInt(rng, 0, 5) == 1;
+		//	int i = p.x;
+		//	int j = p.y;
+		//
+		//	if (combine)
+		//	{
+		//		weights[i][j] = (weights[i][j] + other.weights[i][j]) / 2.f;
+		//	}
+		//	else
+		//	{
+		//		bool keeper = getRandomChance(rng, chance);
+		//		if (keeper)
+		//		{
+		//			weights[i][j] = other.weights[i][j];
+		//		}
+		//		else
+		//		{
+		//			//keep
+		//		}
+		//	}
+		//}
+
+
+		//last layer
 		for (int i = 0; i < 3; i++)
-			for (int j = 0; j < visionTotal; j++)
-			{
-				if (weights[i][j] != other.weights[i][j])
-				{
-					positions.push_back({i,j});
-				}
-			}
-		
-		float chance = getRandomFloat(rng, 0, 1);
-
-		for (auto p : positions)
 		{
-			bool combine = getRandomInt(rng, 0, 5) == 1;
-			int i = p.x;
-			int j = p.y;
+			bool keep = getRandomChance(rng, 0.5);
 
-			if (combine)
+			if (!keep)
 			{
-				weights[i][j] = (weights[i][j] + other.weights[i][j]) / 2.f;
-			}
-			else
-			{
-				bool keeper = getRandomChance(rng, chance);
-				if (keeper)
+				for (int j = 0; j < subLayerSize; j++)
 				{
-					weights[i][j] = other.weights[i][j];
-				}
-				else
-				{
-					//keep
+					weights3[i][j] = other.weights3[i][j];
 				}
 			}
 		}
+
+		//intermediate layer
+		for (int i = 0; i < subLayerSize; i++)
+		{
+			bool keep = getRandomChance(rng, 0.5);
+
+			if (!keep)
+			{
+				for (int j = 0; j < subLayerSize; j++)
+				{
+					weights2[i][j] = other.weights2[i][j];
+				}
+			}
+		}
+
+		//first layer
+		for (int i = 0; i < subLayerSize; i++)
+		{
+			bool keep = getRandomChance(rng, 0.5);
+
+			if (!keep)
+			{
+				for (int j = 0; j < visionTotal; j++)
+				{
+					weights1[i][j] = other.weights1[i][j];
+				}
+			}
+		}
+
+
 	}
 
 };
@@ -468,6 +702,7 @@ struct PlayerSimulation
 {
 	mario::Player p;
 	float maxFit = 0;
+	float maxPosition = 0;
 	float killTimer = 0;
 	int jumpCount = 0;
 };

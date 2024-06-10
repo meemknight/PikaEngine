@@ -52,9 +52,10 @@ struct MarioNeuralVizualizer: public Container
 
 		std::mt19937 rng(std::random_device{}());
 
-		network.addRandomNeuron(rng);
-		network.addRandomNeuron(rng);
-		network.addRandomNeuron(rng);
+		network.addRandomConnection(rng);
+		network.addRandomConnection(rng);
+		network.addRandomConnection(rng);
+		network.addRandomConnection(rng);
 
 		player.p.position.position = {1,1};
 		player.p.lastPos = {1,1};
@@ -103,7 +104,7 @@ struct MarioNeuralVizualizer: public Container
 		glBindFramebuffer(GL_FRAMEBUFFER, requestedInfo.requestedFBO.fbo);
 		renderer.render();
 
-		ImGui::Begin("Neural trainer");
+		ImGui::Begin("Neural trainer for visualizer");
 		{
 		
 			if (rezFile.run(2))
@@ -112,6 +113,8 @@ struct MarioNeuralVizualizer: public Container
 			}
 
 			ImGui::Checkbox("Fixed framerate", &fixedFramerate);
+
+			ImGui::Text("Pos: %d", (int)player.p.position.position.x);
 
 		}
 		ImGui::End();

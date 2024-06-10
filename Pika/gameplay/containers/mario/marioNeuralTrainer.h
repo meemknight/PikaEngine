@@ -24,7 +24,7 @@ struct MarioNeuralTrainer: public Container
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(100);
+		info.defaultHeapMemorySize = pika::MB(400);
 
 		info.extensionsSuported = {".mario"};
 
@@ -36,6 +36,7 @@ struct MarioNeuralTrainer: public Container
 	
 	struct SimulationNetwork
 	{
+		bool mutation = 0;
 		mario::PlayerSimulation player;
 		mario::NeuralNetork network;
 	};
@@ -99,11 +100,12 @@ struct MarioNeuralTrainer: public Container
 			i.player = {};
 			i.player.p.position.position = {1,1};
 			i.player.p.lastPos = {1,1};
+			i.mutation = 0;
 			simulations.push_back(i); 
 		}
 
 		//we also add some of the less fit people
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 10; i++)
 		{
 			float a = mario::getRandomFloat(rng, 0, 1);
 			float b = mario::getRandomFloat(rng, 0, 1);
@@ -128,36 +130,50 @@ struct MarioNeuralTrainer: public Container
 			newNetwork.player.p.lastPos = {1,1};
 
 			//combine the 2 individuals
+			
 			if (mario::getRandomChance(rng, 0.25))
 			{
-				int type = mario::getRandomInt(rng, 0, 100);
+				newNetwork.mutation = 1;
+
+				int type = mario::getRandomInt(rng, 0, 120);
 
 				if (type < 10)
 				{
-					newNetwork.network.removeRandomNeuron(rng);
-					newNetwork.network.removeRandomNeuron(rng);
-					newNetwork.network.removeRandomNeuron(rng);
+					newNetwork.network.removeRandomWeight(rng);
+					newNetwork.network.removeRandomWeight(rng);
+					newNetwork.network.removeRandomWeight(rng);
 				}
 				if (type < 25)
 				{
-					newNetwork.network.removeRandomNeuron(rng);
+					newNetwork.network.removeRandomWeight(rng);
 				}
 				else if (type < 50)
 				{
-					newNetwork.network.addRandomNeuron(rng);
+					newNetwork.network.addRandomConnection(rng);
 				}
 				else if (type < 75)
 				{
-					newNetwork.network.addRandomNeuron(rng);
-					newNetwork.network.addRandomNeuron(rng);
+					newNetwork.network.addRandomConnection(rng);
+					newNetwork.network.addRandomConnection(rng);
 				}
 				else if (type < 100)
 				{
-					newNetwork.network.changeRandomNeuron(rng);
+					newNetwork.network.changeRandomWeight(rng);
+				}
+				else if (type <= 120)
+				{
+					newNetwork.network.changeRandomWeight(rng);
+					newNetwork.network.changeRandomWeight(rng);
+					newNetwork.network.changeRandomWeight(rng);
 				}
 
 			}
 			simulations.push_back(newNetwork);
+		}
+
+		for (auto &s : simulations)
+		{
+			s.player.p.position.position.y += mario::getRandomFloat(rng, 0, 5);
 		}
 
 		generation++;
@@ -191,9 +207,10 @@ struct MarioNeuralTrainer: public Container
 		for (int i = 0; i < 100; i++)
 		{
 			SimulationNetwork s;
-			s.network.addRandomNeuron(rng);
-			s.network.addRandomNeuron(rng);
-			s.network.addRandomNeuron(rng);
+			s.network.addRandomConnection(rng);
+			s.network.addRandomConnection(rng);
+			s.network.addRandomConnection(rng);
+			s.network.addRandomConnection(rng);
 			s.player.p.position.position = {1,1};
 			s.player.p.lastPos = {1,1};
 			simulations.push_back(s);
@@ -272,7 +289,17 @@ struct MarioNeuralTrainer: public Container
 				newDelta, simulator, simulations[i].network))
 			{
 				deadSimulations.push_back(simulations[i]);
-				simulations.erase(simulations.begin() + i);
+
+				if (simulations.size() == 1)
+				{
+					simulations.clear();
+				}
+				else
+				{
+					simulations[i] = simulations[simulations.size() - 1];
+					simulations.pop_back();
+				}
+			
 				i--;
 				continue;
 			}
@@ -280,13 +307,13 @@ struct MarioNeuralTrainer: public Container
 
 		}
 
-		if (simulations.empty()) 
+		if (simulations.empty())
 		{
 
 			Generation result = {};
 
 			result.fitest = 0;
-			result.leastFit = 999999999999;
+			result.leastFit = 9999;
 			result.averageFit = 0;
 
 			for (auto &g : deadSimulations)
@@ -296,7 +323,7 @@ struct MarioNeuralTrainer: public Container
 					result.fitest = g.player.maxFit;
 				}
 
-				if (g.player.maxFit < result.leastFit)
+				if (g.player.maxFit < result.leastFit && !g.mutation)
 				{
 					result.leastFit = g.player.maxFit;
 				}
@@ -305,6 +332,16 @@ struct MarioNeuralTrainer: public Container
 			}
 
 			result.averageFit /= deadSimulations.size();
+
+			if (result.leastFit == 9999)
+			{
+				result.leastFit = 1;
+			}
+
+			if (result.leastFit >= result.averageFit)
+			{
+				result.leastFit = 1;
+			}
 
 			generations.push_back(result);
 
