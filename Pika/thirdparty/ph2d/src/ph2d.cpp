@@ -943,7 +943,7 @@ namespace ph2d
 		switch (type)
 		{
 			case ColliderCircle:
-			return (collider.circle.radius * collider.circle.radius * 3.1415);
+			return (collider.circle.radius * collider.circle.radius * 3.1415926);
 			
 			case ColliderBox:
 			return collider.box.size.x * collider.box.size.y;
@@ -1015,7 +1015,7 @@ void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 
 
 	if (momentOfInertia != 0 && momentOfInertia != INFINITY)
 	{
-		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.95f;
+		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.99f;
 	}
 }
 
@@ -1083,17 +1083,25 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { momentOfInertiaInverseA = 0; }
 			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { momentOfInertiaInverseB = 0; }
 
+			float jt = -glm::dot(rv, tangent);
+
+			float inertiaDivisorA = std::pow(cross(rContactA, tangent), 2) * momentOfInertiaInverseA;
+			float inertiaDivisorB = std::pow(cross(rContactB, tangent), 2) * momentOfInertiaInverseB;
+
+			if (aInverseMass == 0 && bInverseMass == 0
+				&& inertiaDivisorA == 0 && inertiaDivisorB == 0
+				)
+			{
+				//nothing will move, no need to compute anything
+				return;
+			}
+
 			//remove moment of inertia
 			//momentOfInertiaInverseA = 0;
 			//momentOfInertiaInverseB = 0;
 
 			// Solve for magnitude to apply along the friction vector
-			float jt = -glm::dot(rv, tangent);
-			jt = jt / (aInverseMass + bInverseMass)
-				+
-				(std::pow(cross(rContactA, rv), 2) * momentOfInertiaInverseA) +
-				(std::pow(cross(rContactB, rv), 2) * momentOfInertiaInverseB)
-				;
+			jt = jt / (aInverseMass + bInverseMass + inertiaDivisorA + inertiaDivisorB);
 
 			// PythagoreanSolve = A^2 + B^2 = C^2, solving for C given A and B
 			// Use to approximate mu given friction coefficients of each body
@@ -1116,8 +1124,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			//A.motionState.velocity -= (aInverseMass)*frictionImpulse;
 			//B.motionState.velocity += (bInverseMass)*frictionImpulse;
 
-			//A.motionState.applyImpulseWorldPosition(-frictionImpulse, contactPoint);
-			//B.motionState.applyImpulseWorldPosition( frictionImpulse, contactPoint);
+			A.motionState.applyImpulseWorldPosition(-frictionImpulse, contactPoint);
+			B.motionState.applyImpulseWorldPosition( frictionImpulse, contactPoint);
 
 
 		};
@@ -1181,11 +1189,12 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 				// Re-calculate relative velocity after normal impulse
 				// is applied (impulse from first article, this code comes
 				// directly thereafter in the same resolve function)
-
-				glm::vec2 rv = B.motionState.velocity - A.motionState.velocity;
+				// rv also holds the rotational velocity contribution
+				glm::vec2 rv = (B.motionState.velocity + cross(-B.motionState.angularVelocity, rContactB)) -
+					(A.motionState.velocity + cross(-A.motionState.angularVelocity, rContactA));
 
 				// Solve for the tangent vector
-				glm::vec2 tangent = rv - glm::dot(rv, normal) * normal;
+				glm::vec2 tangent = (rv - glm::dot(rv, normal) * normal);
 
 				float tangentSize = glm::length(tangent);
 				

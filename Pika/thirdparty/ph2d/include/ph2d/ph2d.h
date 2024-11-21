@@ -242,8 +242,8 @@ namespace ph2d
 		Collider collider = {};
 
 		float elasticity = 0.2;
-		float staticFriction = 0.5;
-		float dynamicFriction = 0.4;
+		float staticFriction = 0.7;
+		float dynamicFriction = 0.6;
 
 		AABB getAABB();
 
