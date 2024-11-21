@@ -41,7 +41,7 @@ struct PhysicsTest: public Container
 		{
 			//if (i == 1) { mass = 0; }
 
-			if (0)
+			if (1)
 			{
 				float w = rand() % 100 + 20;
 				float h = rand() % 100 + 20;
@@ -51,7 +51,7 @@ struct PhysicsTest: public Container
 				physicsEngine.bodies.back().motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
 			}
 
-			for (int j = 0; j < 2; j++)
+			for (int j = 0; j < 0; j++)
 			{
 				float r = rand() % 35 + 10;
 
@@ -71,7 +71,7 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({600, 600}, ph2d::createBoxCollider({350, 100}));
 		//physicsEngine.bodies[1].motionState.rotation = glm::radians(30.f);
 
-		physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({55}));
+		//physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({55}));
 		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({55}));
 		//physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({25}));
 		//physicsEngine.addBody({550, 700}, ph2d::createCircleCollider({25}));
@@ -89,7 +89,7 @@ struct PhysicsTest: public Container
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).y << "\n";
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).y  << "\n";
 
-		physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.1, 1});
+		physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.0, 1});
 		//physicsEngine.addBody({500, floorPos}, ph2d::createBoxCollider({900, 50}));
 		//physicsEngine.bodies.back().motionState.mass = 0;
 		//physicsEngine.bodies.back().motionState.momentOfInertia = 0;

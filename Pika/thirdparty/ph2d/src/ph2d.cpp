@@ -912,10 +912,10 @@ void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 
 		velocity += (1.0f / mass) * impulse;
 	}
 
-	//if (momentOfInertia != 0 && momentOfInertia != INFINITY)
-	//{
-	//	angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse);
-	//}
+	if (momentOfInertia != 0 && momentOfInertia != INFINITY)
+	{
+		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse);
+	}
 }
 
 void ph2d::MotionState::applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos)
@@ -983,8 +983,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { momentOfInertiaInverseB = 0; }
 
 			//remove moment of inertia
-			momentOfInertiaInverseA = 0;
-			momentOfInertiaInverseB = 0;
+			//momentOfInertiaInverseA = 0;
+			//momentOfInertiaInverseB = 0;
 
 			// Solve for magnitude to apply along the friction vector
 			float jt = -glm::dot(rv, tangent);
@@ -1058,8 +1058,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			}
 
 			//remove moment of inertia
-			inertiaDivisorA = 0;
-			inertiaDivisorB = 0;
+			//inertiaDivisorA = 0;
+			//inertiaDivisorB = 0;
 
 			// Calculate impulse scalar
 			float j = -(1.f + e) * velAlongNormal;
