@@ -253,15 +253,27 @@ namespace ph2d
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
 		glm::vec2 &normal, glm::vec2 &contactPoint);
 
+
+	struct ManifoldIntersection
+	{
+		glm::vec2 normal = {};
+		glm::vec2 contactPoint = {};
+		float penetration = 0;
+		unsigned short A = 0;
+		unsigned short B = 0;
+	};
+
 	struct PhysicsEngine
 	{
 		std::vector<Body> bodies;
+
+		std::vector<ManifoldIntersection> intersections;
 
 		//this will make the simulation run at fixed intervals of time, making it deterministic.
 		// it is measured in secconds, so if you set it to 0.016, it will be updated 60 times a seccond, 
 		// if you set it to 0.032, it will be updated 30 times a seccond, and a smaller number will get a lot more updates!
 		//you can set it to 0 if you want it to just update with the deltaTime;
-		float setFixedTimeStamp = 0.016;
+		float setFixedTimeStamp = 0.008;
 		float maxAccumulated = 0.32;
 		int collisionChecksCount = 8;
 

@@ -17,6 +17,7 @@
 
 #include <ph2d/ph2d.h>
 #include <iostream>
+#include <algorithm>
 
 constexpr static float MAX_VELOCITY = 10'000;
 constexpr static float MAX_ACCELERATION = 10'000;
@@ -364,62 +365,61 @@ namespace ph2d
 	}
 
 
-	bool HalfSpaceVSOBB(LineEquation line, AABB bbox, float br, float &penetration,
-		glm::vec2 &normal, glm::vec2 &contactPoint)
+	bool HalfSpaceVSOBB(LineEquation line, AABB bbox, float rotation,
+		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
 	{
+		glm::vec2 corners[4];
+		bbox.getCornersRotated(corners, rotation);
 
-		glm::vec2 corners[4] = {};
-		bbox.getCornersRotated(corners, br);
+		std::vector<glm::vec2> intersectionPoints;
+		line.normalize();
+		normal = line.getNormal();
 
-		float intersections[4] = {};
-		int intersectioncCount = 0;
-		float biggestPenetration = -100000;
-		glm::vec2 intersectedCrners[4] = {};
-
-
-		for (int i = 0; i < 4; i++)
+		// Clip edges of the OBB against the half-plane
+		for (int i = 0; i < 4; ++i)
 		{
-			float rez = 0;
-			rez = line.computeEquation(corners[i]);
+			glm::vec2 start = corners[i];
+			glm::vec2 end = corners[(i + 1) % 4];
 
-			if (rez >= 0)
+			float startDist = line.computeEquation(start);
+			float endDist = line.computeEquation(end);
+
+			// Include points inside the half-plane
+			if (startDist >= 0) intersectionPoints.push_back(start);
+
+			// Check if the edge intersects the plane
+			if ((startDist >= 0 && endDist < 0) || (startDist < 0 && endDist >= 0))
 			{
-				intersections[intersectioncCount] = rez;
-				intersectedCrners[intersectioncCount] = corners[i];
-				intersectioncCount++;
-				
-				if (rez > biggestPenetration)
-				{
-					biggestPenetration = rez;
-				}
+				float t = startDist / (startDist - endDist); // Interpolation factor
+				glm::vec2 intersection = start + t * (end - start);
+				intersectionPoints.push_back(intersection);
 			}
 		}
 
-		if (intersectioncCount)
+		// No intersection if there are no points
+		if (intersectionPoints.empty())
+			return false;
+
+		// Calculate centroid of the intersection polygon
+		glm::vec2 centroid = {0.0f, 0.0f};
+		for (const auto &point : intersectionPoints)
+			centroid += point;
+		centroid /= static_cast<float>(intersectionPoints.size());
+
+		contactPoint = centroid;
+
+		// Penetration is the maximum distance of included points from the plane
+		penetration = 0.0f;
+		for (const auto &point : intersectionPoints)
 		{
-			line.normalize();
-			normal = line.getNormal();
-			penetration = biggestPenetration;
-
-			contactPoint = {};
-
-			for (int i = 0; i < intersectioncCount; i++)
-			{
-				contactPoint += intersectedCrners[i];
-			}
-
-			contactPoint /= intersectioncCount;
-
-			if (intersectioncCount != 4)
-			{
-				contactPoint += normal * (-penetration / 2.f);
-			}
-
-			return true;
+			float dist = line.computeEquation(point);
+			if (dist > penetration)
+				penetration = dist;
 		}
 
-		return false;
+		return true;
 	}
+
 
 	//a is aabb and b has a rotation
 	bool AABBvsOBB(AABB a, AABB b, float br)
@@ -479,11 +479,78 @@ namespace ph2d
 		return AABBvsOBB(a, b, br);
 	}
 
+	bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 q1, glm::vec2 q2, glm::vec2 &intersection)
+	{
+		glm::vec2 r = p2 - p1;
+		glm::vec2 s = q2 - q1;
+		float rxs = r.x * s.y - r.y * s.x;
+
+		if (glm::abs(rxs) < 1e-6f) return false; // Parallel lines
+
+		float t = ((q1 - p1).x * s.y - (q1 - p1).y * s.x) / rxs;
+		intersection = p1 + t * r;
+		return true;
+	}
+
+	int clipPolygonAgainstEdges(const glm::vec2 *polygon, int vertexCount,
+		const glm::vec2 *clipCorners, float clipRotation,
+		glm::vec2 *outPolygon)
+	{
+		int outCount = 0;
+
+		// Generate edges of the clipping OBB
+		glm::vec2 edges[4];
+		for (int i = 0; i < 4; ++i)
+		{
+			edges[i] = rotateAroundCenter(clipCorners[(i + 1) % 4] - clipCorners[i], clipRotation);
+		}
+
+		for (int edgeIndex = 0; edgeIndex < 4; ++edgeIndex)
+		{
+			glm::vec2 edgeNormal = glm::normalize(glm::vec2(-edges[edgeIndex].y, edges[edgeIndex].x));
+			glm::vec2 edgePoint = clipCorners[edgeIndex];
+
+			glm::vec2 inputPolygon[8];
+			memcpy(inputPolygon, outPolygon, outCount * sizeof(glm::vec2));
+			int inputCount = outCount;
+			outCount = 0;
+
+			for (int i = 0; i < inputCount; ++i)
+			{
+				glm::vec2 current = inputPolygon[i];
+				glm::vec2 next = inputPolygon[(i + 1) % inputCount];
+
+				// Check if points are inside
+				bool currentInside = glm::dot(current - edgePoint, edgeNormal) >= 0;
+				bool nextInside = glm::dot(next - edgePoint, edgeNormal) >= 0;
+
+				// Add intersection points
+				if (currentInside != nextInside)
+				{
+					glm::vec2 intersection;
+					if (lineIntersection(current, next, edgePoint, edgePoint + edges[edgeIndex], intersection))
+					{
+						outPolygon[outCount++] = intersection;
+					}
+				}
+
+				// Add valid points
+				if (nextInside)
+				{
+					outPolygon[outCount++] = next;
+				}
+			}
+		}
+
+		return outCount;
+	}
+
+
 	bool OBBvsOBB(AABB a, float ar, AABB b, float br,
 		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
 	{
 		penetration = 0;
-		normal = {0,0};
+		normal = {0, 0};
 
 		glm::vec2 cornersA[4] = {};
 		glm::vec2 cornersB[4] = {};
@@ -491,31 +558,28 @@ namespace ph2d
 		b.getCornersRotated(cornersB, br);
 
 		glm::vec2 axes[4] = {
-			 rotateAroundCenter({0, 1}, ar), // Normal of A's first edge
-			 rotateAroundCenter({1, 0}, ar), // Normal of A's second edge
-			 rotateAroundCenter({0, 1}, br), // Normal of B's first edge
-			 rotateAroundCenter({1, 0}, br)  // Normal of B's second edge
+			rotateAroundCenter({0, 1}, ar), // Normal of A's first edge
+			rotateAroundCenter({1, 0}, ar), // Normal of A's second edge
+			rotateAroundCenter({0, 1}, br), // Normal of B's first edge
+			rotateAroundCenter({1, 0}, br)  // Normal of B's second edge
 		};
 
-		// Initialize the minimum penetration depth
+		// SAT collision test
 		float minPenetration = FLT_MAX;
 		glm::vec2 minPenetrationAxis = {};
-		bool flipSign = 0;
+		bool flipSign = false;
 
-		// Test each axis
 		for (int i = 0; i < 4; ++i)
 		{
-			bool flip = 0;
+			bool flip = false;
 			float penetrationDepth = calculatePenetrationAlongOneAxe(
 				cornersA, 4, cornersB, 4, axes[i], &flip);
 
-			// If there's no overlap along this axis, shapes are not colliding
 			if (penetrationDepth < 0.0f)
 			{
 				return false; // No collision
 			}
 
-			// Find the axis of least penetration
 			if (penetrationDepth < minPenetration)
 			{
 				minPenetration = penetrationDepth;
@@ -528,12 +592,31 @@ namespace ph2d
 		normal = glm::normalize(minPenetrationAxis);
 		if (flipSign) { normal = -normal; }
 
+		// Find the contact points using clipping
+		glm::vec2 clippedPolygon[8];
+		int clippedCount = 0;
 
-		//contactPoint
-		// Midpoint between the two centers
-		glm::vec2 midpoint = (a.center() + b.center()) * 0.5f;
-		// Adjust by half of the penetration depth along the collision normal
-		contactPoint = midpoint - (normal * (penetration * 0.5f));
+		// Clip A against B's edges
+		clippedCount = clipPolygonAgainstEdges(cornersA, 4, cornersB, br, clippedPolygon);
+
+		// Clip the result against A's edges
+		clippedCount = clipPolygonAgainstEdges(clippedPolygon, clippedCount, cornersA, ar, clippedPolygon);
+
+		if (clippedCount == 0)
+		{
+			// If no clipped points, default to midpoint as fallback
+			contactPoint = (a.center() + b.center()) * 0.5f;
+			return true;
+		}
+
+		// Compute the centroid of the clipped polygon
+		glm::vec2 centroid = {};
+		for (int i = 0; i < clippedCount; ++i)
+		{
+			centroid += clippedPolygon[i];
+		}
+		centroid /= static_cast<float>(clippedCount);
+		contactPoint = centroid;
 
 		return true;
 	}
@@ -682,10 +765,13 @@ namespace ph2d
 			auto abox = A.getAABB();
 			auto bbox = B.getAABB();
 
-			return ph2d::OBBvsCircle(
+			bool rez = ph2d::OBBvsCircle(
 				bbox, B.motionState.rotation, abox, penetration, normal, contactPoint);
+			normal = -normal;
+			return rez;
 
 		}
+
 
 		else if (A.collider.type == ph2d::ColliderHalfSpace &&
 			B.collider.type == ph2d::ColliderCircle)
@@ -697,8 +783,10 @@ namespace ph2d
 			lineEquation.createFromRotationAndPoint(A.motionState.rotation,
 				A.motionState.pos);
 
-			return ph2d::HalfSpaceVSCircle(
+			bool rez = ph2d::HalfSpaceVSCircle(
 				lineEquation, bbox, penetration, normal, contactPoint);
+			normal = -normal;
+			return rez;
 		}
 		else if (A.collider.type == ph2d::ColliderCircle &&
 			B.collider.type == ph2d::ColliderHalfSpace)
@@ -714,6 +802,7 @@ namespace ph2d
 				lineEquation, abox, penetration, normal, contactPoint);
 		}
 
+
 		else if (A.collider.type == ph2d::ColliderHalfSpace &&
 			B.collider.type == ph2d::ColliderBox)
 		{
@@ -723,9 +812,11 @@ namespace ph2d
 			lineEquation.createFromRotationAndPoint(A.motionState.rotation,
 				A.motionState.pos);
 
-			return ph2d::HalfSpaceVSOBB(
+			bool rez = ph2d::HalfSpaceVSOBB(
 				lineEquation, bbox, B.motionState.rotation,
 				penetration, normal, contactPoint);
+			normal = -normal;
+			return rez;
 		}
 		else if (A.collider.type == ph2d::ColliderBox &&
 			B.collider.type == ph2d::ColliderHalfSpace)
@@ -758,6 +849,16 @@ namespace ph2d
 		
 			motionState.acceleration += dragForce;
 		}
+	}
+
+	void applyAngularDrag(MotionState &motionState)
+	{
+		float dragForce = 0.1f * -motionState.angularVelocity;
+		if (dragForce > MAX_AIR_DRAG)
+		{
+			dragForce = MAX_AIR_DRAG;
+		}
+		motionState.angularVelocity += dragForce;
 	}
 
 	void integrateForces(MotionState &motionState, float deltaTime)
@@ -914,7 +1015,7 @@ void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 
 
 	if (momentOfInertia != 0 && momentOfInertia != INFINITY)
 	{
-		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse);
+		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.95f;
 	}
 }
 
@@ -976,7 +1077,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			float aInverseMass, float bInverseMass, float j, glm::vec2 rContactA,
 			glm::vec2 rContactB, glm::vec2 contactPoint)
 		{
-
+			
 			float momentOfInertiaInverseA = 1.f / A.motionState.momentOfInertia;
 			float momentOfInertiaInverseB = 1.f / B.motionState.momentOfInertia;
 			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { momentOfInertiaInverseA = 0; }
@@ -1086,11 +1187,11 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 				// Solve for the tangent vector
 				glm::vec2 tangent = rv - glm::dot(rv, normal) * normal;
 
-				float rangentSize = glm::length(tangent);
+				float tangentSize = glm::length(tangent);
 				
-				if (rangentSize > 0.001)
+				if (tangentSize > 0.001)
 				{
-					tangent /= rangentSize;
+					tangent /= tangentSize;
 
 					applyFriction(A, B, tangent, rv, massInverseA, massInverseB, j,
 						rContactA, rContactB, contactPoint);
@@ -1104,50 +1205,99 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 		size_t bodiesSize = bodies.size();
 		for (int i = 0; i < bodiesSize; i++)
 		{
-
-			//applyDrag(bodies[i].motionState);
-
-			//detect colisions
-			for(int _ = 0; _ < collisionChecksCount; _++)
-			for (int j = 0; j < bodiesSize; j++)
+			if (bodies[i].motionState.mass == 0)
 			{
-				//break;
-				if (i == j) { continue; }
+				bodies[i].motionState.mass = INFINITY;
+			}
 
-				auto &A = bodies[i];
-				auto &B = bodies[j];
+			applyDrag(bodies[i].motionState);
+			applyAngularDrag(bodies[i].motionState);
+		};
 
-				glm::vec2 normal = {};
-				glm::vec2 contactPoint = {};
-				float penetration = 0;
+		for (int _ = 0; _ < collisionChecksCount; _++)
+		{
+			intersections.clear();
 
-				if (BodyvsBody(A, B, penetration, normal, contactPoint))
+			for (int i = 0; i < bodiesSize; i++)
+			{
+				//detect colisions
+				for (int j = 0; j < bodiesSize; j++)
 				{
-					glm::vec2 relativeVelocity = B.motionState.velocity -
-						A.motionState.velocity;
-					float velAlongNormal = glm::dot(relativeVelocity, normal);
+					//break;
+					if (i == j) { break; }
 
-					// Do not resolve if velocities are separating
-					if (velAlongNormal > 0)
-					{
+					auto &A = bodies[i];
+					auto &B = bodies[j];
 
-					}
-					else
+					glm::vec2 normal = {};
+					glm::vec2 contactPoint = {};
+					float penetration = 0;
+
+					if (BodyvsBody(A, B, penetration, normal, contactPoint))
 					{
-						impulseResolution(A, B, normal, velAlongNormal, penetration, contactPoint);
+						ManifoldIntersection intersection = {};
+
+						intersection.A = i;
+						intersection.B = j;
+						intersection.contactPoint = contactPoint;
+						intersection.normal = normal;
+						intersection.penetration = penetration;
+
+						intersections.push_back(intersection);
 					}
 
-					if (_ == collisionChecksCount - 1)
-					{
-						positionalCorrection(A, B, normal, penetration);
-					}
 				}
 
 			}
 
+			std::sort(intersections.begin(), intersections.end(), [&](auto &a, auto &b)
+			{
+				// Retrieve the mass of the objects from the indices A and B
+				float massA = bodies[a.A].motionState.mass;
+				float massB = bodies[a.B].motionState.mass;
+
+				// Sort first by penetration depth (deeper penetration first)
+				if (a.penetration != b.penetration)
+					return a.penetration > b.penetration;  // Sort by deeper penetration first
+
+				// If penetrations are equal, sort by mass (lighter mass first)
+				return massA < massB;  // Lighter mass first (this avoids smaller objects being "swallowed")
+			});
+
+			for (auto &m : intersections)
+			{
+				auto &A = bodies[m.A];
+				auto &B = bodies[m.B];
+
+				glm::vec2 relativeVelocity = B.motionState.velocity -
+					A.motionState.velocity;
+				float velAlongNormal = glm::dot(relativeVelocity, m.normal);
+
+				// Do not resolve if velocities are separating
+				if (velAlongNormal > 0)
+				{
+
+				}
+				else
+				{
+					impulseResolution(A, B, m.normal, velAlongNormal, m.penetration, m.contactPoint);
+				}
+
+				if (_ == collisionChecksCount - 1 || velAlongNormal <= 0)
+				{
+					positionalCorrection(A, B, m.normal, m.penetration);
+				}
+			}
+
+		}
+		
+
+		for (int i = 0; i < bodiesSize; i++)
+		{
 			integrateForces(bodies[i].motionState, deltaTime);
 			bodies[i].motionState.lastPos = bodies[i].motionState.pos;
-		}
+		};
+	
 
 	};
 

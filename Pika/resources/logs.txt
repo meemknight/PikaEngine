@@ -1,4 +1,2 @@
-#2024-11-21 14:44:48[warning]: Couldn't reloaded dll
-#2024-11-21 14:44:48: Reloaded dll
-#2024-11-21 14:44:50: Created container: PhysicsTest
-#2024-11-21 14:49:32: Destroyed continer: PhysicsTest #1
+#2024-11-21 16:21:17: Created container: PhysicsTest
+#2024-11-21 16:22:30: Destroyed continer: PhysicsTest #1
