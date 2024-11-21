@@ -963,7 +963,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			if (A.motionState.mass == 0 || A.motionState.mass == INFINITY) { massInverseA = 0; }
 			if (B.motionState.mass == 0 || B.motionState.mass == INFINITY) { massInverseB = 0; }
 
-			const float percent = 0.40; // usually 20% to 80%
+			const float percent = 0.20; // usually 20% to 80%
 			const float slop = 0.01; // usually 0.01 to 0.1 
 
 			glm::vec2 correction = (glm::max(penetrationDepth - slop, 0.0f) / (massInverseA + massInverseB)) * percent * n;
@@ -1137,8 +1137,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 						impulseResolution(A, B, normal, velAlongNormal, penetration, contactPoint);
 					}
 
-					if (_ == collisionChecksCount - 1
-						)
+					if (_ == collisionChecksCount - 1)
 					{
 						positionalCorrection(A, B, normal, penetration);
 					}
