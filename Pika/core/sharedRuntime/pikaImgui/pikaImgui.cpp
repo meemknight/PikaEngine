@@ -49,6 +49,7 @@ void pika::pikaImgui::initImgui(PikaContext &pikaContext)
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 	//io.ConfigViewportsNoAutoMerge = true;
 	//io.ConfigViewportsNoTaskBarIcon = true;
+	io.FontGlobalScale = 2;
 
 	ImGuiStyle &style = ::ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -92,7 +93,8 @@ void pika::pikaImgui::initImgui(PikaContext &pikaContext)
 		builder.AddChar(0xf114);//ICON_FK_FOLDER_O
 		builder.BuildRanges(&ranges);
 
-		io.Fonts->AddFontFromFileTTF(PIKA_RESOURCES_PATH "fontawesome-webfont.ttf", 150, 0, ranges.Data);
+		io.Fonts->AddFontFromFileTTF(PIKA_RESOURCES_PATH "fontawesome-webfont.ttf", 
+			150.f/ io.FontGlobalScale, 0, ranges.Data);
 	}
 	io.Fonts->Build();
 

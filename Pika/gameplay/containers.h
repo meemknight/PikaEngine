@@ -42,13 +42,14 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 
 #include "containers/bezie/bezie.h"
 
+#include "containers/physicsTest/physicsTest.h"
 
 #if PIKA_PRODUCTION == 1
 
 #define PIKA_ALL_CONTAINERS() \
 	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu) 
-	//PIKA_DECLARE_CONTAINER(Gameplay) 
+	PIKA_DECLARE_CONTAINER(Gameplay) 
 
 #else
 
@@ -67,11 +68,12 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(Mario) \
 	PIKA_DECLARE_CONTAINER(Holloknight)\
 	PIKA_DECLARE_CONTAINER(Bezie)\
+	PIKA_DECLARE_CONTAINER(PhysicsTest)\
 	PIKA_DECLARE_CONTAINER(IsometricGame) \
 	PIKA_DECLARE_CONTAINER(MarioEditor) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
+	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) 
-	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
 	//PIKA_DECLARE_CONTAINER(McDungeonsEditor)
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu)
 

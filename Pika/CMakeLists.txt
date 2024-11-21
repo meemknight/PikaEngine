@@ -40,6 +40,7 @@ add_subdirectory(thirdparty/safeSafe)
 add_subdirectory(thirdparty/profilerLib)
 add_subdirectory(thirdparty/box2d-2.4.1)
 add_subdirectory(thirdparty/sushi)
+add_subdirectory(thirdparty/ph2d)
 
 #Define some macros for the project sources
 file(GLOB_RECURSE PIKA_SOURCES_CORE_CONFIG			CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/core/coreConfig/*.cpp")
@@ -82,7 +83,7 @@ target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pik
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/pikaSTD/")
 target_include_directories(pikaCore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
 target_link_libraries(pikaCore PRIVATE glad glfw gl2d  gl3d glui
-	glm stb_image stb_truetype imgui safeSave profilerLib sushi)
+	glm stb_image stb_truetype imgui safeSave profilerLib sushi ph2d)
 #################^^^^^^^^#############################
 
 
@@ -99,7 +100,7 @@ target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/game
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/core/sharedRuntime/")
 target_include_directories(pikaGameplay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_image 
-	stb_truetype imgui safeSave profilerLib box2d sushi)
+	stb_truetype imgui safeSave profilerLib box2d sushi ph2d)
 #################^^^^^^^^^^^^^^############################
 
 
@@ -123,7 +124,7 @@ target_link_libraries(pikaGameplay PRIVATE glad glfw gl2d gl3d glui glm stb_imag
 #target_include_directories(pikaProduction PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/pluggins/")
 #
 #target_link_libraries(pikaProduction PRIVATE glad glfw gl2d gl3d glui glm stb_image 
-#	stb_truetype imgui safeSave profilerLib box2d sushi)
+#	stb_truetype imgui safeSave profilerLib box2d sushi ph2d)
 #
 
 
