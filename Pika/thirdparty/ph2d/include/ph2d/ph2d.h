@@ -77,7 +77,7 @@ namespace ph2d
 	bool OBBvsOBB(AABB a, float ar, AABB b, float br);
 
 	bool OBBvsOBB(AABB a, float ar, AABB b, float br, float &penetration, 
-		glm::vec2 &normal, glm::vec2 &contactPoint);
+		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB);
 
 	bool AABBvsAABB(AABB a, AABB b, float delta = 0);
 

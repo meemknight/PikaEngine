@@ -37,7 +37,7 @@ struct PhysicsTest: public Container
 	{
 		renderer.create(requestedInfo.requestedFBO.fbo);
 	
-		for (int i = 0; i < 0; i++)
+		for (int i = 0; i < 20; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
@@ -63,7 +63,13 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
 
-		physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({300, 100}));
+		//physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({300, 100}));
+
+		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({800, 50}));
+		//physicsEngine.bodies[1].motionState.mass = 0;
+		//physicsEngine.bodies[1].motionState.momentOfInertia = 0;
+
+
 		//physicsEngine.addBody({700, 700}, ph2d::createBoxCollider({300, 300}));
 
 
@@ -166,9 +172,9 @@ struct PhysicsTest: public Container
 		static int selected = -1;
 
 		//mouse
-		if (!simulate)
+		if (!simulate && input.rMouse.pressed())
 		{
-			//physicsEngine.bodies[0].motionState.setPos({input.mouseX, input.mouseY});
+			physicsEngine.bodies[0].motionState.setPos({input.mouseX, input.mouseY});
 		}
 
 		static glm::vec2 pressedPosition = {};

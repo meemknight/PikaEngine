@@ -575,75 +575,72 @@ namespace ph2d
 		return AABBvsOBB(a, b, br);
 	}
 
-	bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 q1, glm::vec2 q2, glm::vec2 &intersection)
+	glm::vec2 findClosestEdge(const glm::vec2 *corners, int count, glm::vec2 point)
 	{
-		glm::vec2 r = p2 - p1;
-		glm::vec2 s = q2 - q1;
-		float rxs = r.x * s.y - r.y * s.x;
+		float minDist = FLT_MAX;
+		glm::vec2 closestEdge = {0, 0};
 
-		if (glm::abs(rxs) < 1e-6f) return false; // Parallel lines
-
-		float t = ((q1 - p1).x * s.y - (q1 - p1).y * s.x) / rxs;
-		intersection = p1 + t * r;
-		return true;
-	}
-
-	int clipPolygonAgainstEdges(const glm::vec2 *polygon, int vertexCount,
-		const glm::vec2 *clipCorners, float clipRotation,
-		glm::vec2 *outPolygon)
-	{
-		int outCount = 0;
-
-		// Generate edges of the clipping OBB
-		glm::vec2 edges[4];
-		for (int i = 0; i < 4; ++i)
+		for (int i = 0; i < count; ++i)
 		{
-			edges[i] = rotateAroundCenter(clipCorners[(i + 1) % 4] - clipCorners[i], clipRotation);
-		}
+			glm::vec2 edgeStart = corners[i];
+			glm::vec2 edgeEnd = corners[(i + 1) % count];
+			glm::vec2 edge = edgeEnd - edgeStart;
+			glm::vec2 edgeNormal = glm::normalize(glm::vec2(-edge.y, edge.x));
 
-		for (int edgeIndex = 0; edgeIndex < 4; ++edgeIndex)
-		{
-			glm::vec2 edgeNormal = glm::normalize(glm::vec2(-edges[edgeIndex].y, edges[edgeIndex].x));
-			glm::vec2 edgePoint = clipCorners[edgeIndex];
-
-			glm::vec2 inputPolygon[8];
-			memcpy(inputPolygon, outPolygon, outCount * sizeof(glm::vec2));
-			int inputCount = outCount;
-			outCount = 0;
-
-			for (int i = 0; i < inputCount; ++i)
+			float dist = glm::abs(glm::dot(point - edgeStart, edgeNormal));
+			if (dist < minDist)
 			{
-				glm::vec2 current = inputPolygon[i];
-				glm::vec2 next = inputPolygon[(i + 1) % inputCount];
-
-				// Check if points are inside
-				bool currentInside = glm::dot(current - edgePoint, edgeNormal) >= 0;
-				bool nextInside = glm::dot(next - edgePoint, edgeNormal) >= 0;
-
-				// Add intersection points
-				if (currentInside != nextInside)
-				{
-					glm::vec2 intersection;
-					if (lineIntersection(current, next, edgePoint, edgePoint + edges[edgeIndex], intersection))
-					{
-						outPolygon[outCount++] = intersection;
-					}
-				}
-
-				// Add valid points
-				if (nextInside)
-				{
-					outPolygon[outCount++] = next;
-				}
+				minDist = dist;
+				closestEdge = edge;
 			}
 		}
 
-		return outCount;
+		return glm::normalize(closestEdge);
+	}
+
+
+	void clipPolygon(const glm::vec2 *cornersA, int countA, const glm::vec2 &normal,
+		const glm::vec2 *cornersB, int countB, std::vector<glm::vec2> &intersectionPoints)
+	{
+		std::vector<glm::vec2> inputPolygon(cornersA, cornersA + countA);
+
+		for (int i = 0; i < countB; ++i)
+		{
+			glm::vec2 edgeStart = cornersB[i];
+			glm::vec2 edgeEnd = cornersB[(i + 1) % countB];
+			glm::vec2 edgeNormal = glm::normalize(glm::vec2(edgeEnd.y - edgeStart.y, edgeStart.x - edgeEnd.x));
+
+			std::vector<glm::vec2> outputPolygon;
+
+			for (size_t j = 0; j < inputPolygon.size(); ++j)
+			{
+				glm::vec2 current = inputPolygon[j];
+				glm::vec2 next = inputPolygon[(j + 1) % inputPolygon.size()];
+
+				float currentDist = glm::dot(current - edgeStart, edgeNormal);
+				float nextDist = glm::dot(next - edgeStart, edgeNormal);
+
+				if (currentDist >= 0) outputPolygon.push_back(current);
+
+				if (currentDist * nextDist < 0)
+				{
+					float t = currentDist / (currentDist - nextDist);
+					glm::vec2 intersection = current + t * (next - current);
+					outputPolygon.push_back(intersection);
+				}
+			}
+
+			inputPolygon = outputPolygon;
+			if (inputPolygon.empty()) break;
+		}
+
+		intersectionPoints = inputPolygon;
 	}
 
 
 	bool OBBvsOBB(AABB a, float ar, AABB b, float br,
-		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
+		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint, 
+		glm::vec2 &tangentA, glm::vec2 &tangentB)
 	{
 		penetration = 0;
 		normal = {0, 0};
@@ -652,6 +649,9 @@ namespace ph2d
 		glm::vec2 cornersB[4] = {};
 		a.getCornersRotated(cornersA, ar);
 		b.getCornersRotated(cornersB, br);
+
+		//std::swap(cornersA[1], cornersA[2]);
+		//std::swap(cornersB[1], cornersB[2]);
 
 		glm::vec2 axes[4] = {
 			rotateAroundCenter({0, 1}, ar), // Normal of A's first edge
@@ -688,31 +688,28 @@ namespace ph2d
 		normal = glm::normalize(minPenetrationAxis);
 		if (flipSign) { normal = -normal; }
 
-		// Find the contact points using clipping
-		glm::vec2 clippedPolygon[8];
-		int clippedCount = 0;
 
-		// Clip A against B's edges
-		clippedCount = clipPolygonAgainstEdges(cornersA, 4, cornersB, br, clippedPolygon);
 
-		// Clip the result against A's edges
-		clippedCount = clipPolygonAgainstEdges(clippedPolygon, clippedCount, cornersA, ar, clippedPolygon);
+		// Clip the polygons to find the intersection
+		std::vector<glm::vec2> intersectionPoints;
+		clipPolygon(cornersA, 4, normal, cornersB, 4, intersectionPoints);
 
-		if (clippedCount == 0)
+		if (intersectionPoints.empty())
 		{
-			// If no clipped points, default to midpoint as fallback
-			contactPoint = (a.center() + b.center()) * 0.5f;
-			return true;
+			return false; // No intersection points
 		}
 
-		// Compute the centroid of the clipped polygon
-		glm::vec2 centroid = {};
-		for (int i = 0; i < clippedCount; ++i)
+		// Compute centroid of the intersection polygon
+		contactPoint = glm::vec2(0);
+		for (const auto &point : intersectionPoints)
 		{
-			centroid += clippedPolygon[i];
+			contactPoint += point;
 		}
-		centroid /= static_cast<float>(clippedCount);
-		contactPoint = centroid;
+		contactPoint /= static_cast<float>(intersectionPoints.size());
+
+		// Calculate tangents based on the closest edges
+		tangentA = findClosestEdge(cornersA, 4, contactPoint);
+		tangentB = findClosestEdge(cornersB, 4, contactPoint);
 
 		return true;
 	}
@@ -839,7 +836,7 @@ namespace ph2d
 			return ph2d::OBBvsOBB(
 				abox, A.motionState.rotation, bbox,
 				B.motionState.rotation,
-				penetration, normal, contactPoint);
+				penetration, normal, contactPoint, tangentA, tangentB);
 
 		}
 
