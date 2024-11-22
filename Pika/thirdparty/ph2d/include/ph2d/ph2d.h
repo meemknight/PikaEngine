@@ -194,7 +194,7 @@ namespace ph2d
 			return -lineEquation.z * normal;
 		}
 
-		// Rotate the normal by 90 degrees to get a direction along the line
+		// Returns a direction along the line
 		glm::vec2 getLineVector() const
 		{
 			return glm::vec2(-lineEquation.y, lineEquation.x);
@@ -257,13 +257,16 @@ namespace ph2d
 	};
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
-		glm::vec2 &normal, glm::vec2 &contactPoint);
+		glm::vec2 &normal, glm::vec2 &contactPoint, 
+		glm::vec2 &tangentA, glm::vec2 &tangentB);
 
 
 	struct ManifoldIntersection
 	{
 		glm::vec2 normal = {};
 		glm::vec2 contactPoint = {};
+		glm::vec2 tangentA = {};
+		glm::vec2 tangentB = {};
 		float penetration = 0;
 		unsigned short A = 0;
 		unsigned short B = 0;

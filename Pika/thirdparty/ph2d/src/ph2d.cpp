@@ -100,9 +100,9 @@ namespace ph2d
 	void AABB::getCornersRotated(glm::vec2 corners[4], float r)
 	{
 		corners[0] = min();
-		corners[1] = max();
-		corners[2] = {corners[0].x, corners[1].y};
-		corners[3] = {corners[1].x, corners[0].y};
+		corners[2] = max();
+		corners[1] = {corners[0].x, corners[2].y};
+		corners[3] = {corners[2].x, corners[0].y};
 
 		glm::vec2 c = center();
 
@@ -383,14 +383,17 @@ namespace ph2d
 
 
 	bool HalfSpaceVSOBB(LineEquation line, AABB bbox, float rotation,
-		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
+		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint,
+		glm::vec2 &tangentA, glm::vec2 &tangentB)
 	{
 		glm::vec2 corners[4];
 		bbox.getCornersRotated(corners, rotation);
 
+		//todo optimize this wtf
 		std::vector<glm::vec2> intersectionPoints;
 		line.normalize();
 		normal = line.getNormal();
+
 
 		// Clip edges of the OBB against the half-plane
 		for (int i = 0; i < 4; ++i)
@@ -413,9 +416,83 @@ namespace ph2d
 			}
 		}
 
+
 		// No intersection if there are no points
 		if (intersectionPoints.empty())
 			return false;
+
+		//used to calculate the tangent along the obb
+		glm::vec2 bestEdgeStart = {};
+		glm::vec2 bestEdgeEnd = {};
+		tangentB = {};
+
+		if (intersectionPoints.size() == 1)
+		{
+
+		}
+		if (intersectionPoints.size() == 2)
+		{
+			bestEdgeStart = intersectionPoints[0];
+			bestEdgeEnd = intersectionPoints[1];
+			tangentB = glm::normalize(bestEdgeEnd - bestEdgeStart);
+		}
+		else if (intersectionPoints.size() == 3)
+		{
+			//the OBB is entering the plane and forms a triangle, use the biggest edge
+			//we first determine the "pointy" end of the tirangle that enters the triangle
+			
+			//determine deepest center point
+			float biggestPenetration = -1000000000;
+			int centerPoint = 0;
+			for (int i = 0; i < 3; i++)
+			{
+				float dist = line.computeEquation(intersectionPoints[i]);
+				if (dist > biggestPenetration)
+				{
+					biggestPenetration = dist;
+					centerPoint = i;
+				}
+			}
+
+			glm::vec2 first = intersectionPoints[centerPoint] - intersectionPoints[(centerPoint +1) % 3];
+			glm::vec2 second = intersectionPoints[centerPoint] - intersectionPoints[(centerPoint + 2) %3];
+			
+			float firstL = glm::length(first);
+			float secondL = glm::length(second);
+
+			if (firstL > secondL)
+			{
+				if(firstL)
+					tangentB = first / firstL;
+			}
+			else
+			{
+				if(secondL)
+					tangentB = second / secondL;
+			}
+		}
+		else
+		{
+			float biggestPenetration = -1000000000;
+			for (int i = 0; i < intersectionPoints.size(); i++)
+			{
+				glm::vec2 start = intersectionPoints[i];
+				glm::vec2 end = intersectionPoints[(i + 1) % 4];
+
+				float startDist = line.computeEquation(start);
+				float endDist = line.computeEquation(end);
+
+				if (startDist + endDist > biggestPenetration)
+				{
+					biggestPenetration = startDist + endDist;
+					bestEdgeStart = start;
+					bestEdgeEnd = end;
+				}
+			}
+			tangentB = glm::normalize(bestEdgeEnd - bestEdgeStart);
+		}
+
+
 
 		// Calculate centroid of the intersection polygon
 		glm::vec2 centroid = {0.0f, 0.0f};
@@ -433,6 +510,8 @@ namespace ph2d
 			if (dist > penetration)
 				penetration = dist;
 		}
+
+		tangentA = line.getLineVector();
 
 		return true;
 	}
@@ -736,7 +815,7 @@ namespace ph2d
 	}
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
-		glm::vec2 &normal, glm::vec2 &contactPoint)
+		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB)
 	{
 
 		if (A.collider.type == ph2d::ColliderCircle &&
@@ -831,7 +910,7 @@ namespace ph2d
 
 			bool rez = ph2d::HalfSpaceVSOBB(
 				lineEquation, bbox, B.motionState.rotation,
-				penetration, normal, contactPoint);
+				penetration, normal, contactPoint, tangentA, tangentB);
 			normal = -normal;
 			return rez;
 		}
@@ -845,7 +924,8 @@ namespace ph2d
 				B.motionState.pos);
 
 			return ph2d::HalfSpaceVSOBB(
-				lineEquation, abox, A.motionState.rotation, penetration, normal, contactPoint);
+				lineEquation, abox, A.motionState.rotation, penetration, normal, contactPoint,
+			tangentB, tangentA);
 		}
 
 		return 0;
@@ -1105,21 +1185,66 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			B.motionState.pos += massInverseB * correction;
 		};
 
-		auto angularCorrection = [&](Body &A, Body &B, glm::vec2 n,
-			float penetrationDepth)
+		auto rotationalCorrection = [&](Body &A, Body &B,
+			glm::vec2 tangentA, glm::vec2 tangentB)
 		{
 
-			float intertiaInverseA = 1.f / A.motionState.momentOfInertia;
-			float intertiaInverseB = 1.f / B.motionState.momentOfInertia;
+			if (tangentA.x == 0 && tangentA.y == 0) { return; }
+			if (tangentB.x == 0 && tangentB.y == 0) { return; }
 
-			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { intertiaInverseA = 0; }
-			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { intertiaInverseB = 0; }
+			float inertiaInverseA = 1.f / A.motionState.momentOfInertia;
+			float inertiaInverseB = 1.f / B.motionState.momentOfInertia;
 
-			const float percent = 0.20; // usually 20% to 80%
-			const float slop = 0.01; // usually 0.01 to 0.1 
+			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { inertiaInverseA = 0; }
+			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { inertiaInverseB = 0; }
 
-			//float angularDeviationA = glm::dot(A.motionState.rotation, normal);
-			//float angularDeviationB = glm::dot(B.motionState.rotation, normal);
+			const float PI = 3.1415926;
+
+			const float percent = 0.15; //
+			const float slop = 0.00; // usually 0.01 to 0.1 
+			const float tresshold = glm::radians(5.f);
+
+			int flipped = 1;
+
+			if (glm::dot(tangentA, tangentB) < 0)
+			{
+				tangentB = -tangentB;
+				//flipped = -1;
+			}
+
+			// Calculate the angle between the tangents
+			float angleA = atan2(tangentA.y, tangentA.x);
+			float angleB = atan2(tangentB.y, tangentB.x);
+			float angleDifference = angleB - angleA;
+
+			// Normalize the angle difference to [-pi, pi]
+			if (angleDifference > PI) angleDifference -= 2 * PI;
+			if (angleDifference < -PI) angleDifference += 2 * PI;
+
+			// Apply correction only if the angle is not too big
+			if (fabs(angleDifference) < tresshold && fabs(angleDifference) > slop)
+			{
+				// Correction angle scaled by the inertia and correction percent
+				float correction = percent * angleDifference / (inertiaInverseA + inertiaInverseB);
+
+				// Rotate object A towards B
+				if (inertiaInverseA > 0)
+				{
+					//if (std::abs(A.motionState.angularVelocity) < 10)
+					{
+						A.motionState.rotation -= correction * inertiaInverseA * flipped;
+					}
+				}
+
+				// Rotate object B towards A
+				if (inertiaInverseB > 0)
+				{
+					//if (std::abs(A.motionState.angularVelocity) < 10)
+					{
+						B.motionState.rotation += correction * inertiaInverseB * flipped;
+					}
+				}
+			}
 
 			//glm::vec2 correction = (glm::max(penetrationDepth - slop, 0.0f) / (intertiaInverseA + intertiaInverseB)) * percent * n;
 			//A.motionState.pos -= massInverseA * correction;
@@ -1295,12 +1420,18 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 					glm::vec2 contactPoint = {};
 					float penetration = 0;
 
-					if (BodyvsBody(A, B, penetration, normal, contactPoint))
+					glm::vec2 tangentA = {};
+					glm::vec2 tangentB = {};
+
+					if (BodyvsBody(A, B, penetration, normal, contactPoint, 
+						tangentA, tangentB))
 					{
 						ManifoldIntersection intersection = {};
 
 						intersection.A = i;
 						intersection.B = j;
+						intersection.tangentA = tangentA;
+						intersection.tangentB = tangentB;
 						intersection.contactPoint = contactPoint;
 						intersection.normal = normal;
 						intersection.penetration = penetration;
@@ -1348,6 +1479,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 				if (_ == collisionChecksCount - 1 || velAlongNormal <= 0)
 				{
 					positionalCorrection(A, B, m.normal, m.penetration);
+					rotationalCorrection(A, B, m.tangentA, m.tangentB);
 				}
 			}
 

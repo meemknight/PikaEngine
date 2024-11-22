@@ -287,9 +287,12 @@ struct PhysicsTest: public Container
 		bool penetrated = 0;
 		glm::vec2 contactPoint = {};
 
+		glm::vec2 tangentA = {};
+		glm::vec2 tangentB = {};
+
 		if (ph2d::BodyvsBody(physicsEngine.bodies[0],
 			physicsEngine.bodies[1],
-			p, n, contactPoint))
+			p, n, contactPoint, tangentA, tangentB))
 		{
 			penetrated = true;
 		}
@@ -406,6 +409,13 @@ struct PhysicsTest: public Container
 				contactPoint + n * 100.f, Colors_Green, 4);
 
 			renderer.renderRectangle({contactPoint - glm::vec2(2,2), 4,4}, Colors_White);
+
+			renderer.renderLine(contactPoint,
+				contactPoint + tangentA * 100.f, Colors_Red, 4);
+
+
+			renderer.renderLine(contactPoint,
+				contactPoint + tangentB * 100.f, Colors_Purple, 4);
 		}
 
 
