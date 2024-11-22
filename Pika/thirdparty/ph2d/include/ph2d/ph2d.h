@@ -22,6 +22,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <bitset>
+#include <unordered_map>
 
 constexpr static int PH2D_MAX_CONVEX_SHAPE_POINTS = 12;
 
@@ -300,7 +301,6 @@ namespace ph2d
 		Collider collider = {};
 		
 		ph2dUserData userData;
-		ph2dBodyId id = 0;
 
 		//we use center position
 		MotionState motionState;
@@ -339,8 +339,10 @@ namespace ph2d
 		glm::vec2 tangentA = {};
 		glm::vec2 tangentB = {};
 		float penetration = 0;
-		unsigned short A = 0;
-		unsigned short B = 0;
+		ph2dBodyId A = 0;
+		ph2dBodyId B = 0;
+		float massA = 0;
+		float massB = 0;
 	};
 
 	struct SimulationPhysicsSettings
@@ -360,8 +362,9 @@ namespace ph2d
 	{
 		ph2dBodyId idCounter = 0;
 
-		std::vector<Body> bodies;
+		std::unordered_map<ph2dBodyId, Body> bodies;
 
+		//for internal use for now
 		std::vector<ManifoldIntersection> intersections;
 
 		//this will make the simulation run at fixed intervals of time, making it deterministic.
@@ -377,9 +380,9 @@ namespace ph2d
 
 		SimulationPhysicsSettings simulationphysicsSettings;
 
-		void addBody(glm::vec2 centerPos, Collider collider);
+		ph2dBodyId addBody(glm::vec2 centerPos, Collider collider);
 
-		void addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal);
+		ph2dBodyId addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal);
 	};
 
 	glm::mat2 rotationMatrix(float angle);

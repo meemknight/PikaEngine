@@ -44,6 +44,8 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 
 #include "containers/physicsTest/physicsTest.h"
 
+#include "containers/angryBirds/angryBirds.h"
+
 #if PIKA_PRODUCTION == 1
 
 #define PIKA_ALL_CONTAINERS() \
@@ -55,6 +57,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 
 #define PIKA_ALL_CONTAINERS() \
 	PIKA_DECLARE_CONTAINER(Gameplay) \
+	PIKA_DECLARE_CONTAINER(AngryBirds) \
 	PIKA_DECLARE_CONTAINER(SushiViewer) \
 	PIKA_DECLARE_CONTAINER(ImmageViewer) \
 	PIKA_DECLARE_CONTAINER(ThreeDTest) \

@@ -43,17 +43,17 @@ struct PhysicsTest: public Container
 		{
 			//if (i == 1) { mass = 0; }
 
-			if (0)
+			if (1)
 			{
 				float w = rand() % 100 + 20;
 				float h = rand() % 100 + 20;
 
-				physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
+				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
 					ph2d::createBoxCollider({w, h}));
-				physicsEngine.bodies.back().motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
+				physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
 			}
 
-			for (int j = 0; j < 2; j++)
+			for (int j = 0; j < 1; j++)
 			{
 				float r = rand() % 35 + 10;
 
@@ -73,13 +73,12 @@ struct PhysicsTest: public Container
 		};
 		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 
-
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
 
-		physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
-		//physicsEngine.bodies.back().flags.setFreezePosition();
-		physicsEngine.bodies.back().flags.setFreezeRotation();
+		auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
+		physicsEngine.bodies[body].flags.setFreezePosition();
+		//physicsEngine.bodies[body].flags.setFreezeRotation();
 
 		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({800, 50}));
 		//physicsEngine.bodies[1].motionState.mass = 0;
@@ -258,8 +257,10 @@ struct PhysicsTest: public Container
 				physicsEngine.runSimulation(0);
 			}
 
-			for (auto &b : physicsEngine.bodies)
+			for (auto &it : physicsEngine.bodies)
 			{
+				auto &b = it.second;
+
 				auto bottom = b.getAABB().max().y;
 				auto left = b.getAABB().min().x;
 				auto right = b.getAABB().max().x;

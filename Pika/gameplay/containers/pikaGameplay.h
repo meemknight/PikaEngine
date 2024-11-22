@@ -66,14 +66,10 @@ struct Gameplay : public Container
 
 
 
-
-
 		if (input.buttons[pika::Button::A].released())
 		{
 			//.. A button was released
 		}
-
-
 
 
 

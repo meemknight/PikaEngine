@@ -1089,6 +1089,7 @@ namespace ph2d
 			return ph2d::HalfSpaceVsOBB(
 				lineEquation, abox, A.motionState.rotation, penetration, normal, contactPoint,
 			tangentB, tangentA);
+
 		}
 
 
@@ -1682,45 +1683,51 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 		};
 
 
-		//gravity
-		for (int i = 0; i < bodies.size(); i++)
+		for (auto &it : bodies)
 		{
+			auto &b = it.second;
+
+			//gravity
 			//no need to check for freeze position on x y because I clear them later anyway.
-			if (bodies[i].motionState.mass != 0 && bodies[i].motionState.mass != INFINITY
-				&& !bodies[i].flags.isFreezePosition()
+			if (b.motionState.mass != 0 && b.motionState.mass != INFINITY
+				&& !b.flags.isFreezePosition()
 				)
 			{
-				bodies[i].motionState.acceleration += simulationphysicsSettings.gravity
-					* bodies[i].gravityScale;
+				b.motionState.acceleration += simulationphysicsSettings.gravity
+					* b.gravityScale;
 			}
+
+			//make sure all objects use a valid mass
+			if (b.motionState.mass <= 0)
+			{
+				b.motionState.mass = INFINITY;
+			}
+
+			if (b.motionState.momentOfInertia <= 0)
+			{
+				b.motionState.momentOfInertia = INFINITY;
+			}
+
+			applyDrag(b.motionState, b.dragScale, simulationphysicsSettings);
+			applyAngularDrag(b.motionState, b.angularDragScale, simulationphysicsSettings);
+
 		}
 
-		size_t bodiesSize = bodies.size();
-		for (int i = 0; i < bodiesSize; i++)
-		{
-			if (bodies[i].motionState.mass == 0)
-			{
-				bodies[i].motionState.mass = INFINITY;
-			}
-
-			applyDrag(bodies[i].motionState, bodies[i].dragScale, simulationphysicsSettings);
-			applyAngularDrag(bodies[i].motionState, bodies[i].angularDragScale, simulationphysicsSettings);
-		};
 
 		for (int _ = 0; _ < collisionChecksCount; _++)
 		{
 			intersections.clear();
 
-			for (int i = 0; i < bodiesSize; i++)
+			for (auto &it1 : bodies)
 			{
 				//detect colisions
-				for (int j = 0; j < bodiesSize; j++)
+				for (auto &it2 : bodies)
 				{
 					//break;
-					if (i == j) { break; }
+					if (it1.first == it2.first) { break; }
 
-					auto &A = bodies[i];
-					auto &B = bodies[j];
+					auto &A = it1.second;
+					auto &B = it2.second;
 
 					glm::vec2 normal = {};
 					glm::vec2 contactPoint = {};
@@ -1734,13 +1741,15 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 					{
 						ManifoldIntersection intersection = {};
 
-						intersection.A = i;
-						intersection.B = j;
+						intersection.A = it1.first;
+						intersection.B = it2.first;
 						intersection.tangentA = tangentA;
 						intersection.tangentB = tangentB;
 						intersection.contactPoint = contactPoint;
 						intersection.normal = normal;
 						intersection.penetration = penetration;
+						intersection.massA = A.motionState.mass;
+						intersection.massB = B.motionState.mass;
 
 						intersections.push_back(intersection);
 					}
@@ -1752,13 +1761,14 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			std::sort(intersections.begin(), intersections.end(), [&](auto &a, auto &b)
 			{
 				// Retrieve the mass of the objects from the indices A and B
-				float massA = bodies[a.A].motionState.mass;
-				float massB = bodies[a.B].motionState.mass;
+				float massA = a.massA;
+				float massB = a.massB;
 
 				// Sort first by penetration depth (deeper penetration first)
 				if (a.penetration != b.penetration)
 					return a.penetration > b.penetration;  // Sort by deeper penetration first
 
+				//TODO this aint right!
 				// If penetrations are equal, sort by mass (lighter mass first)
 				return massA < massB;  // Lighter mass first (this avoids smaller objects being "swallowed")
 			});
@@ -1791,11 +1801,13 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 		}
 		
-		for (int i = 0; i < bodiesSize; i++)
+		for (auto &it : bodies)
 		{
-			integrateForces(bodies[i].motionState, deltaTime, simulationphysicsSettings, 
-				bodies[i].flags);
-			bodies[i].motionState.lastPos = bodies[i].motionState.pos;
+			auto &b = it.second;
+
+			integrateForces(b.motionState, deltaTime, simulationphysicsSettings, 
+				b.flags);
+			b.motionState.lastPos = b.motionState.pos;
 		};
 	
 
@@ -1804,18 +1816,16 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 }
 
 
-void ph2d::PhysicsEngine::addBody(glm::vec2 centerPos, Collider collider)
+ph2d::ph2dBodyId ph2d::PhysicsEngine::addBody(glm::vec2 centerPos, Collider collider)
 {
-
 	Body body;
-	body.id = ++idCounter;
 	body.motionState.setPos(centerPos);
 	body.collider = collider;
 	body.motionState.mass = collider.computeMass();
 	body.motionState.momentOfInertia = collider.computeMomentOfInertia(body.motionState.mass);
 
-	bodies.push_back(body);
-
+	bodies.emplace(++idCounter, body);
+	return idCounter;
 }
 
 
@@ -1842,18 +1852,17 @@ glm::vec2 ph2d::rotationToVector(float rotation)
 	return glm::normalize(glm::vec2(-x, y));
 }
 
-void ph2d::PhysicsEngine::addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal)
+ph2d::ph2dBodyId ph2d::PhysicsEngine::addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal)
 {
 	Body body;
-	body.id = ++idCounter;
 	body.motionState.setPos(position);
 	body.collider.type = ColliderType::ColliderHalfSpace;
 	body.motionState.mass = 0;
 	body.motionState.momentOfInertia = 0;
 
 	body.motionState.rotation = vectorToRotation(normal);
-	bodies.push_back(body);
-
+	bodies.emplace(++idCounter ,body);
+	return idCounter;
 }
 
 
