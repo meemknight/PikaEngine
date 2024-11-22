@@ -330,7 +330,7 @@ namespace ph2d
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
 		glm::vec2 &normal, glm::vec2 &contactPoint, 
-		glm::vec2 &tangentA, glm::vec2 &tangentB);
+		glm::vec2 &tangentA, glm::vec2 &tangentB, bool *reverseOrder = 0);
 
 	struct ManifoldIntersection
 	{

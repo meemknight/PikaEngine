@@ -976,10 +976,11 @@ namespace ph2d
 	}
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
-		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB)
+		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB, bool *reverseOrder)
 	{
 		tangentA = {};
 		tangentB = {};
+		if (reverseOrder) { *reverseOrder = false; }
 
 		if (A.collider.type == ph2d::ColliderCircle &&
 			B.collider.type == ph2d::ColliderCircle
@@ -1056,6 +1057,8 @@ namespace ph2d
 			LineEquation lineEquation;
 			lineEquation.createFromRotationAndPoint(B.motionState.rotation,
 				B.motionState.pos);
+			
+			if (reverseOrder) { *reverseOrder = true; }
 
 			return ph2d::HalfSpaceVSCircle(
 				lineEquation, abox, penetration, normal, contactPoint);
@@ -1086,6 +1089,7 @@ namespace ph2d
 			lineEquation.createFromRotationAndPoint(B.motionState.rotation,
 				B.motionState.pos);
 
+			if (reverseOrder) { *reverseOrder = true; }
 			return ph2d::HalfSpaceVsOBB(
 				lineEquation, abox, A.motionState.rotation, penetration, normal, contactPoint,
 			tangentB, tangentA);
@@ -1736,20 +1740,36 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 					glm::vec2 tangentA = {};
 					glm::vec2 tangentB = {};
 
+					bool reverseOrder = 0;
+
 					if (BodyvsBody(A, B, penetration, normal, contactPoint, 
-						tangentA, tangentB))
+						tangentA, tangentB, &reverseOrder))
 					{
 						ManifoldIntersection intersection = {};
 
-						intersection.A = it1.first;
-						intersection.B = it2.first;
-						intersection.tangentA = tangentA;
-						intersection.tangentB = tangentB;
+						if (reverseOrder)
+						{
+							intersection.A = it2.first;
+							intersection.B = it1.first;
+							intersection.tangentA = tangentB;
+							intersection.tangentB = tangentA;
+							intersection.massA = B.motionState.mass;
+							intersection.massB = A.motionState.mass;
+							intersection.normal = -normal;
+						}
+						else
+						{
+							intersection.A = it1.first;
+							intersection.B = it2.first;
+							intersection.tangentA = tangentA;
+							intersection.tangentB = tangentB;
+							intersection.massA = A.motionState.mass;
+							intersection.massB = B.motionState.mass;
+							intersection.normal = normal;
+						}
+
 						intersection.contactPoint = contactPoint;
-						intersection.normal = normal;
 						intersection.penetration = penetration;
-						intersection.massA = A.motionState.mass;
-						intersection.massB = B.motionState.mass;
 
 						intersections.push_back(intersection);
 					}

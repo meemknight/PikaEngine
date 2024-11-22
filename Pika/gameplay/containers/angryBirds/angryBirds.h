@@ -116,26 +116,26 @@ struct AngryBirds: public Container
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
 
 
-		//for (int i = 0; i < 10; i++)
-		//{
-		//	if (1)
-		//	{
-		//		float w = rand() % 100 + 20;
-		//		float h = rand() % 100 + 20;
-		//
-		//		auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
-		//			ph2d::createBoxCollider({w, h}));
-		//		physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
-		//	}
-		//
-		//	for (int j = 0; j < 1; j++)
-		//	{
-		//		float r = rand() % 35 + 10;
-		//
-		//		physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
-		//			ph2d::createCircleCollider({r}));
-		//	}
-		//}
+		for (int i = 0; i < 2; i++)
+		{
+			if (1)
+			{
+				float w = rand() % 100 + 20;
+				float h = rand() % 100 + 20;
+		
+				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
+					ph2d::createBoxCollider({w, h}));
+				physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
+			}
+		
+			for (int j = 0; j < 1; j++)
+			{
+				float r = rand() % 35 + 10;
+		
+				physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
+					ph2d::createCircleCollider({r}));
+			}
+		}
 
 		//floor
 		physicsEngine.addHalfSpaceStaticObject({0, 800}, {0.0, 1});
@@ -181,8 +181,20 @@ struct AngryBirds: public Container
 
 		if (input.lMouse.pressed())
 		{
+			addBlock(0, mousePosWorld);
 			addBlock(1, mousePosWorld);
+			addBlock(2, mousePosWorld);
+			addBlock(3, mousePosWorld);
+			addBlock(4, mousePosWorld);
+			addBlock(5, mousePosWorld);
+			addBlock(6, mousePosWorld);
+			addBlock(7, mousePosWorld);
 		}
+
+		//if (input.lMouse.pressed())
+		//{
+		//	addBlock(0, mousePosWorld);
+		//}
 
 
 	#pragma region render
@@ -197,10 +209,10 @@ struct AngryBirds: public Container
 			{
 				int textureIndex = itFound->second.textureType;
 
-				//renderer.renderRectangle(b.getAABB().asVec4(),
-				//	textures[textureIndex],
-				//	Colors_White,
-				//	{}, b.motionState.rotation, texturesAtlas[textureIndex].get(0, 0));
+				renderer.renderRectangle(b.getAABB().asVec4(),
+					textures[textureIndex],
+					Colors_White,
+					{}, glm::degrees(b.motionState.rotation), texturesAtlas[textureIndex].get(0, 0));
 
 			}
 
