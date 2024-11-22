@@ -14,6 +14,8 @@
 // that means position x, position y; size x, size y.
 // you can easily convert from a vec4 to an aabb and back
 
+#pragma once
+
 #undef min
 #undef max
 
@@ -247,7 +249,11 @@ namespace ph2d
 
 		AABB getAABB();
 
+		bool isHalfPlane();
+
 		bool intersectPoint(glm::vec2 p, float delta = 0);
+
+		LineEquation getLineEquationForHalfPlaneColliders();
 	};
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,

@@ -51,7 +51,7 @@ struct PhysicsTest: public Container
 				physicsEngine.bodies.back().motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
 			}
 
-			for (int j = 0; j < 1; j++)
+			for (int j = 0; j < 2; j++)
 			{
 				float r = rand() % 35 + 10;
 
@@ -63,7 +63,7 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
 
-		//physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({300, 300}));
+		physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({300, 100}));
 		//physicsEngine.addBody({700, 700}, ph2d::createBoxCollider({300, 300}));
 
 
@@ -72,7 +72,7 @@ struct PhysicsTest: public Container
 
 		//physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({75}));
 		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({55}));
-		physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({40}));
+		//physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({40}));
 		//physicsEngine.addBody({550, 700}, ph2d::createCircleCollider({25}));
 
 		//physicsEngine.addBody({600, 600}, ph2d::createBoxCollider({50, 50}));
@@ -91,7 +91,7 @@ struct PhysicsTest: public Container
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).y << "\n";
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).y  << "\n";
 
-		physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.2, 1});
+		physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.0, 1});
 		//physicsEngine.addBody({500, floorPos}, ph2d::createBoxCollider({900, 50}));
 		//physicsEngine.bodies.back().motionState.mass = 0;
 		//physicsEngine.bodies.back().motionState.momentOfInertia = 0;
@@ -154,6 +154,10 @@ struct PhysicsTest: public Container
 		ImGui::SliderAngle("angular velocity", &physicsEngine.bodies[0].motionState.angularVelocity);
 		//physicsEngine.bodies[0].motionState.angularVelocity = 1.5;
 
+		ImGui::Text("Mouse pos %d, %d", input.mouseX, input.mouseY);
+
+		ImGui::Text("Y min pos %f", physicsEngine.bodies[0].getAABB().min().y);
+
 		ImGui::Checkbox("Simulate", &simulate);
 
 		ImGui::End();
@@ -164,7 +168,7 @@ struct PhysicsTest: public Container
 		//mouse
 		if (!simulate)
 		{
-			physicsEngine.bodies[0].motionState.setPos({input.mouseX, input.mouseY});
+			//physicsEngine.bodies[0].motionState.setPos({input.mouseX, input.mouseY});
 		}
 
 		static glm::vec2 pressedPosition = {};
@@ -175,9 +179,7 @@ struct PhysicsTest: public Container
 
 			for (int i = 0; i < physicsEngine.bodies.size(); i++)
 			{
-				if (OBBvsPoint(physicsEngine.bodies[i].getAABB(),
-					physicsEngine.bodies[i].motionState.rotation,
-					{input.mouseX, input.mouseY}))
+				if (physicsEngine.bodies[i].intersectPoint({input.mouseX, input.mouseY}))
 				{
 					selected = i;
 					pressedPosition = {input.mouseX, input.mouseY};
@@ -336,7 +338,6 @@ struct PhysicsTest: public Container
 		ImGui::Text("Penetration: %f", p);
 		ImGui::End();
 
-
 		for (int i = 0; i < physicsEngine.bodies.size(); i++)
 		{
 			auto &b = physicsEngine.bodies[i];
@@ -357,6 +358,13 @@ struct PhysicsTest: public Container
 			{
 				color = Colors_Red;
 			}
+
+			//if (OBBvsPoint(physicsEngine.bodies[i].getAABB(),
+			//	physicsEngine.bodies[i].motionState.rotation,
+			//	{input.mouseX, input.mouseY}))
+			//{
+			//	color = Colors_Blue;
+			//}
 
 			if (b.collider.type == ph2d::ColliderCircle)
 			{

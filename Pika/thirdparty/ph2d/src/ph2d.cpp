@@ -1,3 +1,4 @@
+#include "ph2d/ph2d.h"
 //////////////////////////////////////////////////
 //ph2d.h				0.0.1
 //Copyright(c) 2024 Luta Vlad - Low Level Game Dev
@@ -19,7 +20,10 @@
 #include <iostream>
 #include <algorithm>
 
+//todo per engine
 constexpr static float MAX_VELOCITY = 10'000;
+constexpr static float MIN_VELOCITY = 0.1;
+constexpr static float MIN_ANGULAR_VELOCITY = 0.01;
 constexpr static float MAX_ACCELERATION = 10'000;
 constexpr static float MAX_AIR_DRAG = 100;
 
@@ -39,6 +43,19 @@ void normalizeSafe(glm::vec2 &v)
 
 namespace ph2d
 {
+
+
+	LineEquation Body::getLineEquationForHalfPlaneColliders()
+	{
+		if (collider.type != ColliderHalfSpace) { return {}; }
+
+		LineEquation lineEquation;
+		lineEquation.createFromRotationAndPoint(motionState.rotation,
+			motionState.pos);
+
+		return lineEquation;
+	}
+
 
 	void AABB::rotateAroundCenter(float r)
 	{
@@ -853,10 +870,14 @@ namespace ph2d
 
 	void applyAngularDrag(MotionState &motionState)
 	{
-		float dragForce = 0.1f * -motionState.angularVelocity;
+		float dragForce = 0.02f * -motionState.angularVelocity;
 		if (dragForce > MAX_AIR_DRAG)
 		{
 			dragForce = MAX_AIR_DRAG;
+		}
+		if (dragForce < -MAX_AIR_DRAG)
+		{
+			dragForce = -MAX_AIR_DRAG;
 		}
 		motionState.angularVelocity += dragForce;
 	}
@@ -871,6 +892,17 @@ namespace ph2d
 		}
 		else
 		{
+
+			//if (glm::length(motionState.velocity) < MIN_VELOCITY)
+			//{
+			//	motionState.velocity = glm::vec2(0.0f);
+			//}
+			//
+			//if (std::abs(motionState.angularVelocity) < MIN_ANGULAR_VELOCITY)
+			//{
+			//	motionState.angularVelocity = 0.0f;
+			//}
+
 			//linear motion
 			motionState.acceleration = glm::clamp(motionState.acceleration,
 				glm::vec2(-MAX_ACCELERATION), glm::vec2(MAX_ACCELERATION));
@@ -1015,7 +1047,7 @@ void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 
 
 	if (momentOfInertia != 0 && momentOfInertia != INFINITY)
 	{
-		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.99f;
+		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.95f;
 	}
 }
 
@@ -1071,6 +1103,27 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 			A.motionState.pos -= massInverseA * correction;
 			B.motionState.pos += massInverseB * correction;
+		};
+
+		auto angularCorrection = [&](Body &A, Body &B, glm::vec2 n,
+			float penetrationDepth)
+		{
+
+			float intertiaInverseA = 1.f / A.motionState.momentOfInertia;
+			float intertiaInverseB = 1.f / B.motionState.momentOfInertia;
+
+			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { intertiaInverseA = 0; }
+			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { intertiaInverseB = 0; }
+
+			const float percent = 0.20; // usually 20% to 80%
+			const float slop = 0.01; // usually 0.01 to 0.1 
+
+			//float angularDeviationA = glm::dot(A.motionState.rotation, normal);
+			//float angularDeviationB = glm::dot(B.motionState.rotation, normal);
+
+			//glm::vec2 correction = (glm::max(penetrationDepth - slop, 0.0f) / (intertiaInverseA + intertiaInverseB)) * percent * n;
+			//A.motionState.pos -= massInverseA * correction;
+			//B.motionState.pos += massInverseB * correction;
 		};
 
 		auto applyFriction = [&](Body &A, Body &B, glm::vec2 tangent, glm::vec2 rv,
@@ -1189,7 +1242,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 				// Re-calculate relative velocity after normal impulse
 				// is applied (impulse from first article, this code comes
 				// directly thereafter in the same resolve function)
-				// rv also holds the rotational velocity contribution
+				// rv also holds the rotationalrotational velocity contribution
 				glm::vec2 rv = (B.motionState.velocity + cross(-B.motionState.angularVelocity, rContactB)) -
 					(A.motionState.velocity + cross(-A.motionState.angularVelocity, rContactA));
 
@@ -1408,6 +1461,11 @@ ph2d::AABB ph2d::Body::getAABB()
 
 }
 
+bool ph2d::Body::isHalfPlane()
+{
+	return collider.type == ColliderHalfSpace;
+}
+
 bool ph2d::Body::intersectPoint(glm::vec2 p, float delta)
 {
 	switch (collider.type)
@@ -1424,6 +1482,18 @@ bool ph2d::Body::intersectPoint(glm::vec2 p, float delta)
 		return OBBvsPoint(getAABB(), motionState.rotation, p, delta);
 	}
 	break;
+
+	case ColliderHalfSpace:
+	{
+		LineEquation lineEquation;
+		lineEquation.createFromRotationAndPoint(motionState.rotation,
+			motionState.pos);
+
+		return (lineEquation.computeEquation(p) + delta) >= 0;
+	}
+	break;
+
+	//todo last cases
 
 	}
 
