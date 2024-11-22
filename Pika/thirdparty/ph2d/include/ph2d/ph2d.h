@@ -22,6 +22,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+constexpr static int PH2D_MAX_CONVEX_SHAPE_POINTS = 12;
+
 namespace ph2d
 {
 	struct LineEquation;
@@ -201,6 +203,16 @@ namespace ph2d
 		}
 	};
 
+	struct ConvexPolygon
+	{
+		//the vertexes of the object as distance from center, in a trigonometrical /
+			// anti trigonometrical order.
+		glm::vec2 vertexesObjectSpace[PH2D_MAX_CONVEX_SHAPE_POINTS];
+		unsigned char vertexCount;
+
+		void getCornersRotated(glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS], float angle) const;
+	};
+
 	struct Collider
 	{
 		union
@@ -214,7 +226,8 @@ namespace ph2d
 			{
 				float radius;
 			}circle;
-	
+			
+			ConvexPolygon convexPolygon;
 		} collider = {};
 
 		unsigned char type = 0;
@@ -230,11 +243,14 @@ namespace ph2d
 		ColliderCircle,
 		ColliderBox,
 		ColliderHalfSpace,
+		ColliderConvexPolygon,
 	};
 
 	Collider createBoxCollider(glm::vec2 size);
 
 	Collider createCircleCollider(float r);
+
+	Collider createConvexPolygonCollider(glm::vec2 *shape, unsigned char count);
 
 	struct Body
 	{
@@ -297,5 +313,8 @@ namespace ph2d
 	glm::mat2 rotationMatrix(float angle);
 
 	void integrateForces(MotionState &motionState, float mass, float deltaTime);
+
+	float cross(glm::vec2 a, glm::vec2 b);
+
 
 };

@@ -116,6 +116,17 @@ namespace ph2d
 
 	}
 
+	void ConvexPolygon::getCornersRotated(glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS],
+		float angle) const
+	{
+		int c = std::min((unsigned char)vertexCount, (unsigned char)PH2D_MAX_CONVEX_SHAPE_POINTS);
+		for (int i = 0; i < c; i++)
+		{
+			corners[i] = vertexesObjectSpace[i];
+			corners[i] = rotateAroundCenter(corners[i], angle);
+		}
+	}
+
 	//The second is the circle
 	bool AABBvsCircle(AABB abox, AABB bbox, float &penetration,
 		glm::vec2 &normal, glm::vec2 &contactPoint)
@@ -261,6 +272,19 @@ namespace ph2d
 		return rez;
 	}
 
+
+	bool CirclevsConvexPolygon(AABB circle, const ConvexPolygon &convexPolygon,
+		glm::vec2 convexPolygonCenter,
+		float rotation,
+		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
+	{
+
+
+
+
+	}
+
+
 	bool AABBvsAABB(AABB abox, AABB bbox, float &penetration,
 		glm::vec2 &normal)
 	{
@@ -382,7 +406,7 @@ namespace ph2d
 	}
 
 
-	bool HalfSpaceVSOBB(LineEquation line, AABB bbox, float rotation,
+	bool HalfSpaceVsOBB(LineEquation line, AABB bbox, float rotation,
 		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint,
 		glm::vec2 &tangentA, glm::vec2 &tangentB)
 	{
@@ -516,6 +540,144 @@ namespace ph2d
 		return true;
 	}
 
+	bool HalfSpaceVsConvexPolygon(LineEquation line, const ConvexPolygon &convexPolygon, 
+		glm::vec2 convexPolygonCenter,
+		float rotation,
+		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint,
+		glm::vec2 &tangentA, glm::vec2 &tangentB)
+	{
+		line.normalize();
+		normal = line.getNormal();
+
+		glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS] = {};
+		convexPolygon.getCornersRotated(corners, rotation);
+		int vertexCount = convexPolygon.vertexCount;
+
+		for (int i = 0; i < vertexCount; i++)
+		{
+			corners[i] += convexPolygonCenter;
+		}
+
+		if (vertexCount < 3) { return 0; }
+
+		std::vector<glm::vec2> intersectionPoints;
+
+		// Clip edges of the OBB against the half-plane
+		for (int i = 0; i < vertexCount; ++i)
+		{
+			glm::vec2 start = corners[i];
+			glm::vec2 end = corners[(i + 1) % vertexCount];
+
+			float startDist = line.computeEquation(start);
+			float endDist = line.computeEquation(end);
+
+			// Include points inside the half-plane
+			if (startDist >= 0) intersectionPoints.push_back(start);
+
+			// Check if the edge intersects the plane
+			if ((startDist >= 0 && endDist < 0) || (startDist < 0 && endDist >= 0))
+			{
+				float t = startDist / (startDist - endDist); // Interpolation factor
+				glm::vec2 intersection = start + t * (end - start);
+				intersectionPoints.push_back(intersection);
+			}
+		}
+
+		// No intersection if there are no points
+		if (intersectionPoints.empty())
+			return false;
+
+		//used to calculate the tangent along the obb
+		glm::vec2 bestEdgeStart = {};
+		glm::vec2 bestEdgeEnd = {};
+		tangentB = {};
+
+		if (intersectionPoints.size() == 1)
+		{
+
+		}
+		if (intersectionPoints.size() == 2)
+		{
+			bestEdgeStart = intersectionPoints[0];
+			bestEdgeEnd = intersectionPoints[1];
+			tangentB = glm::normalize(bestEdgeEnd - bestEdgeStart);
+		}
+		else if (intersectionPoints.size() == 3)
+		{
+			//the OBB is entering the plane and forms a triangle, use the biggest edge
+			//we first determine the "pointy" end of the tirangle that enters the triangle
+
+			//determine deepest center point
+			float biggestPenetration = -1000000000;
+			int centerPoint = 0;
+			for (int i = 0; i < 3; i++)
+			{
+				float dist = line.computeEquation(intersectionPoints[i]);
+				if (dist > biggestPenetration)
+				{
+					biggestPenetration = dist;
+					centerPoint = i;
+				}
+			}
+
+			glm::vec2 first = intersectionPoints[centerPoint] - intersectionPoints[(centerPoint + 1) % 3];
+			glm::vec2 second = intersectionPoints[centerPoint] - intersectionPoints[(centerPoint + 2) % 3];
+
+			float firstL = glm::length(first);
+			float secondL = glm::length(second);
+
+			if (firstL > secondL)
+			{
+				if (firstL)
+					tangentB = first / firstL;
+			}
+			else
+			{
+				if (secondL)
+					tangentB = second / secondL;
+			}
+		}
+		else
+		{
+			float biggestPenetration = -1000000000;
+			for (int i = 0; i < intersectionPoints.size(); i++)
+			{
+				glm::vec2 start = intersectionPoints[i];
+				glm::vec2 end = intersectionPoints[(i + 1) % 4];
+
+				float startDist = line.computeEquation(start);
+				float endDist = line.computeEquation(end);
+
+				if (startDist + endDist > biggestPenetration)
+				{
+					biggestPenetration = startDist + endDist;
+					bestEdgeStart = start;
+					bestEdgeEnd = end;
+				}
+			}
+			tangentB = glm::normalize(bestEdgeEnd - bestEdgeStart);
+		}
+
+		glm::vec2 centroid = {0.0f, 0.0f};
+		for (const auto &point : intersectionPoints)
+			centroid += point;
+		centroid /= static_cast<float>(intersectionPoints.size());
+
+		contactPoint = centroid;
+
+		// Penetration is the maximum distance of included points from the plane
+		penetration = 0.0f;
+		for (const auto &point : intersectionPoints)
+		{
+			float dist = line.computeEquation(point);
+			if (dist > penetration)
+				penetration = dist;
+		}
+		
+		tangentA = line.getLineVector();
+
+		return true;
+	}
 
 	//a is aabb and b has a rotation
 	bool AABBvsOBB(AABB a, AABB b, float br)
@@ -814,6 +976,8 @@ namespace ph2d
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
 		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB)
 	{
+		tangentA = {};
+		tangentB = {};
 
 		if (A.collider.type == ph2d::ColliderCircle &&
 			B.collider.type == ph2d::ColliderCircle
@@ -905,7 +1069,7 @@ namespace ph2d
 			lineEquation.createFromRotationAndPoint(A.motionState.rotation,
 				A.motionState.pos);
 
-			bool rez = ph2d::HalfSpaceVSOBB(
+			bool rez = ph2d::HalfSpaceVsOBB(
 				lineEquation, bbox, B.motionState.rotation,
 				penetration, normal, contactPoint, tangentA, tangentB);
 			normal = -normal;
@@ -920,10 +1084,39 @@ namespace ph2d
 			lineEquation.createFromRotationAndPoint(B.motionState.rotation,
 				B.motionState.pos);
 
-			return ph2d::HalfSpaceVSOBB(
+			return ph2d::HalfSpaceVsOBB(
 				lineEquation, abox, A.motionState.rotation, penetration, normal, contactPoint,
 			tangentB, tangentA);
 		}
+
+
+		else if (A.collider.type == ph2d::ColliderHalfSpace &&
+			B.collider.type == ph2d::ColliderConvexPolygon)
+			{
+
+				LineEquation lineEquation;
+				lineEquation.createFromRotationAndPoint(A.motionState.rotation,
+					A.motionState.pos);
+
+				bool rez = ph2d::HalfSpaceVsConvexPolygon(
+					lineEquation, B.collider.collider.convexPolygon, B.motionState.pos, B.motionState.rotation,
+					penetration, normal, contactPoint, tangentA, tangentB);
+				normal = -normal;
+				return rez;
+				}
+		else if (A.collider.type == ph2d::ColliderConvexPolygon &&
+			B.collider.type == ph2d::ColliderHalfSpace)
+			{
+
+				LineEquation lineEquation;
+				lineEquation.createFromRotationAndPoint(B.motionState.rotation,
+					B.motionState.pos);
+
+				return ph2d::HalfSpaceVsConvexPolygon(
+					lineEquation, A.collider.collider.convexPolygon, A.motionState.pos, A.motionState.rotation, penetration, normal, contactPoint,
+					tangentB, tangentA);
+			}
+
 
 		return 0;
 	}
@@ -1015,6 +1208,23 @@ namespace ph2d
 	}
 
 
+	// More exotic (but necessary) forms of the cross product
+	// with a vector a and scalar s, both returning a vector
+	glm::vec2 cross(glm::vec2 a, float s)
+	{
+		return glm::vec2(s * a.y, -s * a.x);
+	}
+
+	glm::vec2 cross(float s, glm::vec2 a)
+	{
+		return glm::vec2(-s * a.y, s * a.x);
+	}
+
+	float cross(glm::vec2 a, glm::vec2 b)
+	{
+		return a.x * b.y - a.y * b.x;
+	}
+
 	glm::mat2 rotationMatrix(float angle)
 	{
 		float c = cos(angle);
@@ -1047,6 +1257,19 @@ namespace ph2d
 		return c;
 	}
 
+	Collider createConvexPolygonCollider(glm::vec2 *shape, unsigned char count)
+	{
+		Collider c;
+		c.type = ColliderConvexPolygon;
+
+		int countMax = std::min(count, (unsigned char)PH2D_MAX_CONVEX_SHAPE_POINTS);
+
+		memcpy(c.collider.convexPolygon.vertexesObjectSpace, shape, countMax * sizeof(glm::vec2));
+		c.collider.convexPolygon.vertexCount = count;
+
+		return c;
+	}
+
 	float Collider::computeMass()
 	{
 		switch (type)
@@ -1056,6 +1279,20 @@ namespace ph2d
 			
 			case ColliderBox:
 			return collider.box.size.x * collider.box.size.y;
+
+			case ColliderConvexPolygon:
+			{
+				float mass = 0;
+				unsigned char c = collider.convexPolygon.vertexCount;
+
+				for (int i = 0; i < c; i++)
+				{
+					glm::vec2 a = collider.convexPolygon.vertexesObjectSpace[i];
+					glm::vec2 b = collider.convexPolygon.vertexesObjectSpace[(i + 1) % c];
+					mass += cross(a, b) / 2.f;
+				}
+			}
+			break;
 
 			default:
 			return 0;
@@ -1073,6 +1310,26 @@ namespace ph2d
 		case ColliderBox:
 		return mass * (collider.box.size.x * collider.box.size.x + 
 			collider.box.size.y * collider.box.size.y) * (1.f/12.f);
+
+		case ColliderConvexPolygon:
+		{
+			float momentOfInertia = 0;
+			unsigned char c = collider.convexPolygon.vertexCount;
+
+			for (int i = 0; i < c; i++)
+			{
+				glm::vec2 a = collider.convexPolygon.vertexesObjectSpace[i];
+				glm::vec2 b = collider.convexPolygon.vertexesObjectSpace[(i + 1) % c];
+				float crossProduct = cross(a, b);
+
+				// Sum the contributions from the triangle
+				momentOfInertia += (glm::dot(a, a) + glm::dot(a, b) + glm::dot(b, b)) * 1;
+
+			}
+
+			return momentOfInertia * mass / 6.f;
+		}
+		break;
 
 		default:
 		return 0;
@@ -1097,22 +1354,7 @@ bool overlap(ph2d::Body &a, ph2d::Body &b)
 	return 0;
 }
 
-float cross(glm::vec2 a, glm::vec2 b)
-{
-	return a.x * b.y - a.y * b.x;
-}
 
-// More exotic (but necessary) forms of the cross product
-// with a vector a and scalar s, both returning a vector
-glm::vec2 cross(glm::vec2 a, float s)
-{
-	return glm::vec2(s * a.y, -s * a.x);
-}
-
-glm::vec2 cross(float s, glm::vec2 a)
-{
-	return glm::vec2(-s * a.y, s * a.x);
-}
 
 
 void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector)
@@ -1197,7 +1439,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 			const float PI = 3.1415926;
 
-			const float percent = 0.15; //
+			const float percent = 0.17; //
 			const float slop = 0.00; // usually 0.01 to 0.1 
 			const float tresshold = glm::radians(5.f);
 
@@ -1584,6 +1826,30 @@ ph2d::AABB ph2d::Body::getAABB()
 	}
 	break;
 
+	case ColliderConvexPolygon:
+	{
+		unsigned char c = collider.collider.convexPolygon.vertexCount;
+		auto v = collider.collider.convexPolygon.vertexesObjectSpace;
+
+		if (c == 0) { return {}; }
+
+		glm::vec2 minPos = v[0];
+		glm::vec2 maxPos = v[0];
+
+		for (int i = 0; i < c; i++)
+		{
+			if (v[i].x < minPos.x) { minPos.x = v[i].x; }
+			if (v[i].y < minPos.y) { minPos.y = v[i].y; }
+
+			if (v[i].x > maxPos.x) { maxPos.x = v[i].x; }
+			if (v[i].y > maxPos.y) { maxPos.y = v[i].y; }
+		}
+
+		glm::vec4 rez(minPos + motionState.pos, maxPos - minPos);
+		return rez;
+	}
+	break;
+
 	}
 
 	return {};
@@ -1593,6 +1859,24 @@ ph2d::AABB ph2d::Body::getAABB()
 bool ph2d::Body::isHalfPlane()
 {
 	return collider.type == ColliderHalfSpace;
+}
+
+//https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
+bool pointInTriangle(glm::vec2 pt, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3)
+{
+	auto sign = [](glm::vec2 p1, glm::vec2 p2, glm::vec2 p3)
+	{
+		return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+	};
+
+	float d1 = sign(pt, v1, v2);
+	float d2 = sign(pt, v2, v3);
+	float d3 = sign(pt, v3, v1);
+
+	float has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+	float has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+	return !(has_neg && has_pos);
 }
 
 bool ph2d::Body::intersectPoint(glm::vec2 p, float delta)
@@ -1622,7 +1906,25 @@ bool ph2d::Body::intersectPoint(glm::vec2 p, float delta)
 	}
 	break;
 
-	//todo last cases
+	case ColliderConvexPolygon:
+	{
+		//todo apply delta
+		auto &c = collider.collider.convexPolygon;
+
+		for (int i = 0; i < c.vertexCount; i++)
+		{
+			glm::vec2 p1 = c.vertexesObjectSpace[i] + motionState.pos;
+			glm::vec2 p2 = c.vertexesObjectSpace[(i + 1) % c.vertexCount] + motionState.pos;
+			glm::vec2 p3 = motionState.pos;
+				
+			if (pointInTriangle(p, p1, p2, p3))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	break;
 
 	}
 

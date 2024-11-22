@@ -37,7 +37,7 @@ struct PhysicsTest: public Container
 	{
 		renderer.create(requestedInfo.requestedFBO.fbo);
 	
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 0; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
@@ -59,6 +59,18 @@ struct PhysicsTest: public Container
 					ph2d::createCircleCollider({r}));
 			}
 		}
+
+
+		glm::vec2 shape[5] = 
+		{
+			{0, -50},
+			{40, -10},
+			{25, 25},
+			{-25, 25},
+			{-40, -10},
+		};
+		physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
@@ -163,6 +175,7 @@ struct PhysicsTest: public Container
 		ImGui::Text("Mouse pos %d, %d", input.mouseX, input.mouseY);
 
 		ImGui::Text("Y min pos %f", physicsEngine.bodies[0].getAABB().min().y);
+		ImGui::Text("Moment of inertia %f", physicsEngine.bodies[0].motionState.momentOfInertia);
 
 		ImGui::Checkbox("Simulate", &simulate);
 
@@ -402,9 +415,24 @@ struct PhysicsTest: public Container
 				glm::vec2 lineEquationStart = lineEquation.getClosestPointToOrigin();
 				lineEquationStart -= lineEquation.getLineVector() * 1000.f;
 				renderer.renderLine(lineEquationStart, lineEquationStart + lineEquation.getLineVector() * 2000.f, Colors_Red);
+			}
+			else if (b.collider.type == ph2d::ColliderConvexPolygon)
+			{
+				auto &c = b.collider.collider.convexPolygon;
 
+				for (int i = 0; i < c.vertexCount; i++)
+				{
+					glm::vec2 p1 = c.vertexesObjectSpace[i] + b.motionState.pos;
+					glm::vec2 p2 = c.vertexesObjectSpace[(i + 1) % c.vertexCount] + b.motionState.pos;
+
+					p1 = ph2d::rotateAroundPoint(p1, b.motionState.pos, b.motionState.rotation);
+					p2 = ph2d::rotateAroundPoint(p2, b.motionState.pos, b.motionState.rotation);
+
+					renderer.renderLine(p1, p2, color);
+				}
 
 			}
+
 		}
 
 		//renderer.renderRectangle({-100, floorPos, 100000, 20});
