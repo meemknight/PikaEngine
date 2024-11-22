@@ -21,11 +21,17 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <bitset>
 
 constexpr static int PH2D_MAX_CONVEX_SHAPE_POINTS = 12;
 
+
 namespace ph2d
 {
+
+	using ph2dUserData = std::uint64_t;
+	using ph2dBodyId = std::uint32_t;
+	
 	struct LineEquation;
 
 
@@ -105,6 +111,42 @@ namespace ph2d
 
 	glm::vec2 rotateAroundPoint(glm::vec2 in, glm::vec2 centerReff, float r);
 
+
+	enum
+	{
+		BodyFlag_freezeX = 0,
+		BodyFlag_freezeY = 1,
+		BodyFlag_freezeRotation = 2,
+		BodyFlag_Sensor = 3,
+
+	};
+
+	struct BodyFlags
+	{
+		std::bitset<8> flags = {};
+
+		//the kinematic body is just a body with frozen rotation and positions!
+		bool isKinematic() { return isFreezeX() && isFreezeY() && isFreezeRotation(); }
+
+		//the kinematic body is just a body with frozen rotation and positions!
+		void setKinematic(bool k = true) { setFreezeX(k); setFreezeY(k); setFreezeRotation(k); }
+
+		bool isFreezeX() const { return flags.test(BodyFlag_freezeX); }
+		void setFreezeX(bool f = true) { flags.set(BodyFlag_freezeX, f); }
+
+		bool isFreezeY() const { return flags.test(BodyFlag_freezeY); }
+		void setFreezeY(bool f = true) { flags.set(BodyFlag_freezeY, f); }
+
+		bool isFreezePosition() const{ return isFreezeX() && isFreezeY(); }
+		void setFreezePosition(bool f = true) { setFreezeX(f); setFreezeY(f); }
+
+		bool isFreezeRotation() const { return flags.test(BodyFlag_freezeRotation); }
+		void setFreezeRotation(bool f = true) { flags.set(BodyFlag_freezeRotation, f); }
+
+		bool isSensor() const { return flags.test(BodyFlag_Sensor); }
+		void setSensor(bool s = true) { flags.set(BodyFlag_Sensor, s); }
+	};
+
 	struct MotionState
 	{
 		glm::vec2 pos = {};
@@ -120,9 +162,9 @@ namespace ph2d
 
 		void setPos(glm::vec2 p) { pos = p; lastPos = p; }
 
-		void applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector);
+		void applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector, BodyFlags flags);
 		
-		void applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos);
+		void applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos, BodyFlags flags);
 
 	};
 
@@ -252,16 +294,30 @@ namespace ph2d
 
 	Collider createConvexPolygonCollider(glm::vec2 *shape, unsigned char count);
 
+
 	struct Body
 	{
+		Collider collider = {};
+		
+		ph2dUserData userData;
+		ph2dBodyId id = 0;
+
 		//we use center position
 		MotionState motionState;
 
-		Collider collider = {};
+		void applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector);
+
+		void applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos);
+
+		glm::vec2 gravityScale = {1,1};
 
 		float elasticity = 0.2;
 		float staticFriction = 0.7;
 		float dynamicFriction = 0.6;
+		float dragScale = 1;
+		float angularDragScale = 1;
+
+		BodyFlags flags;
 
 		AABB getAABB();
 
@@ -276,7 +332,6 @@ namespace ph2d
 		glm::vec2 &normal, glm::vec2 &contactPoint, 
 		glm::vec2 &tangentA, glm::vec2 &tangentB);
 
-
 	struct ManifoldIntersection
 	{
 		glm::vec2 normal = {};
@@ -288,8 +343,23 @@ namespace ph2d
 		unsigned short B = 0;
 	};
 
+	struct SimulationPhysicsSettings
+	{
+		glm::vec2 gravity{0, 9.81};
+		float maxVelocity = 10'000;
+		float minVelocity = 0.1;
+		float minAngularVelocity = 0.01;
+		float maxAcceleration = 10'000;
+		float maxAirDrag = 100;
+		float maxAngularDrag = 100;
+		float airDragCoeficient = 0.1f;
+		float rotationalDragCoeficient = 0.01f;
+	};
+
 	struct PhysicsEngine
 	{
+		ph2dBodyId idCounter = 0;
+
 		std::vector<Body> bodies;
 
 		std::vector<ManifoldIntersection> intersections;
@@ -304,6 +374,8 @@ namespace ph2d
 
 		float _fixedTimeAccumulated = 0;
 		void runSimulation(float deltaTime);
+
+		SimulationPhysicsSettings simulationphysicsSettings;
 
 		void addBody(glm::vec2 centerPos, Collider collider);
 

@@ -37,11 +37,13 @@ struct PhysicsTest: public Container
 	{
 		renderer.create(requestedInfo.requestedFBO.fbo);
 	
-		for (int i = 0; i < 0; i++)
+		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
+
+		for (int i = 0; i < 10; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
-			if (1)
+			if (0)
 			{
 				float w = rand() % 100 + 20;
 				float h = rand() % 100 + 20;
@@ -69,13 +71,15 @@ struct PhysicsTest: public Container
 			{-25, 25},
 			{-40, -10},
 		};
-		physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
 
-		//physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({300, 100}));
+		physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
+		//physicsEngine.bodies.back().flags.setFreezePosition();
+		physicsEngine.bodies.back().flags.setFreezeRotation();
 
 		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({800, 50}));
 		//physicsEngine.bodies[1].motionState.mass = 0;
@@ -220,7 +224,7 @@ struct PhysicsTest: public Container
 			force *= physicsEngine.bodies[selected].motionState.mass;
 			force *= 2.f;
 
-			physicsEngine.bodies[selected].motionState.applyImpulseWorldPosition(force,
+			physicsEngine.bodies[selected].applyImpulseWorldPosition(force,
 				//physicsEngine.bodies[selected].motionState.pos
 				pressedPosition
 			);
@@ -236,12 +240,12 @@ struct PhysicsTest: public Container
 		{
 
 			//gravity
-			if(simulate)
-			for (int i=0; i<physicsEngine.bodies.size(); i++)
-			{
-				if(physicsEngine.bodies[i].motionState.mass != 0 && physicsEngine.bodies[i].motionState.mass != INFINITY)
-					physicsEngine.bodies[i].motionState.acceleration += glm::vec2(0, 9.81) * 100.f;
-			}
+			//if(simulate)
+			//for (int i=0; i<physicsEngine.bodies.size(); i++)
+			//{
+			//	if(physicsEngine.bodies[i].motionState.mass != 0 && physicsEngine.bodies[i].motionState.mass != INFINITY)
+			//		physicsEngine.bodies[i].motionState.acceleration += glm::vec2(0, 9.81) * 100.f;
+			//}
 
 			if (simulate)
 			{

@@ -20,12 +20,6 @@
 #include <iostream>
 #include <algorithm>
 
-//todo per engine
-constexpr static float MAX_VELOCITY = 10'000;
-constexpr static float MIN_VELOCITY = 0.1;
-constexpr static float MIN_ANGULAR_VELOCITY = 0.01;
-constexpr static float MAX_ACCELERATION = 10'000;
-constexpr static float MAX_AIR_DRAG = 100;
 
 void normalizeSafe(glm::vec2 &v)
 {
@@ -278,10 +272,18 @@ namespace ph2d
 		float rotation,
 		float &penetration, glm::vec2 &normal, glm::vec2 &contactPoint)
 	{
+		penetration = 0;
+		normal = {0, 0};
 
+		glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS] = {};
+		convexPolygon.getCornersRotated(corners, rotation);
+		int vertexCount = convexPolygon.vertexCount;
 
+		glm::vec2 circleCenter = circle.center();
+		float circleRadius = circle.size.x/2.f;
+		
 
-
+		return true;
 	}
 
 
@@ -1117,45 +1119,71 @@ namespace ph2d
 					tangentB, tangentA);
 			}
 
+		else if (A.collider.type == ph2d::ColliderCircle
+			&& B.collider.type == ph2d::ColliderConvexPolygon
+			)
+			{
+				return CirclevsConvexPolygon(A.getAABB(), B.collider.collider.convexPolygon,
+					B.motionState.pos, B.motionState.rotation, penetration, normal, contactPoint);
+			}
+		else if (A.collider.type == ph2d::ColliderConvexPolygon
+			&& B.collider.type == ph2d::ColliderCircle
+			)
+			{
+				bool rez = CirclevsConvexPolygon(B.getAABB(), A.collider.collider.convexPolygon,
+					A.motionState.pos, A.motionState.rotation, penetration, normal, contactPoint);
+				normal = -normal;
+				return rez;
+			}
+
 
 		return 0;
 	}
 
 	//todo make sure drag can't be stronger than speed!
-	void applyDrag(MotionState &motionState)
+	void applyDrag(MotionState &motionState, float scale, SimulationPhysicsSettings &s)
 	{
-		glm::vec2 dragForce = 0.1f * -motionState.velocity * glm::abs(motionState.velocity) / 2.f;
+		glm::vec2 dragForce = scale * s.airDragCoeficient * -motionState.velocity * glm::abs(motionState.velocity) / 2.f;
+
 		float length = glm::length(dragForce);
 		if (length)
 		{
-			if (length > MAX_AIR_DRAG)
+			if (length > s.maxAirDrag)
 			{
 				dragForce /= length;
-				dragForce *= MAX_AIR_DRAG;
+				dragForce *= s.maxAirDrag;
 			}
 		
 			motionState.acceleration += dragForce;
 		}
 	}
 
-	void applyAngularDrag(MotionState &motionState)
+	//todo delta time
+	void applyAngularDrag(MotionState &motionState, float scale,
+		SimulationPhysicsSettings &s)
 	{
-		float dragForce = 0.02f * -motionState.angularVelocity;
-		if (dragForce > MAX_AIR_DRAG)
+		float dragForce = scale * s.rotationalDragCoeficient * -motionState.angularVelocity;
+		if (dragForce > s.maxAngularDrag)
 		{
-			dragForce = MAX_AIR_DRAG;
+			dragForce = s.maxAngularDrag;
 		}
-		if (dragForce < -MAX_AIR_DRAG)
+		if (dragForce < -s.maxAngularDrag)
 		{
-			dragForce = -MAX_AIR_DRAG;
+			dragForce = -s.maxAngularDrag;
 		}
 		motionState.angularVelocity += dragForce;
 	}
 
-	void integrateForces(MotionState &motionState, float deltaTime)
+	void integrateForces(MotionState &motionState, float deltaTime,
+		SimulationPhysicsSettings &s, BodyFlags flags)
 	{
 
-		if (motionState.mass == 0 || motionState.mass == INFINITY)
+		bool frezeX = flags.isFreezeX();
+		bool frezeY = flags.isFreezeY();
+
+		if (motionState.mass == 0 || motionState.mass == INFINITY
+			|| (frezeX && frezeY)
+			)
 		{
 			motionState.acceleration = {};
 			motionState.velocity = {};
@@ -1175,16 +1203,21 @@ namespace ph2d
 
 			//linear motion
 			motionState.acceleration = glm::clamp(motionState.acceleration,
-				glm::vec2(-MAX_ACCELERATION), glm::vec2(MAX_ACCELERATION));
+				glm::vec2(-s.maxAcceleration), glm::vec2(s.maxAcceleration));
 
 			//Symplectic Euler
 			motionState.velocity += motionState.acceleration * deltaTime * 0.5f;
-			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-MAX_VELOCITY), glm::vec2(MAX_VELOCITY));
+			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-s.maxVelocity), glm::vec2(s.maxVelocity));
 
-			motionState.pos += motionState.velocity * deltaTime;
+			glm::vec2 toAdd = motionState.velocity * deltaTime;
+
+			if (frezeX) { toAdd.x = 0; motionState.velocity.x = 0; }
+			if (frezeY) { toAdd.y = 0; motionState.velocity.y = 0; }
+
+			motionState.pos += toAdd;
 
 			motionState.velocity += motionState.acceleration * deltaTime * 0.5f;
-			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-MAX_VELOCITY), glm::vec2(MAX_VELOCITY));
+			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-s.maxVelocity), glm::vec2(s.maxVelocity));
 
 			if (std::fabs(motionState.velocity.x) < 0.00001) { motionState.velocity.x = 0; }
 			if (std::fabs(motionState.velocity.y) < 0.00001) { motionState.velocity.y = 0; }
@@ -1192,7 +1225,8 @@ namespace ph2d
 			motionState.acceleration = {};
 		}
 
-		if (motionState.momentOfInertia == 0 || motionState.momentOfInertia == INFINITY)
+		if (motionState.momentOfInertia == 0 || motionState.momentOfInertia == INFINITY
+			|| flags.isFreezeRotation())
 		{
 			motionState.angularVelocity = 0;
 			motionState.torque = 0;
@@ -1357,23 +1391,29 @@ bool overlap(ph2d::Body &a, ph2d::Body &b)
 
 
 
-void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector)
+void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector, BodyFlags flags)
 {
+
+
 	if (mass != 0 && mass != INFINITY )
 	{
-		velocity += (1.0f / mass) * impulse;
+		glm::vec2 toAdd = (1.0f / mass) * impulse;
+		if (flags.isFreezeX()) { toAdd.x = 0; }
+		if (flags.isFreezeY()) { toAdd.y = 0; }
+
+		velocity += toAdd;
 	}
 
-	if (momentOfInertia != 0 && momentOfInertia != INFINITY)
+	if (momentOfInertia != 0 && momentOfInertia != INFINITY && !flags.isFreezeRotation())
 	{
 		angularVelocity -= (1.0f / momentOfInertia) * cross(contactVector, impulse) * 0.95f;
 	}
 }
 
-void ph2d::MotionState::applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos)
+void ph2d::MotionState::applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos, BodyFlags flags)
 {
 	glm::vec2 relVector = contactVectorWorldPos - pos;
-	applyImpulseObjectPosition(impulse, relVector);
+	applyImpulseObjectPosition(impulse, relVector, flags);
 }
 
 
@@ -1408,9 +1448,16 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 		auto positionalCorrection = [&](Body &A, Body &B, glm::vec2 n,
 			float penetrationDepth)
 		{
+			bool dontMoveA = A.flags.isFreezeX() || A.flags.isFreezeY();
+			bool dontMoveB = B.flags.isFreezeX() || B.flags.isFreezeY();
 
 			float massInverseA = 1.f / A.motionState.mass;
 			float massInverseB = 1.f / B.motionState.mass;
+
+			if (dontMoveA) { massInverseA = 0; }
+			if (dontMoveB) { massInverseB = 0; }
+
+			if (dontMoveA == 0 && massInverseB == 0) { return; }
 
 			if (A.motionState.mass == 0 || A.motionState.mass == INFINITY) { massInverseA = 0; }
 			if (B.motionState.mass == 0 || B.motionState.mass == INFINITY) { massInverseB = 0; }
@@ -1430,12 +1477,18 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 			if (tangentA.x == 0 && tangentA.y == 0) { return; }
 			if (tangentB.x == 0 && tangentB.y == 0) { return; }
+			bool dontRotateA = A.flags.isFreezeRotation();
+			bool dontRotateB = B.flags.isFreezeRotation();
 
 			float inertiaInverseA = 1.f / A.motionState.momentOfInertia;
 			float inertiaInverseB = 1.f / B.motionState.momentOfInertia;
 
 			if (A.motionState.momentOfInertia == 0 || A.motionState.momentOfInertia == INFINITY) { inertiaInverseA = 0; }
 			if (B.motionState.momentOfInertia == 0 || B.motionState.momentOfInertia == INFINITY) { inertiaInverseB = 0; }
+			if (dontRotateA) { inertiaInverseA = 0; }
+			if (dontRotateB) { inertiaInverseB = 0; }
+
+			if (inertiaInverseA == 0 && inertiaInverseB == 0) { return; }
 
 			const float PI = 3.1415926;
 
@@ -1541,8 +1594,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			//A.motionState.velocity -= (aInverseMass)*frictionImpulse;
 			//B.motionState.velocity += (bInverseMass)*frictionImpulse;
 
-			A.motionState.applyImpulseWorldPosition(-frictionImpulse, contactPoint);
-			B.motionState.applyImpulseWorldPosition( frictionImpulse, contactPoint);
+			A.motionState.applyImpulseWorldPosition(-frictionImpulse, contactPoint, A.flags);
+			B.motionState.applyImpulseWorldPosition( frictionImpulse, contactPoint, B.flags);
 
 
 		};
@@ -1598,8 +1651,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			//A.motionState.velocity -= massInverseA * impulse;
 			//B.motionState.velocity += massInverseB * impulse;
 
-			A.motionState.applyImpulseWorldPosition(-impulse, contactPoint);
-			B.motionState.applyImpulseWorldPosition( impulse, contactPoint);
+			A.motionState.applyImpulseWorldPosition(-impulse, contactPoint, A.flags);
+			B.motionState.applyImpulseWorldPosition( impulse, contactPoint, B.flags);
 
 			{
 
@@ -1628,6 +1681,20 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 		};
 
+
+		//gravity
+		for (int i = 0; i < bodies.size(); i++)
+		{
+			//no need to check for freeze position on x y because I clear them later anyway.
+			if (bodies[i].motionState.mass != 0 && bodies[i].motionState.mass != INFINITY
+				&& !bodies[i].flags.isFreezePosition()
+				)
+			{
+				bodies[i].motionState.acceleration += simulationphysicsSettings.gravity
+					* bodies[i].gravityScale;
+			}
+		}
+
 		size_t bodiesSize = bodies.size();
 		for (int i = 0; i < bodiesSize; i++)
 		{
@@ -1636,8 +1703,8 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 				bodies[i].motionState.mass = INFINITY;
 			}
 
-			applyDrag(bodies[i].motionState);
-			applyAngularDrag(bodies[i].motionState);
+			applyDrag(bodies[i].motionState, bodies[i].dragScale, simulationphysicsSettings);
+			applyAngularDrag(bodies[i].motionState, bodies[i].angularDragScale, simulationphysicsSettings);
 		};
 
 		for (int _ = 0; _ < collisionChecksCount; _++)
@@ -1724,10 +1791,10 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 		}
 		
-
 		for (int i = 0; i < bodiesSize; i++)
 		{
-			integrateForces(bodies[i].motionState, deltaTime);
+			integrateForces(bodies[i].motionState, deltaTime, simulationphysicsSettings, 
+				bodies[i].flags);
 			bodies[i].motionState.lastPos = bodies[i].motionState.pos;
 		};
 	
@@ -1741,6 +1808,7 @@ void ph2d::PhysicsEngine::addBody(glm::vec2 centerPos, Collider collider)
 {
 
 	Body body;
+	body.id = ++idCounter;
 	body.motionState.setPos(centerPos);
 	body.collider = collider;
 	body.motionState.mass = collider.computeMass();
@@ -1777,6 +1845,7 @@ glm::vec2 ph2d::rotationToVector(float rotation)
 void ph2d::PhysicsEngine::addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal)
 {
 	Body body;
+	body.id = ++idCounter;
 	body.motionState.setPos(position);
 	body.collider.type = ColliderType::ColliderHalfSpace;
 	body.motionState.mass = 0;
@@ -1787,6 +1856,16 @@ void ph2d::PhysicsEngine::addHalfSpaceStaticObject(glm::vec2 position, glm::vec2
 
 }
 
+
+void ph2d::Body::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector)
+{
+	motionState.applyImpulseObjectPosition(impulse, contactVector, flags);
+}
+
+void ph2d::Body::applyImpulseWorldPosition(glm::vec2 impulse, glm::vec2 contactVectorWorldPos)
+{
+	motionState.applyImpulseWorldPosition(impulse, contactVectorWorldPos, flags);
+}
 
 ph2d::AABB ph2d::Body::getAABB()
 {
