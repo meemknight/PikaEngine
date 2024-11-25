@@ -356,6 +356,8 @@ namespace ph2d
 		float maxAngularDrag = 100;
 		float airDragCoeficient = 0.1f;
 		float rotationalDragCoeficient = 0.01f;
+		float restingVelocity = 0.01;
+		float restingAngularVelocity = glm::radians(0.01);
 	};
 
 	struct PhysicsEngine

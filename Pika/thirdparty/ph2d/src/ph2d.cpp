@@ -1214,12 +1214,19 @@ namespace ph2d
 			motionState.velocity += motionState.acceleration * deltaTime * 0.5f;
 			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-s.maxVelocity), glm::vec2(s.maxVelocity));
 
-			glm::vec2 toAdd = motionState.velocity * deltaTime;
+			glm::vec2 toAdd = motionState.velocity;
 
 			if (frezeX) { toAdd.x = 0; motionState.velocity.x = 0; }
 			if (frezeY) { toAdd.y = 0; motionState.velocity.y = 0; }
 
-			motionState.pos += toAdd;
+			//resting velocity
+			if (glm::length(toAdd) < s.restingVelocity)
+			{
+				toAdd = {};
+				motionState.velocity = {};
+			}
+
+			motionState.pos += toAdd * deltaTime;
 
 			motionState.velocity += motionState.acceleration * deltaTime * 0.5f;
 			motionState.velocity = glm::clamp(motionState.velocity, glm::vec2(-s.maxVelocity), glm::vec2(s.maxVelocity));
@@ -1240,7 +1247,15 @@ namespace ph2d
 		{
 			//rotation
 			motionState.angularVelocity += motionState.torque * (1.f/motionState.momentOfInertia) * deltaTime;
-			motionState.rotation += motionState.angularVelocity * deltaTime;
+
+			float toAdd = motionState.angularVelocity;
+			if (std::abs(toAdd) < s.restingAngularVelocity)
+			{
+				toAdd = {};
+				motionState.angularVelocity = 0;
+			}
+
+			motionState.rotation += toAdd * deltaTime;
 			motionState.torque = 0;
 		}
 		
@@ -1673,7 +1688,7 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 				float tangentSize = glm::length(tangent);
 				
-				if (tangentSize > 0.001)
+				if (tangentSize > 0.00001)
 				{
 					tangent /= tangentSize;
 

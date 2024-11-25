@@ -8,7 +8,7 @@
 #include <imgui_spinner.h>
 #include "ph2d/ph2d.h"
 #include <engineLibraresSupport/engineGL2DSupport.h>
-
+#include <imguiComboSearch.h>
 
 struct AngryBirds: public Container
 {
@@ -23,9 +23,10 @@ struct AngryBirds: public Container
 		glassblock,
 		woodblock,
 		stoneblock,
+		pig,
 	};
 
-	glm::ivec2 sizes[8]{
+	glm::ivec2 sizes[9]{
 		glm::ivec2{40,40},
 		glm::ivec2{40,40},
 
@@ -36,9 +37,22 @@ struct AngryBirds: public Container
 		glm::ivec2(80,80),
 		glm::ivec2(80,80),
 		glm::ivec2(80,80),
+
+		glm::ivec2(70,70),
+
 	};
 
-	const char *textureNames[8]
+	float friction[9]
+	{
+		0.8, 0.8, 0.8, 0.6, 0.8, 0.6, 0.8, 0.8, 0.8
+	};
+
+	float elasticity[9]
+	{
+		0.4, 0.4, 0.2, 0.2, 0.4, 0.2, 0.4, 0.2, 0.9
+	};
+
+	const char *textureNames[9]
 	{
 		PIKA_RESOURCES_PATH "sus/woodballs.png",
 		PIKA_RESOURCES_PATH "sus/woodsmall.png",
@@ -48,13 +62,18 @@ struct AngryBirds: public Container
 		PIKA_RESOURCES_PATH "sus/glass.png",
 		PIKA_RESOURCES_PATH "sus/wood.png",
 		PIKA_RESOURCES_PATH "sus/stone.png",
+		PIKA_RESOURCES_PATH "sus/pig.png",
 	};
 
-	gl2d::Texture textures[8];
-	gl2d::TextureAtlas texturesAtlas[8];
+	gl2d::Texture textures[9];
+	gl2d::TextureAtlas texturesAtlas[9];
+	gl2d::Texture background;
+	gl2d::Texture sling;
+	glm::vec2 backgroundSize;
 
 	gl2d::Renderer2D renderer;
 	ph2d::PhysicsEngine physicsEngine;
+	ph2d::ph2dBodyId selectedID = 0;
 
 	struct GameBlock
 	{
@@ -67,10 +86,11 @@ struct AngryBirds: public Container
 	void addBlock(int type, glm::vec2 pos)
 	{
 		glm::ivec2 size = sizes[type];
+		ph2d::ph2dBodyId body = 0;
 
-		if (type == woodBalls)
+		if (type == woodBalls || type == pig)
 		{
-			auto body = physicsEngine.addBody(pos,
+			body = physicsEngine.addBody(pos,
 				ph2d::createCircleCollider(size.x/2));
 
 			GameBlock b;
@@ -79,7 +99,7 @@ struct AngryBirds: public Container
 		}
 		else
 		{
-			auto body = physicsEngine.addBody(pos,
+			body = physicsEngine.addBody(pos,
 				ph2d::createBoxCollider(size));
 
 			GameBlock b;
@@ -87,36 +107,62 @@ struct AngryBirds: public Container
 			gameBlocks.emplace(body, b);
 		}
 
+		physicsEngine.bodies[body].dynamicFriction = friction[type];
+		physicsEngine.bodies[body].staticFriction = friction[type] + 0.1f;
+		physicsEngine.bodies[body].elasticity = elasticity[type];
+
+		
+	}
+
+	void removeBlock(ph2d::ph2dBodyId id)
+	{
+		gameBlocks.erase(id);
+		physicsEngine.bodies.erase(id);
 	}
 
 	//todo user can request imgui ids; shortcut manager context; allocators
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(10);
+		info.defaultHeapMemorySize = pika::MB(40);
 		info.requestImguiFbo = true;
 		info.pushAnImguiIdForMe = true;
-		info.andInputWithWindowHasFocus = 0;
-		info.andInputWithWindowHasFocusLastFrame = 0;
+		info.andInputWithWindowHasFocus = 1;
+		info.andInputWithWindowHasFocusLastFrame = 1;
 
 		return info;
 	}
-
 
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 		renderer.create(requestedInfo.requestedFBO.fbo);
 
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 9; i++)
 		{
 			textures[i] = pika::gl2d::loadTexture(textureNames[i], requestedInfo);
-			texturesAtlas[i] = gl2d::TextureAtlas(3, 1);
+
+			if (i == pig)
+			{
+				texturesAtlas[i] = gl2d::TextureAtlas(1, 1);
+			}
+			else
+			{
+				texturesAtlas[i] = gl2d::TextureAtlas(3, 1);
+			}
 		}
 
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
+		physicsEngine.simulationphysicsSettings.restingAngularVelocity = glm::radians(5.f);
+		physicsEngine.simulationphysicsSettings.restingVelocity = 5;
 
+		background = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "sus/background.png", requestedInfo);
+		background.bind();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		backgroundSize = background.GetSize();
 
-		for (int i = 0; i < 2; i++)
+		sling = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "sus/sling.png", requestedInfo);
+
+		for (int i = 0; i < 0; i++)
 		{
 			if (1)
 			{
@@ -143,6 +189,46 @@ struct AngryBirds: public Container
 		return true;
 	}
 
+	std::vector<const char *>options = {
+	"woodBalls",
+	"woodSmall",
+	"stoneplank",
+	"glassplank",
+	"woodplank",
+	"glassblock",
+	"woodblock",
+	"stoneblock",
+	"pig",
+	"eraser",
+	"move",
+	"none",
+	};
+
+	bool radioButtonGroup(const char *label, const char *options[], int options_count, int &current_option)
+	{
+		bool selection_changed = false;
+
+		ImGui::Text("%s", label); // Display the group label
+		for (int i = 0; i < options_count; ++i)
+		{
+			if (ImGui::RadioButton(options[i], current_option == i))
+			{
+				current_option = i;
+				selection_changed = true;
+			}
+			if (i < options_count - 1)
+			{
+				ImGui::SameLine(); // Place options horizontally
+			}
+		}
+
+		return selection_changed;
+	}
+
+	int currentSelectedOption = 10;
+	bool simulate = 1;
+	bool snowGeometryOutlines = true;
+
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
@@ -154,9 +240,48 @@ struct AngryBirds: public Container
 		renderer.updateWindowMetrics(w, h);
 	#pragma endregion
 
+	#pragma region imgui
+
+		ImGui::Begin("Game window");
+
+		ImGui::ComboWithFilter("Select object", &currentSelectedOption, options);
+		//radioButtonGroup("Select object", options, sizeof(options)/sizeof(options[0]), currentSelectedOption);
+	
+		ImGui::Checkbox("Simulate physics", &simulate);
+		ImGui::Checkbox("Show Geometry outlines", &snowGeometryOutlines);
+
+
+		if (selectedID != 0)
+		{
+			auto found = physicsEngine.bodies.find(selectedID);
+
+			if (found != physicsEngine.bodies.end())
+			{
+				ImGui::Separator();
+
+				ImGui::Text("Object id: %d", selectedID);
+				ImGui::DragFloat2("Position: ", &found->second.motionState.pos[0]);
+				ImGui::SliderAngle("Angle: ", &found->second.motionState.rotation);
+			}
+			else
+			{
+				selectedID = 0;
+			}
+
+
+		}
+
+		ImGui::End();
+
+	#pragma endregion
+
+
 	#pragma region update simulation
 
-		physicsEngine.runSimulation(input.deltaTime);
+		if (simulate)
+		{
+			physicsEngine.runSimulation(input.deltaTime);
+		}
 
 	#pragma endregion
 
@@ -179,16 +304,42 @@ struct AngryBirds: public Container
 			glm::vec2(input.mouseX, input.mouseY) / glm::vec2(windowState.windowW, windowState.windowH));
 	#pragma endregion
 
-		if (input.lMouse.pressed())
+		if (input.lMouse.pressed() && currentSelectedOption < 9)
 		{
-			addBlock(0, mousePosWorld);
-			addBlock(1, mousePosWorld);
-			addBlock(2, mousePosWorld);
-			addBlock(3, mousePosWorld);
-			addBlock(4, mousePosWorld);
-			addBlock(5, mousePosWorld);
-			addBlock(6, mousePosWorld);
-			addBlock(7, mousePosWorld);
+			addBlock(currentSelectedOption, mousePosWorld);
+
+		}
+
+		if (input.lMouse.pressed() && currentSelectedOption == 9)
+		{
+
+			for (auto &b : physicsEngine.bodies)
+			{
+
+				if (b.second.intersectPoint(mousePosWorld) &&
+					b.second.collider.type != ph2d::ColliderHalfSpace
+					)
+				{
+					removeBlock(b.first);
+					break;
+				}
+
+			}
+		}
+
+		if (input.lMouse.pressed() && currentSelectedOption == 10)
+		{
+			for (auto &b : physicsEngine.bodies)
+			{
+
+				if (b.second.intersectPoint(mousePosWorld) &&
+					b.second.collider.type != ph2d::ColliderHalfSpace
+					)
+				{
+					selectedID = b.first;
+				}
+
+			}
 		}
 
 		//if (input.lMouse.pressed())
@@ -198,6 +349,14 @@ struct AngryBirds: public Container
 
 
 	#pragma region render
+
+
+		glm::vec4 backgroundPos{-backgroundSize, backgroundSize * 3.f};
+		backgroundPos.y += 130;
+		renderer.renderRectangle(backgroundPos,
+			background, Colors_White, {}, 0, {-1,2,2,-1});
+
+		renderer.renderRectangle({0, 720, 50, 80}, sling);
 
 		for (auto &index : physicsEngine.bodies)
 		{
@@ -215,8 +374,18 @@ struct AngryBirds: public Container
 					{}, glm::degrees(b.motionState.rotation), texturesAtlas[textureIndex].get(0, 0));
 
 			}
+		}
 
-			
+		if (currentSelectedOption < 9 && input.hasFocus && input.lastFrameHasFocus)
+		{
+			glm::vec4 aabb = glm::vec4(mousePosWorld, sizes[currentSelectedOption]);
+			aabb.x -= aabb.z / 2;
+			aabb.y -= aabb.w / 2;
+
+			renderer.renderRectangle(aabb,
+				textures[currentSelectedOption],
+				{1,1,1,0.8},
+				{}, 0, texturesAtlas[currentSelectedOption].get(0, 0));
 		}
 
 	#pragma endregion
@@ -224,6 +393,7 @@ struct AngryBirds: public Container
 
 	#pragma region render debug
 
+		if(snowGeometryOutlines)
 		for (auto &index : physicsEngine.bodies)
 		{
 			auto &b = index.second;
