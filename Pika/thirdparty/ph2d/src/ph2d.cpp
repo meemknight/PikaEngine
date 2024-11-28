@@ -1121,8 +1121,12 @@ namespace ph2d
 	}
 
 	bool BodyvsBody(Body &A, Body &B, float &penetration,
-		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, glm::vec2 &tangentB, bool *reverseOrder)
+		glm::vec2 &normal, glm::vec2 &contactPoint, glm::vec2 &tangentA, 
+		glm::vec2 &tangentB, bool *reverseOrder)
 	{
+
+		//todo reverseOrder for all
+
 		tangentA = {};
 		tangentB = {};
 		if (reverseOrder) { *reverseOrder = false; }
@@ -1273,6 +1277,11 @@ namespace ph2d
 			&& B.collider.type == ph2d::ColliderConvexPolygon
 			)
 			{
+				if (reverseOrder)
+				{
+					*reverseOrder = true;
+				}
+
 				return CirclevsConvexPolygon(A.getAABB(), B.collider.collider.convexPolygon,
 					B.motionState.pos, B.motionState.rotation, penetration, normal, contactPoint);
 			}
@@ -1280,6 +1289,7 @@ namespace ph2d
 			&& B.collider.type == ph2d::ColliderCircle
 			)
 			{
+
 				bool rez = CirclevsConvexPolygon(B.getAABB(), A.collider.collider.convexPolygon,
 					A.motionState.pos, A.motionState.rotation, penetration, normal, contactPoint);
 				normal = -normal;
@@ -1877,7 +1887,6 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 
 		}
 
-
 		for (int _ = 0; _ < collisionChecksCount; _++)
 		{
 			intersections.clear();
@@ -1980,7 +1989,35 @@ void ph2d::PhysicsEngine::runSimulation(float deltaTime)
 			}
 
 		}
+	
+
+		for (auto &c : constrains)
+		{
+
+			auto ait = bodies.find(c.second.A);
+			auto bit = bodies.find(c.second.B);
+
+			if (ait == bodies.end() || bit == bodies.end()) { continue; }
+
+			float distance = glm::distance(ait->second.motionState.pos, bit->second.motionState.pos);
+
+			float deformation = c.second.restingDistance - distance;
+
+			if (deformation == 0) { continue; }
+
+			float elasticForce = deformation * c.second.elasticForce;
 		
+			glm::vec2 dir = bit->second.motionState.pos - ait->second.motionState.pos;
+			normalizeSafe(dir);
+
+			dir *= elasticForce;
+
+			ait->second.applyImpulseObjectPosition(-dir, {});
+			bit->second.applyImpulseObjectPosition( dir, {});
+
+		}
+
+
 		for (auto &it : bodies)
 		{
 			auto &b = it.second;
@@ -2005,6 +2042,12 @@ ph2d::ph2dBodyId ph2d::PhysicsEngine::addBody(glm::vec2 centerPos, Collider coll
 	body.motionState.momentOfInertia = collider.computeMomentOfInertia(body.motionState.mass);
 
 	bodies.emplace(++idCounter, body);
+	return idCounter;
+}
+
+ph2d::ph2dBodyId ph2d::PhysicsEngine::addConstrain(ph2d::Constrain c)
+{
+	constrains.emplace(++idCounter, c);
 	return idCounter;
 }
 

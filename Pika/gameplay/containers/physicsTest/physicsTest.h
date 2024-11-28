@@ -72,7 +72,24 @@ struct PhysicsTest: public Container
 		};
 		for (int i = 0; i < 5; i++) { shape[i] *= 2; }
 
-		physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+
+		auto bodyA = physicsEngine.addBody({500, 200}, ph2d::createCircleCollider({20}));
+		physicsEngine.bodies[bodyA].flags.setKinematic(true);
+
+		for (int i = 0; i < 10; i++)
+		{
+			auto bodyB = physicsEngine.addBody({500, 220 + i * 20}, ph2d::createCircleCollider({20}));
+			physicsEngine.addConstrain({bodyA, bodyB, 40});
+			bodyA = bodyB;
+			
+
+		}
+
+	
+
+		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+		//auto body = physicsEngine.addBody({500, 200}, ph2d::createBoxCollider({300, 300}));
+
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
@@ -92,7 +109,6 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({600, 600}, ph2d::createBoxCollider({350, 350}));
 		//physicsEngine.bodies[1].motionState.rotation = glm::radians(30.f);
 
-		physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({75}));
 		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({25}));
 		//physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({40}));
 		//physicsEngine.addBody({550, 700}, ph2d::createCircleCollider({25}));

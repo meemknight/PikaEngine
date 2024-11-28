@@ -364,11 +364,24 @@ namespace ph2d
 		float restingAngularVelocity = glm::radians(0.01);
 	};
 
+	struct Constrain
+	{
+		ph2dBodyId A;
+		ph2dBodyId B;
+
+		float restingDistance = 0;
+		float elasticForce = 50000;
+
+	};
+
 	struct PhysicsEngine
 	{
 		ph2dBodyId idCounter = 0;
 
 		std::unordered_map<ph2dBodyId, Body> bodies;
+
+		std::unordered_map<ph2dBodyId, Constrain> constrains;
+
 
 		//for internal use for now
 		std::vector<ManifoldIntersection> intersections;
@@ -387,6 +400,8 @@ namespace ph2d
 		SimulationPhysicsSettings simulationphysicsSettings;
 
 		ph2dBodyId addBody(glm::vec2 centerPos, Collider collider);
+
+		ph2dBodyId addConstrain(Constrain c);
 
 		ph2dBodyId addHalfSpaceStaticObject(glm::vec2 position, glm::vec2 normal);
 	};
