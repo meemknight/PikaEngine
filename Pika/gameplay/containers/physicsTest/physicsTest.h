@@ -39,7 +39,7 @@ struct PhysicsTest: public Container
 	
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 0; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
@@ -62,7 +62,6 @@ struct PhysicsTest: public Container
 			}
 		}
 
-
 		glm::vec2 shape[5] = 
 		{
 			{0, -50},
@@ -71,13 +70,15 @@ struct PhysicsTest: public Container
 			{-25, 25},
 			{-40, -10},
 		};
-		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+		for (int i = 0; i < 5; i++) { shape[i] *= 2; }
+
+		physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
 
-		auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
-		physicsEngine.bodies[body].flags.setFreezePosition();
+		//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
+		//physicsEngine.bodies[body].flags.setFreezePosition();
 		//physicsEngine.bodies[body].flags.setFreezeRotation();
 
 		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({800, 50}));
@@ -91,8 +92,8 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({600, 600}, ph2d::createBoxCollider({350, 350}));
 		//physicsEngine.bodies[1].motionState.rotation = glm::radians(30.f);
 
-		//physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({75}));
-		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({55}));
+		physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({75}));
+		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({25}));
 		//physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({40}));
 		//physicsEngine.addBody({550, 700}, ph2d::createCircleCollider({25}));
 
@@ -171,14 +172,14 @@ struct PhysicsTest: public Container
 
 		ImGui::DragInt("Speed", &simulationSpeed);
 
-		ImGui::SliderAngle("Angle", &physicsEngine.bodies[0].motionState.rotation);
-		ImGui::SliderAngle("angular velocity", &physicsEngine.bodies[0].motionState.angularVelocity);
+		ImGui::SliderAngle("Angle", &physicsEngine.bodies[1].motionState.rotation);
+		ImGui::SliderAngle("angular velocity", &physicsEngine.bodies[1].motionState.angularVelocity);
 		//physicsEngine.bodies[0].motionState.angularVelocity = 1.5;
 
 		ImGui::Text("Mouse pos %d, %d", input.mouseX, input.mouseY);
 
-		ImGui::Text("Y min pos %f", physicsEngine.bodies[0].getAABB().min().y);
-		ImGui::Text("Moment of inertia %f", physicsEngine.bodies[0].motionState.momentOfInertia);
+		ImGui::Text("Y min pos %f", physicsEngine.bodies[1].getAABB().min().y);
+		ImGui::Text("Moment of inertia %f", physicsEngine.bodies[1].motionState.momentOfInertia);
 
 		ImGui::Checkbox("Simulate", &simulate);
 
@@ -188,9 +189,9 @@ struct PhysicsTest: public Container
 		static int selected = -1;
 
 		//mouse
-		if (!simulate && input.rMouse.pressed())
+		if (!simulate && input.rMouse.held())
 		{
-			physicsEngine.bodies[0].motionState.setPos({input.mouseX, input.mouseY});
+			physicsEngine.bodies[1].motionState.setPos({input.mouseX, input.mouseY});
 		}
 
 		static glm::vec2 pressedPosition = {};
@@ -199,22 +200,22 @@ struct PhysicsTest: public Container
 		{
 			selected = -1;
 
-			for (int i = 0; i < physicsEngine.bodies.size(); i++)
+			for (auto b : physicsEngine.bodies)
 			{
-				if (physicsEngine.bodies[i].intersectPoint({input.mouseX, input.mouseY}))
+				if (b.second.intersectPoint({input.mouseX, input.mouseY}))
 				{
-					selected = i;
+					selected = b.first;
 					pressedPosition = {input.mouseX, input.mouseY};
 				}
 			}
 		}
 
-		if (selected >= 0)
+		if (selected > 0)
 		{
 			renderer.renderLine(pressedPosition, {input.mouseX, input.mouseY}, Colors_Blue, 4);
 		}
 
-		if (input.lMouse.released() && selected >= 0)
+		if (input.lMouse.released() && selected > 0)
 		{
 
 			glm::vec2 force = pressedPosition - glm::vec2({input.mouseX, input.mouseY});
@@ -314,21 +315,12 @@ struct PhysicsTest: public Container
 		glm::vec2 tangentA = {};
 		glm::vec2 tangentB = {};
 
-		if (ph2d::BodyvsBody(physicsEngine.bodies[0],
-			physicsEngine.bodies[1],
+		if (ph2d::BodyvsBody(physicsEngine.bodies[1],
+			physicsEngine.bodies[2],
 			p, n, contactPoint, tangentA, tangentB))
 		{
 			penetrated = true;
 		}
-
-		//if (ph2d::OBBvsOBB(physicsEngine.bodies[0].getAABB(),
-		//	physicsEngine.bodies[0].motionState.rotation,
-		//	physicsEngine.bodies[1].getAABB(),
-		//	physicsEngine.bodies[1].motionState.rotation,
-		//	p, n, contactPoint))
-		//{
-		//	penetrated = true;
-		//}
 
 		//auto a = physicsEngine.bodies[0].getAABB();
 		//auto b = physicsEngine.bodies[1].getAABB();

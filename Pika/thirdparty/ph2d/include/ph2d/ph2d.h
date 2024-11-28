@@ -254,6 +254,10 @@ namespace ph2d
 		unsigned char vertexCount;
 
 		void getCornersRotated(glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS], float angle) const;
+
+		void getCornersRotatedInWorlSpace(glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS], float angle,
+			glm::vec2 centerPos) const;
+
 	};
 
 	struct Collider

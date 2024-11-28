@@ -121,6 +121,17 @@ namespace ph2d
 		}
 	}
 
+	void ConvexPolygon::getCornersRotatedInWorlSpace(glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS], float angle, glm::vec2 centerPos) const
+	{
+		int c = std::min((unsigned char)vertexCount, (unsigned char)PH2D_MAX_CONVEX_SHAPE_POINTS);
+		for (int i = 0; i < c; i++)
+		{
+			corners[i] = vertexesObjectSpace[i];
+			corners[i] = rotateAroundCenter(corners[i], angle);
+			corners[i] += centerPos;
+		}
+	}
+
 	//The second is the circle
 	bool AABBvsCircle(AABB abox, AABB bbox, float &penetration,
 		glm::vec2 &normal, glm::vec2 &contactPoint)
@@ -266,6 +277,10 @@ namespace ph2d
 		return rez;
 	}
 
+	float orientationTest(const glm::vec2 &A, const glm::vec2 &B, const glm::vec2 &C)
+	{
+		return (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
+	}
 
 	bool CirclevsConvexPolygon(AABB circle, const ConvexPolygon &convexPolygon,
 		glm::vec2 convexPolygonCenter,
@@ -275,13 +290,143 @@ namespace ph2d
 		penetration = 0;
 		normal = {0, 0};
 
-		glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS] = {};
+		glm::vec2 corners[PH2D_MAX_CONVEX_SHAPE_POINTS] = {}; //object space
 		convexPolygon.getCornersRotated(corners, rotation);
 		int vertexCount = convexPolygon.vertexCount;
 
 		glm::vec2 circleCenter = circle.center();
-		float circleRadius = circle.size.x/2.f;
-		
+		float circleRadius = circle.size.x / 2.f;
+
+		glm::vec2 vectorToCircle = circleCenter - convexPolygonCenter;
+
+		normalizeSafe(vectorToCircle);
+
+		int supportPoint = 0;
+		float closestValue = glm::dot(corners[0], vectorToCircle);
+
+		for (int i = 1; i < convexPolygon.vertexCount; i++)
+		{
+			float value = glm::dot(corners[i], vectorToCircle);
+
+			if (value > closestValue)
+			{
+				closestValue = value;
+				supportPoint = i;
+			}
+		}
+
+		int closestSupportPoint = supportPoint;
+
+		int secondSupportPoint = 0;
+
+		//find the other vertex
+		{
+			glm::vec2 vertexInWorldSpace = corners[supportPoint] + convexPolygonCenter;
+			glm::vec2 directionToCircle = circleCenter - vertexInWorldSpace;
+
+			//no intersection
+			//if (glm::length(directionToCircle) > circleRadius) { return false; }
+
+			contactPoint = vertexInWorldSpace;
+
+			int vertexLeftIndex = supportPoint - 1; if (vertexLeftIndex < 0) { vertexLeftIndex = convexPolygon.vertexCount - 1; }
+			int vertexRightIndex = (supportPoint + 1) % convexPolygon.vertexCount;
+
+			glm::vec2 leftVertex = corners[vertexLeftIndex];
+			glm::vec2 rightVertex = corners[vertexRightIndex];
+
+			glm::vec2 directionToLeft = leftVertex - corners[supportPoint];
+			glm::vec2 directionToRight = rightVertex - corners[supportPoint];
+			normalizeSafe(directionToLeft);
+			normalizeSafe(directionToRight);
+
+			if (glm::dot(directionToLeft, directionToCircle) > glm::dot(directionToRight, directionToCircle))
+			{
+				secondSupportPoint = vertexLeftIndex;
+			}
+			else
+			{
+				secondSupportPoint = vertexRightIndex;
+			}
+		}
+
+		//make sure the 2 vertexes are always in a consistent order relative to the center of the object
+		{
+
+			if (orientationTest({}, corners[supportPoint], corners[secondSupportPoint]) < 0)
+			{
+				std::swap(supportPoint, secondSupportPoint);
+			}
+		}
+
+		glm::vec2 lineVector = corners[supportPoint] - corners[secondSupportPoint];
+		normalizeSafe(lineVector);
+
+		normal = glm::vec2(lineVector.y, -lineVector.x);
+
+		LineEquation contactLine;
+		contactLine.createFromNormalAndPoint(-normal, corners[supportPoint] + convexPolygonCenter);
+
+		//no intersection
+		if (contactLine.getDistanceToPoint(circleCenter) > circleRadius) { return false; }
+
+
+		//check if only the corner is touching the circle
+		{
+			glm::vec2 dir1 = corners[supportPoint] - corners[secondSupportPoint];
+			glm::vec2 dir2 = (corners[supportPoint] + convexPolygonCenter) - circleCenter;
+
+			glm::vec2 dir3 = corners[secondSupportPoint] - corners[supportPoint];
+			glm::vec2 dir4 = (corners[secondSupportPoint] + convexPolygonCenter) - circleCenter;
+			if (glm::dot(dir1, dir2) < 0 || glm::dot(dir3, dir4) < 0)
+			{
+
+				if (glm::distance(corners[closestSupportPoint] + convexPolygonCenter, 
+					circleCenter) > circleRadius)
+				{
+					//extra check for corectness
+					return 0;
+				}
+
+				glm::vec2 vertexInWorldSpace = corners[closestSupportPoint] + convexPolygonCenter;
+				normal = vertexInWorldSpace - circleCenter;
+				float distanceToRadius = glm::length(normal);
+				
+				if (distanceToRadius == 0)
+				{
+					normal = glm::vec2(lineVector.y, -lineVector.x);
+				}
+				else
+				{
+					normal /= distanceToRadius;
+				}
+
+				//compute penetration
+				{
+					glm::vec2 vertexAtTheEdgeOfTheCircle = circleCenter + normal * circleRadius;
+					contactPoint = (vertexAtTheEdgeOfTheCircle + vertexInWorldSpace) / 2.f;
+					penetration = glm::distance(vertexAtTheEdgeOfTheCircle, vertexInWorldSpace);
+					
+				}
+
+			}
+			else
+			{
+				//todo propper clipping here
+
+
+				//compute penetration
+				glm::vec2 vertexAtTheEdgeOfTheCircle = circleCenter + normal * circleRadius;
+				penetration = contactLine.getDistanceToPoint(vertexAtTheEdgeOfTheCircle);
+				contactPoint = vertexAtTheEdgeOfTheCircle + (normal * (penetration * 0.5f));
+
+				//penetration = 0.001;
+
+			}
+
+		}
+
+		normalizeSafe(normal);
 
 		return true;
 	}
