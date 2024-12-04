@@ -12,6 +12,31 @@
 struct PhysicsTest: public Container
 {
 
+
+	// Function to generate a pastel color based on an input number
+	glm::vec3 generatePastelColor(int inputNumber)
+	{
+		srand(inputNumber);
+
+		// Seed random number generator based on input
+		//auto baseColor = glm::vec3(0,0,0);
+		//glm::vec3 baseColor = glm::ballRand<float>(1.0f);  // Random direction on a sphere
+		glm::vec3 baseColor(rand() % 100 / 100.f, rand() % 100 / 100.f, rand() % 100 / 100.f);
+		baseColor = glm::abs(baseColor);            // Ensure positive values
+
+		// Adjust saturation to pastel range by mixing with white
+		float pastelFactor = 0.7f;
+		glm::vec3 pastelColor = glm::mix(baseColor, glm::vec3(1.0f), pastelFactor);
+
+		// Map input number into [0,1] range
+		float modifier = (inputNumber % 1000) / 1000.0f;
+		pastelColor += modifier * 0.1f;
+
+		return glm::clamp(pastelColor, 0.0f, 1.0f);
+	}
+
+
+
 	gl2d::Renderer2D renderer;
 	ph2d::PhysicsEngine physicsEngine;
 
@@ -38,8 +63,9 @@ struct PhysicsTest: public Container
 		renderer.create(requestedInfo.requestedFBO.fbo);
 	
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
+		physicsEngine.collisionChecksCount = 1;
 
-		for (int i = 0; i < 0; i++)
+		for (int i = 0; i < 50; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
@@ -48,17 +74,23 @@ struct PhysicsTest: public Container
 				float w = rand() % 100 + 20;
 				float h = rand() % 100 + 20;
 
+				//w = 60;
+				//h = 60;
+
 				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
 					ph2d::createBoxCollider({w, h}));
-				physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
+				//physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
+				physicsEngine.bodies[body].flags.setFreezeRotation();
 			}
 
 			for (int j = 0; j < 1; j++)
 			{
 				float r = rand() % 35 + 10;
 
-				physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
+				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
 					ph2d::createCircleCollider({r}));
+				physicsEngine.bodies[body].flags.setFreezeRotation();
+
 			}
 		}
 
@@ -73,32 +105,38 @@ struct PhysicsTest: public Container
 		for (int i = 0; i < 5; i++) { shape[i] *= 2; }
 
 
-		auto bodyA = physicsEngine.addBody({500, 200}, ph2d::createCircleCollider({20}));
-		physicsEngine.bodies[bodyA].flags.setKinematic(true);
+		//auto bodyA = physicsEngine.addBody({500, 200}, ph2d::createCircleCollider({20}));
+		//physicsEngine.bodies[bodyA].flags.setKinematic(true);
+		//
+		//for (int i = 0; i < 10; i++)
+		//{
+		//	auto bodyB = physicsEngine.addBody({500, 220 + i * 20}, ph2d::createCircleCollider({20}));
+		//	physicsEngine.addConstrain({bodyA, bodyB, 40});
+		//	bodyA = bodyB;
+		//	
+		//
+		//}
 
-		for (int i = 0; i < 10; i++)
+		if(0)
 		{
-			auto bodyB = physicsEngine.addBody({500, 220 + i * 20}, ph2d::createCircleCollider({20}));
-			physicsEngine.addConstrain({bodyA, bodyB, 40});
-			bodyA = bodyB;
-			
+			auto b = physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
+			physicsEngine.bodies[b].flags.setFreezeRotation();
 
+			auto body = physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({100}));
+
+			//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({200, 200}));
+			physicsEngine.bodies[body].flags.setFreezeRotation();
 		}
-
-	
-
-		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
-		//auto body = physicsEngine.addBody({500, 200}, ph2d::createBoxCollider({300, 300}));
-
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
+		
+		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({300, 250}));
 
-		//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 50}));
+		//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({400, 100}));
 		//physicsEngine.bodies[body].flags.setFreezePosition();
 		//physicsEngine.bodies[body].flags.setFreezeRotation();
 
-		//physicsEngine.addBody({1, 800}, ph2d::createBoxCollider({800, 50}));
 		//physicsEngine.bodies[1].motionState.mass = 0;
 		//physicsEngine.bodies[1].motionState.momentOfInertia = 0;
 
@@ -109,7 +147,6 @@ struct PhysicsTest: public Container
 		//physicsEngine.addBody({600, 600}, ph2d::createBoxCollider({350, 350}));
 		//physicsEngine.bodies[1].motionState.rotation = glm::radians(30.f);
 
-		//physicsEngine.addBody({800, 100}, ph2d::createCircleCollider({25}));
 		//physicsEngine.addBody({900, 500}, ph2d::createCircleCollider({40}));
 		//physicsEngine.addBody({550, 700}, ph2d::createCircleCollider({25}));
 
@@ -129,7 +166,9 @@ struct PhysicsTest: public Container
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({0,-1})).y << "\n";
 		//std::cout << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).x << " " << ph2d::rotationToVector(ph2d::vectorToRotation({1,0}) ).y  << "\n";
 
-		physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.0, 1});
+		auto b = physicsEngine.addHalfSpaceStaticObject({0, floorPos}, {0.0, 1});
+		//physicsEngine.bodies[b].staticFriction = 0;
+		//physicsEngine.bodies[b].dynamicFriction = 0;
 		//physicsEngine.addBody({500, floorPos}, ph2d::createBoxCollider({900, 50}));
 		//physicsEngine.bodies.back().motionState.mass = 0;
 		//physicsEngine.bodies.back().motionState.momentOfInertia = 0;
@@ -145,6 +184,7 @@ struct PhysicsTest: public Container
 		w = windowState.frameBufferW; //window w
 		h = windowState.frameBufferH; //window h
 
+		glClearColor(0.2, 0.22, 0.23, 1);
 		glClear(GL_COLOR_BUFFER_BIT); //clear screen
 
 		renderer.updateWindowMetrics(w, h);
@@ -178,7 +218,7 @@ struct PhysicsTest: public Container
 	//}
 	//renderer.renderCircleOutline(b.center, b.r, color, 2, 32);
 		static int simulationSpeed = 1;
-		float rightPos = 950;
+		float rightPos = 1200;
 
 		//physicsEngine.bodies[0].motionState.rotation = glm::radians(-30.f);
 
@@ -373,13 +413,13 @@ struct PhysicsTest: public Container
 		ImGui::Text("Penetration: %f", p);
 		ImGui::End();
 
-		for (int i = 0; i < physicsEngine.bodies.size(); i++)
+		for (auto &i : physicsEngine.bodies)
 		{
-			auto &b = physicsEngine.bodies[i];
+			auto &b = i.second;
 
-			auto color = Colors_White;
+			auto color = glm::vec4(generatePastelColor(i.first), 1);
 
-			if (i == selected)
+			if (i.first == selected)
 			{
 				color = Colors_Blue;
 			}
@@ -389,10 +429,10 @@ struct PhysicsTest: public Container
 				color = Colors_Turqoise;
 			}
 
-			if (penetrated)
-			{
-				color = Colors_Red;
-			}
+			//if (penetrated)
+			//{
+			//	color = Colors_Red;
+			//}
 
 			//if (OBBvsPoint(physicsEngine.bodies[i].getAABB(),
 			//	physicsEngine.bodies[i].motionState.rotation,
@@ -427,7 +467,7 @@ struct PhysicsTest: public Container
 
 				glm::vec2 lineEquationStart = lineEquation.getClosestPointToOrigin();
 				lineEquationStart -= lineEquation.getLineVector() * 1000.f;
-				renderer.renderLine(lineEquationStart, lineEquationStart + lineEquation.getLineVector() * 2000.f, Colors_Red);
+				renderer.renderLine(lineEquationStart, lineEquationStart + lineEquation.getLineVector() * 2000.f, Colors_Red, 4);
 			}
 			else if (b.collider.type == ph2d::ColliderConvexPolygon)
 			{
@@ -441,7 +481,7 @@ struct PhysicsTest: public Container
 					p1 = ph2d::rotateAroundPoint(p1, b.motionState.pos, b.motionState.rotation);
 					p2 = ph2d::rotateAroundPoint(p2, b.motionState.pos, b.motionState.rotation);
 
-					renderer.renderLine(p1, p2, color);
+					renderer.renderLine(p1, p2, color, 4);
 				}
 
 			}
@@ -457,12 +497,10 @@ struct PhysicsTest: public Container
 
 			renderer.renderRectangle({contactPoint - glm::vec2(2,2), 4,4}, Colors_White);
 
-			renderer.renderLine(contactPoint,
-				contactPoint + tangentA * 100.f, Colors_Red, 4);
-
-
-			renderer.renderLine(contactPoint,
-				contactPoint + tangentB * 100.f, Colors_Purple, 4);
+			//renderer.renderLine(contactPoint,
+			//	contactPoint + tangentA * 100.f, Colors_Red, 4);
+			//renderer.renderLine(contactPoint,
+			//	contactPoint + tangentB * 100.f, Colors_Purple, 4);
 		}
 
 

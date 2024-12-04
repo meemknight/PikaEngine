@@ -1550,7 +1550,8 @@ namespace ph2d
 };
 
 float PythagoreanSolve(float fA, float fB)
-{
+{	
+	//return std::min(fA, fB);
 	return std::sqrt(fA * fA + fB * fB);
 }
 
