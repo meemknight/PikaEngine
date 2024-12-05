@@ -1351,15 +1351,6 @@ namespace ph2d
 		else
 		{
 
-			//if (glm::length(motionState.velocity) < MIN_VELOCITY)
-			//{
-			//	motionState.velocity = glm::vec2(0.0f);
-			//}
-			//
-			//if (std::abs(motionState.angularVelocity) < MIN_ANGULAR_VELOCITY)
-			//{
-			//	motionState.angularVelocity = 0.0f;
-			//}
 
 			//linear motion
 			motionState.acceleration = glm::clamp(motionState.acceleration,
@@ -1403,14 +1394,12 @@ namespace ph2d
 			//rotation
 			motionState.angularVelocity += motionState.torque * (1.f/motionState.momentOfInertia) * deltaTime;
 
-			float toAdd = motionState.angularVelocity;
-			if (std::abs(toAdd) < s.restingAngularVelocity)
+			if (std::abs(motionState.angularVelocity) < s.restingAngularVelocity)
 			{
-				toAdd = {};
 				motionState.angularVelocity = 0;
 			}
 
-			motionState.rotation += toAdd * deltaTime;
+			motionState.rotation += motionState.angularVelocity * deltaTime;
 			motionState.torque = 0;
 		}
 		

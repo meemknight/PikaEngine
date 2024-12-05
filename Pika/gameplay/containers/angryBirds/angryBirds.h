@@ -24,9 +24,10 @@ struct AngryBirds: public Container
 		woodblock,
 		stoneblock,
 		pig,
+		red,
 	};
 
-	glm::ivec2 sizes[9]{
+	glm::ivec2 sizes[10]{
 		glm::ivec2{40,40},
 		glm::ivec2{40,40},
 
@@ -39,20 +40,21 @@ struct AngryBirds: public Container
 		glm::ivec2(80,80),
 
 		glm::ivec2(70,70),
+		glm::ivec2(70,70),
 
 	};
 
-	float friction[9]
+	float friction[10]
 	{
-		0.8, 0.8, 0.8, 0.6, 0.8, 0.6, 0.8, 0.8, 0.8
+		0.8, 0.8, 0.8, 0.6, 0.8, 0.6, 0.8, 0.8, 0.8, 0.8
 	};
 
-	float elasticity[9]
+	float elasticity[10]
 	{
-		0.4, 0.4, 0.2, 0.2, 0.4, 0.2, 0.4, 0.2, 0.9
+		0.4, 0.4, 0.2, 0.2, 0.4, 0.2, 0.4, 0.2, 0.9, 0.9
 	};
 
-	const char *textureNames[9]
+	const char *textureNames[10]
 	{
 		PIKA_RESOURCES_PATH "sus/woodballs.png",
 		PIKA_RESOURCES_PATH "sus/woodsmall.png",
@@ -63,10 +65,11 @@ struct AngryBirds: public Container
 		PIKA_RESOURCES_PATH "sus/wood.png",
 		PIKA_RESOURCES_PATH "sus/stone.png",
 		PIKA_RESOURCES_PATH "sus/pig.png",
+		PIKA_RESOURCES_PATH "sus/red.png",
 	};
 
-	gl2d::Texture textures[9];
-	gl2d::TextureAtlas texturesAtlas[9];
+	gl2d::Texture textures[10];
+	gl2d::TextureAtlas texturesAtlas[10];
 	gl2d::Texture background;
 	gl2d::Texture sling;
 	glm::vec2 backgroundSize;
@@ -83,12 +86,12 @@ struct AngryBirds: public Container
 
 	std::unordered_map<ph2d::ph2dBodyId, GameBlock> gameBlocks;
 
-	void addBlock(int type, glm::vec2 pos)
+	void addBlock(int type, glm::vec2 pos, glm::vec2 velocity = {})
 	{
 		glm::ivec2 size = sizes[type];
 		ph2d::ph2dBodyId body = 0;
 
-		if (type == woodBalls || type == pig)
+		if (type == woodBalls || type == pig || type == red)
 		{
 			body = physicsEngine.addBody(pos,
 				ph2d::createCircleCollider(size.x/2));
@@ -110,8 +113,7 @@ struct AngryBirds: public Container
 		physicsEngine.bodies[body].dynamicFriction = friction[type];
 		physicsEngine.bodies[body].staticFriction = friction[type] + 0.1f;
 		physicsEngine.bodies[body].elasticity = elasticity[type];
-
-		
+		physicsEngine.bodies[body].motionState.velocity = velocity;
 	}
 
 	void removeBlock(ph2d::ph2dBodyId id)
@@ -137,11 +139,11 @@ struct AngryBirds: public Container
 	{
 		renderer.create(requestedInfo.requestedFBO.fbo);
 
-		for (int i = 0; i < 9; i++)
+		for (int i = 0; i < 10; i++)
 		{
 			textures[i] = pika::gl2d::loadTexture(textureNames[i], requestedInfo);
 
-			if (i == pig)
+			if (i == pig || i == red)
 			{
 				texturesAtlas[i] = gl2d::TextureAtlas(1, 1);
 			}
@@ -152,7 +154,7 @@ struct AngryBirds: public Container
 		}
 
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
-		physicsEngine.simulationphysicsSettings.restingAngularVelocity = glm::radians(5.f);
+		physicsEngine.simulationphysicsSettings.restingAngularVelocity = glm::radians(50.f);
 		physicsEngine.simulationphysicsSettings.restingVelocity = 5;
 
 		background = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "sus/background.png", requestedInfo);
@@ -201,6 +203,7 @@ struct AngryBirds: public Container
 	"pig",
 	"eraser",
 	"move",
+	"red",
 	"none",
 	};
 
@@ -285,7 +288,7 @@ struct AngryBirds: public Container
 
 	#pragma endregion
 
-		pika::gl2d::cameraController(renderer.currentCamera, input, 100, 1);
+		pika::gl2d::cameraController(renderer.currentCamera, input, 500, 3);
 
 
 		glm::vec2 mousePosScreen = {input.mouseX, input.mouseY};
@@ -358,6 +361,14 @@ struct AngryBirds: public Container
 
 		renderer.renderRectangle({0, 720, 50, 80}, sling);
 
+		static int pressed = 0;
+		static glm::vec2 pressedPosition = {};
+
+		if (currentSelectedOption == 11 && pressed)
+		{
+			renderer.renderLine({pressedPosition}, mousePosWorld, Colors_Red, 4);
+		}
+
 		for (auto &index : physicsEngine.bodies)
 		{
 			auto &b = index.second;
@@ -386,6 +397,31 @@ struct AngryBirds: public Container
 				textures[currentSelectedOption],
 				{1,1,1,0.8},
 				{}, 0, texturesAtlas[currentSelectedOption].get(0, 0));
+		}
+
+
+	
+
+		if (currentSelectedOption == 11)
+		{
+			
+			if (input.lMouse.pressed())
+			{
+				pressed = true;
+				pressedPosition = mousePosWorld;
+			}
+
+
+			if (input.lMouse.released() && pressed)
+			{
+				glm::vec2 vector =  pressedPosition - mousePosWorld;
+
+				addBlock(red, {0, 750}, vector * 3.f);
+
+				pressed = 0;
+			}
+
+
 		}
 
 	#pragma endregion
@@ -458,6 +494,41 @@ struct AngryBirds: public Container
 			}
 
 		}
+
+
+		if(0)
+		for (auto &A : physicsEngine.bodies)
+			for (auto &B : physicsEngine.bodies)
+			{
+				glm::vec2 tangentA = {};
+				glm::vec2 tangentB = {};
+				glm::vec2 contactPoint = {};
+				glm::vec2 n = {};
+				float p = 0;
+
+				if (A.first == B.first) { break; }
+
+				if (ph2d::BodyvsBody(A.second,
+					B.second,
+					p, n, contactPoint, tangentA, tangentB))
+				{
+					
+					renderer.renderLine(contactPoint,
+						contactPoint + n * 100.f, Colors_Green, 4);
+
+					renderer.renderRectangle({contactPoint - glm::vec2(2,2), 4,4}, Colors_White);
+
+					renderer.renderLine(contactPoint,
+						contactPoint + tangentA * 100.f, Colors_Red, 4);
+					renderer.renderLine(contactPoint,
+						contactPoint + tangentB * 100.f, Colors_Purple, 4);
+
+
+				}
+
+			}
+
+
 
 		renderer.renderRectangle({mousePosWorld - glm::vec2(3,3), 6, 6}, Colors_Red);
 

@@ -7,9 +7,11 @@
 #include <pikaSizes.h>
 #include <imgui_spinner.h>
 #include <ph2d/ph2d.h>
+#include <unordered_set>
+#include <sstream>
 
 
-struct PhysicsTest: public Container
+struct Logo: public Container
 {
 
 
@@ -40,11 +42,14 @@ struct PhysicsTest: public Container
 	gl2d::Renderer2D renderer;
 	ph2d::PhysicsEngine physicsEngine;
 	gl2d::Texture ballTexture;
+	gl2d::Texture logoTexture;
 
 	std::unordered_set<unsigned int> ropeIds;
 
+	std::unordered_map<unsigned int, glm::vec3> colors;
+
 	//static constexpr float floorPos = 850;
-	static constexpr float floorPos = 850;
+	static constexpr float floorPos = 1000;
 
 	bool simulate = 1;
 
@@ -52,7 +57,7 @@ struct PhysicsTest: public Container
 	static ContainerStaticInfo containerInfo()
 	{
 		ContainerStaticInfo info = {};
-		info.defaultHeapMemorySize = pika::MB(10);
+		info.defaultHeapMemorySize = pika::MB(20);
 		info.requestImguiFbo = true;
 		info.pushAnImguiIdForMe = true;
 		info.andInputWithWindowHasFocus = 0;
@@ -67,106 +72,36 @@ struct PhysicsTest: public Container
 		renderer.create(requestedInfo.requestedFBO.fbo);
 	
 		ballTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "ball.png", requestedInfo);
+		logoTexture = pika::gl2d::loadTexture(PIKA_RESOURCES_PATH "logo2.png", requestedInfo);
 
-		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
+		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 1.f;
 		//physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 0);
 		physicsEngine.simulationphysicsSettings.airDragCoeficient = 0.01f;
-		//physicsEngine.collisionChecksCount = 1;
+		physicsEngine.collisionChecksCount = 2;
+		physicsEngine.setFixedTimeStamp = 0;
 
-		for (int i = 0; i < 0; i++)
+
+		auto file = requestedInfo.readEntireFileBinaryAsAString(PIKA_RESOURCES_PATH "physicsOrder.txt");
+		std::stringstream stream(file);
+
+		
 		{
-			//if (i == 1) { mass = 0; }
+			unsigned int id = 0;
+			float r, g, b;
 
-			if (0)
+			while (stream.good() && !stream.eof() && stream >> id)
 			{
-				float w = rand() % 100 + 20;
-				float h = rand() % 100 + 20;
+				stream >> r >> g >> b;
 
-				//w = 60;
-				//h = 60;
-
-				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
-					ph2d::createBoxCollider({w, h}));
-				//physicsEngine.bodies[body].motionState.rotation = ((rand() % 800) / 800.f) * 3.14159f;
-				//physicsEngine.bodies[body].flags.setFreezeRotation();
-			}
-
-			for (int j = 0; j < 2; j++)
-			{
-				float r = rand() % 35 + 10;
-
-				auto body = physicsEngine.addBody({rand() % 800 + 100, rand() % 800 + 100},
-					ph2d::createCircleCollider({r}));
-				//physicsEngine.bodies[body].flags.setFreezeRotation();
-
-			}
-		}
-
-		if(0)
-		for (int i = 0; i < 20; i++)
-		{
-
-			float r = 20;
-			auto body = physicsEngine.addBody(
-				glm::vec2{300, 200} + glm::vec2{(i % 5) * 40, 0}
-				+ glm::vec2{0,(i / 5) * 40}
-				+glm::vec2{(i / 5) * 20, 0},
-
-
-				ph2d::createCircleCollider({r}));
+				colors[id] = glm::vec3{r,g,b} / 255.f;
+			};
 
 		}
 
-
-		glm::vec2 shape[5] = 
-		{
-			{0, -50},
-			{40, -10},
-			{25, 25},
-			{-25, 25},
-			{-40, -10},
-		};
-		for (int i = 0; i < 5; i++) { shape[i] *= 2; }
-
-
-		//rope
-		if(0)
-		{
-			auto bodyA = physicsEngine.addBody({200, 800}, ph2d::createCircleCollider({20}));
-			physicsEngine.bodies[bodyA].flags.setKinematic(true);
-			ropeIds.insert(bodyA);
-			for (int i = 0; i < 25; i++)
-			{
-				auto bodyB = physicsEngine.addBody({200 + i * 45, 800}, ph2d::createCircleCollider({20}));
-				physicsEngine.addConstrain({bodyA, bodyB, 35, 50000 * 1.2});
-				bodyA = bodyB;
-				ropeIds.insert(bodyA);
-
-
-				if (i == 24)
-				{
-					physicsEngine.bodies[bodyA].flags.setKinematic(true);
-				}
-			}
-		}
-
+	
+	
 		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 
-		if(1)
-		{
-			auto b = physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
-			auto body = physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({100}));
-
-			auto mass = physicsEngine.bodies[body].motionState.mass;
-			auto inertia = physicsEngine.bodies[body].motionState.momentOfInertia;
-
-			//physicsEngine.bodies[b].flags.setFreezeRotation();
-			physicsEngine.bodies[b].motionState.mass = mass;
-			physicsEngine.bodies[b].motionState.momentOfInertia = inertia;
-
-			//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({200, 200}));
-			//physicsEngine.bodies[body].flags.setFreezeRotation();
-		}
 
 		//physicsEngine.addBody({500, 1100}, 
 		//	ph2d::createBoxCollider({1100, 10}));
@@ -258,7 +193,7 @@ struct PhysicsTest: public Container
 	//}
 	//renderer.renderCircleOutline(b.center, b.r, color, 2, 32);
 		static int simulationSpeed = 1;
-		float rightPos = 1200;
+		float rightPos = 1000;
 
 		//physicsEngine.bodies[0].motionState.rotation = glm::radians(-30.f);
 
@@ -268,14 +203,10 @@ struct PhysicsTest: public Container
 
 		ImGui::DragInt("Speed", &simulationSpeed);
 
-		ImGui::SliderAngle("Angle", &physicsEngine.bodies[1].motionState.rotation);
-		ImGui::SliderAngle("angular velocity", &physicsEngine.bodies[1].motionState.angularVelocity);
 		//physicsEngine.bodies[0].motionState.angularVelocity = 1.5;
 
 		ImGui::Text("Mouse pos %d, %d", input.mouseX, input.mouseY);
 
-		ImGui::Text("Y min pos %f", physicsEngine.bodies[1].getAABB().min().y);
-		ImGui::Text("Moment of inertia %f", physicsEngine.bodies[1].motionState.momentOfInertia);
 
 		ImGui::Checkbox("Simulate", &simulate);
 
@@ -285,10 +216,10 @@ struct PhysicsTest: public Container
 		static int selected = -1;
 
 		//mouse
-		if (!simulate && input.rMouse.held())
-		{
-			physicsEngine.bodies[1].motionState.setPos({input.mouseX, input.mouseY});
-		}
+		//if (!simulate && input.rMouse.held())
+		//{
+		//	physicsEngine.bodies[1].motionState.setPos({input.mouseX, input.mouseY});
+		//}
 
 		static glm::vec2 pressedPosition = {};
 
@@ -345,13 +276,13 @@ struct PhysicsTest: public Container
 
 			if (simulate)
 			{
-				physicsEngine.collisionChecksCount = 8;
-				physicsEngine.runSimulation(input.deltaTime);
+				physicsEngine.collisionChecksCount = 1;
+				physicsEngine.runSimulation(0.008);
 			}
 			else
 			{
 				physicsEngine.collisionChecksCount = 0;
-				physicsEngine.runSimulation(0);
+				//physicsEngine.runSimulation(0.008);
 			}
 
 			for (auto &it : physicsEngine.bodies)
@@ -369,7 +300,7 @@ struct PhysicsTest: public Container
 					b.motionState.pos.y -= diff;
 					b.motionState.lastPos = b.motionState.pos;
 				
-					b.motionState.velocity.y *= -0.2f;
+					b.motionState.velocity.y *= -0.9f;
 				}
 
 				if (left < 0)
@@ -403,20 +334,6 @@ struct PhysicsTest: public Container
 		//renderer.renderRectangleOutline({300 - 25, 100 - 25, 50, 50}, Colors_Red);
 		//renderer.renderRectangleOutline({600 - 25, 200 - 25, 50, 50}, Colors_Red);
 
-		float p = 0;
-		glm::vec2 n = {};
-		bool penetrated = 0;
-		glm::vec2 contactPoint = {};
-
-		glm::vec2 tangentA = {};
-		glm::vec2 tangentB = {};
-
-		if (ph2d::BodyvsBody(physicsEngine.bodies[1],
-			physicsEngine.bodies[2],
-			p, n, contactPoint, tangentA, tangentB))
-		{
-			penetrated = true;
-		}
 
 		//auto a = physicsEngine.bodies[0].getAABB();
 		//auto b = physicsEngine.bodies[1].getAABB();
@@ -450,30 +367,84 @@ struct PhysicsTest: public Container
 		//}
 
 		ImGui::Begin("Settings");
-		ImGui::Text("Penetration: %f", p);
+		int count = physicsEngine.bodies.size();
+		ImGui::Text("Count: %d", count);
+
+		if (ImGui::Button("Make Photo"))
+		{
+
+			glm::ivec2 size = {};
+			auto pixels = logoTexture.readTextureData(0, &size);
+
+			auto samplePixel = [&](glm::vec2 uv)
+			{
+				uv = glm::clamp(uv, {0,0}, {1,1});
+				uv.y = 1 - uv.y;
+				uv *= glm::vec2(size.x-1, size.y-1);
+
+				uv = glm::ivec2(uv);
+
+				glm::vec4 rez = {};
+				rez.r = pixels[(4 * (uv.x + uv.y * size.x)) + 0];
+				rez.g = pixels[(4 * (uv.x + uv.y * size.x)) + 1];
+				rez.b = pixels[(4 * (uv.x + uv.y * size.x)) + 2];
+				rez.a = pixels[(4 * (uv.x + uv.y * size.x)) + 3];
+				return rez;
+			};
+
+			pika::memory::pushCustomAllocatorsToStandard();
+			{
+				std::ofstream f(PIKA_RESOURCES_PATH "physicsOrder.txt");
+
+				for (auto &o : physicsEngine.bodies)
+				{
+
+					f << o.first << " ";
+					
+					glm::vec2 uv = o.second.motionState.pos;
+					uv /= glm::vec2(rightPos, floorPos);
+					auto color = samplePixel(uv);
+					f << color.r << ' ' << color.g << ' ' << color.b << "\n";
+				}
+				f.close();
+			}
+			pika::memory::popCustomAllocatorsToStandard();
+		}
+
 		ImGui::End();
 
+		static bool start = 0;
 		if (input.buttons[pika::Button::P].held())
 		{
+			start = true;
+		}
+
+		if (start)
+		{
+			static int ballsCounter = 0;
 			static float timer = 0;
 			static float counter = 0;
 
-			if (timer <= 0)
+			if (ballsCounter < 600)
 			{
-				auto p = physicsEngine.addBody({input.mouseX, input.mouseY}, ph2d::createCircleCollider({22}));
+				if (timer <= 0)
+				{
+					auto p = physicsEngine.addBody({rightPos/2, floorPos/2}, ph2d::createCircleCollider({24}));
 
-				glm::vec2 direction = {sin(counter), cos(counter)};
-				direction.y = std::abs(direction.y);
-				direction.y += 0.1;
-				direction = glm::normalize(direction);
+					glm::vec2 direction = {sin(counter), cos(counter)};
+					//direction.y = std::abs(direction.y);
+					//direction.y += 0.1;
+					direction = glm::normalize(direction);
 
+					physicsEngine.bodies[p].motionState.velocity = direction * 2000.f;
+					timer = 0.05;
+					ballsCounter++;
+				};
 
-				physicsEngine.bodies[p].motionState.velocity = direction * 200.f;
-				timer = 0.2;
+				timer -= 0.008;
+				counter += 0.008 * 2.f;
+
 			};
-
-			timer -= input.deltaTime;
-			counter += input.deltaTime * 2.f;
 		}
 
 		for (auto &i : physicsEngine.bodies)
@@ -487,10 +458,12 @@ struct PhysicsTest: public Container
 				color = Colors_Blue;
 			}
 
-			if (b.intersectPoint({input.mouseX, input.mouseY}))
-			{
-				color = Colors_Turqoise;
-			}
+			//if (b.intersectPoint({input.mouseX, input.mouseY}))
+			//{
+			//	color = Colors_Turqoise;
+			//}
+
+			color = glm::vec4(colors[i.first], 1);
 
 			//if (penetrated)
 			//{
@@ -514,12 +487,6 @@ struct PhysicsTest: public Container
 				renderer.renderLine(b.motionState.pos, b.motionState.pos + vector *
 					b.collider.collider.circle.radius, color, 4);
 
-				auto color = Colors_White;
-
-				if (ropeIds.find(i.first) == ropeIds.end())
-				{
-					color = glm::vec4(generatePastelColor(i.first), 1);
-				}
 					 
 				renderer.renderRectangle(b.getAABB().asVec4(), ballTexture, color, {}, b.motionState.rotation);
 
@@ -561,19 +528,6 @@ struct PhysicsTest: public Container
 		}
 
 		//renderer.renderRectangle({-100, floorPos, 100000, 20});
-
-		if (penetrated)
-		{
-			renderer.renderLine(contactPoint,
-				contactPoint + n * 100.f, Colors_Green, 4);
-
-			renderer.renderRectangle({contactPoint - glm::vec2(2,2), 4,4}, Colors_White);
-
-			//renderer.renderLine(contactPoint,
-			//	contactPoint + tangentA * 100.f, Colors_Red, 4);
-			//renderer.renderLine(contactPoint,
-			//	contactPoint + tangentB * 100.f, Colors_Purple, 4);
-		}
 
 		renderer.renderRectangle({
 			glm::vec2(input.mouseX,input.mouseY) - glm::vec2(4,4), 8, 8}, Colors_Red);
