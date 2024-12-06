@@ -77,7 +77,7 @@ namespace sushi
 		float LT = 0.f;
 		float RT = 0.f;
 
-		struct
+		struct Joystick
 		{
 			constexpr static float JOYSTICK_SENSITIVITY = 0.7f;
 
@@ -88,7 +88,9 @@ namespace sushi
 			bool up() { return y > JOYSTICK_SENSITIVITY; }
 			bool down() { return y < -JOYSTICK_SENSITIVITY; }
 
-		}LStick, RStick;
+		};
+
+        Joystick LStick, RStick;
 
 		bool connected = 0;
 
