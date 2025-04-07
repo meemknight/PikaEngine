@@ -17,7 +17,6 @@ namespace pika
 		void init(std::string name);
 
 		
-
 		//this will be dependent on the configuration of the project. 
 		void log(const char *l, int type = pika::logNormal);
 		
@@ -25,8 +24,8 @@ namespace pika
 		std::string name = "";
 		bool firstLog = 0;
 
-		std::deque<std::string> internalLogs;
 		static constexpr int maxInternalLogCount = 200;
+		std::deque<std::string> internalLogs; //used to print the logs in a internal console
 
 		
 		pika::PushNotificationManager *pushNotificationManager = 0;

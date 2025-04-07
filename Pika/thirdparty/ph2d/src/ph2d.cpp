@@ -1489,6 +1489,7 @@ namespace ph2d
 					glm::vec2 b = collider.convexPolygon.vertexesObjectSpace[(i + 1) % c];
 					mass += cross(a, b) / 2.f;
 				}
+				return mass;
 			}
 			break;
 
@@ -1558,7 +1559,6 @@ bool overlap(ph2d::Body &a, ph2d::Body &b)
 
 void ph2d::MotionState::applyImpulseObjectPosition(glm::vec2 impulse, glm::vec2 contactVector, BodyFlags flags)
 {
-
 
 	if (mass != 0 && mass != INFINITY )
 	{

@@ -46,6 +46,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 #include "containers/physicsTest/logo.h"
 
 #include "containers/angryBirds/angryBirds.h"
+#include "containers/milk/milk.h"
 
 #if PIKA_PRODUCTION == 1
 
@@ -78,6 +79,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(MarioEditor) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
 	PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
+	PIKA_DECLARE_CONTAINER(Milk) \
 	PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) 
 	//PIKA_DECLARE_CONTAINER(McDungeonsEditor)
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu)

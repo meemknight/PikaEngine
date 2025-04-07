@@ -70,10 +70,10 @@ struct PhysicsTest: public Container
 
 		physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 9.81) * 100.f;
 		//physicsEngine.simulationphysicsSettings.gravity = glm::vec2(0, 0);
-		physicsEngine.simulationphysicsSettings.airDragCoeficient = 0.01f;
+		//physicsEngine.simulationphysicsSettings.airDragCoeficient = 0.01f;
 		//physicsEngine.collisionChecksCount = 1;
 
-		for (int i = 0; i < 0; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			//if (i == 1) { mass = 0; }
 
@@ -130,7 +130,7 @@ struct PhysicsTest: public Container
 
 
 		//rope
-		if(0)
+		if(1)
 		{
 			auto bodyA = physicsEngine.addBody({200, 800}, ph2d::createCircleCollider({20}));
 			physicsEngine.bodies[bodyA].flags.setKinematic(true);
@@ -138,7 +138,7 @@ struct PhysicsTest: public Container
 			for (int i = 0; i < 25; i++)
 			{
 				auto bodyB = physicsEngine.addBody({200 + i * 45, 800}, ph2d::createCircleCollider({20}));
-				physicsEngine.addConstrain({bodyA, bodyB, 35, 50000 * 1.2});
+				physicsEngine.addConstrain({bodyA, bodyB, 40, 5000 * 1.2});
 				bodyA = bodyB;
 				ropeIds.insert(bodyA);
 
@@ -152,7 +152,7 @@ struct PhysicsTest: public Container
 
 		//physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 
-		if(1)
+		if(0)
 		{
 			auto b = physicsEngine.addBody({500, 200}, ph2d::createConvexPolygonCollider(shape, 5));
 			auto body = physicsEngine.addBody({500, 500}, ph2d::createCircleCollider({100}));
@@ -166,6 +166,15 @@ struct PhysicsTest: public Container
 
 			//auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({200, 200}));
 			//physicsEngine.bodies[body].flags.setFreezeRotation();
+		}
+
+		{
+			auto body = physicsEngine.addBody({500, 500}, ph2d::createBoxCollider({200, 200}));
+			//physicsEngine.bodies[body].flags.setFreezeRotation();
+
+			body = physicsEngine.addBody({420, 200}, ph2d::createCircleCollider({50}));
+			//physicsEngine.bodies[body].flags.setFreezeRotation();
+
 		}
 
 		//physicsEngine.addBody({500, 1100}, 
@@ -346,6 +355,7 @@ struct PhysicsTest: public Container
 			if (simulate)
 			{
 				physicsEngine.collisionChecksCount = 8;
+				physicsEngine.setFixedTimeStamp = 0;
 				physicsEngine.runSimulation(input.deltaTime);
 			}
 			else
@@ -363,21 +373,21 @@ struct PhysicsTest: public Container
 				auto right = b.getAABB().max().x;
 				auto top = b.getAABB().min().y;
 
-				if (bottom > floorPos)
-				{
-					float diff = bottom - floorPos;
-					b.motionState.pos.y -= diff;
-					b.motionState.lastPos = b.motionState.pos;
-				
-					b.motionState.velocity.y *= -0.2f;
-				}
+				//if (bottom > floorPos)
+				//{
+				//	float diff = bottom - floorPos;
+				//	b.motionState.pos.y -= diff;
+				//	b.motionState.lastPos = b.motionState.pos;
+				//
+				//	b.motionState.velocity.y *= -0.2;
+				//}
 
 				if (left < 0)
 				{
 					b.motionState.pos.x -= left;
 					b.motionState.lastPos = b.motionState.pos;
 
-					b.motionState.velocity.x *= -0.9;
+					b.motionState.velocity.x *= -1;
 				}
 
 				if (right > rightPos)
@@ -385,7 +395,7 @@ struct PhysicsTest: public Container
 					b.motionState.pos.x -= right - rightPos;
 					b.motionState.lastPos = b.motionState.pos;
 
-					b.motionState.velocity.x *= -0.9;
+					b.motionState.velocity.x *= -1;
 				}
 
 				if (top < 0)
@@ -393,7 +403,7 @@ struct PhysicsTest: public Container
 					b.motionState.pos.y -= top;
 					b.motionState.lastPos = b.motionState.pos;
 
-					b.motionState.velocity.y *= -0.9;
+					b.motionState.velocity.y *= -1;
 				}
 			}
 		}

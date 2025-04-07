@@ -4,6 +4,7 @@
 namespace pika
 {
 
+	//todo probably should also add a /0 at the end  + TAKE CARE OF SIZE!!!!
 	void removeCharacters(char *dest, const char *source, const char *charsToRemove, size_t destSize)
 	{
 		int write = 0;

@@ -2,12 +2,13 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
+#include <sstream>
 
 void pika::LogManager::init(std::string name)
 {
 
 	this->name = name;
-	bool firstLog = 0;
+	firstLog = 0;
 	
 }
 
@@ -56,6 +57,8 @@ std::stringstream formatLog(const char *l, int type)
 
 void pika::LogManager::logToFile(const char *l, int type)
 {
+	if (name == "") { name = DefaultLogFile; }
+
 	//todo unlickely atribute
 	if (!firstLog)
 	{
