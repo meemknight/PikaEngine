@@ -966,7 +966,7 @@ void IsometricGame::saveData(RequestedContainerInfo &requestedInfo)
 		);
 	}
 
-	auto fileData = data.formatIntoFileData();
+	auto fileData = data.formatIntoFileDataBinary();
 
 	requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "iso/save.bin", fileData.data(), fileData.size());
 

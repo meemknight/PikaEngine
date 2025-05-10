@@ -1,0 +1,5 @@
+newmtl floorMaterial
+
+map_Kd floor.png
+norm floorN.png
+map_Pr floorR.png
