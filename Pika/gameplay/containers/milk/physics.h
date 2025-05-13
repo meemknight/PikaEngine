@@ -12,7 +12,7 @@ constexpr static float MAX_ACCELERATION = 10'000;
 constexpr static float MAX_AIR_DRAG = 100;
 
 
-struct alignas(16) PhysicsObject
+struct PhysicsObject
 {
 	//the position represents the center of the object.
 	// the shape is the width height depth for cube and for circle it is radius.
@@ -77,7 +77,6 @@ struct alignas(16) PhysicsObject
 	}
 
 };
-
 
 
 PhysicsObject createBall(glm::vec3 pos, float r);

@@ -30,8 +30,6 @@ struct Milk: public Container
 	}
 
 	gl3d::Renderer3D renderer;
-	gl3d::Model helmetModel;
-	gl3d::Entity helmetEntity;
 	pika::gl3d::General3DEditor editor;
 	gl3d::Material floorMaterial;
 
@@ -71,7 +69,7 @@ struct Milk: public Container
 
 		int id = simulator.getIdAndIncrement();
 
-		simulator.bodies[id] = box;
+		simulator.bodies.insert({id, box});
 		c.physicsID = id;
 
 
@@ -181,25 +179,25 @@ struct Milk: public Container
 		//renderer.skyBox.color = {0.2,0.3,0.8};
 
 		renderer.skyBox = renderer.loadHDRSkyBox(PIKA_RESOURCES_PATH "/skyBoxes/canary_wharf_2k.hdr");
-		renderer.skyBox.color = {0.4,0.4,0.4};
+		renderer.skyBox.color = {139.f / 255.f,139.f / 255.f,139.f / 255.f};
 		floorMaterial = renderer.loadMaterial(PIKA_RESOURCES_PATH "milk/floor/floor.mtl", gl3d::TextureLoadQuality::maxQuality)[0];
 
 
-		helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", gl3d::TextureLoadQuality::maxQuality, 1.f);
+		renderer.createPointLight({4.6,8.8,-8.5}, glm::vec3{169 / 255.f}, 27.150, 1.2);
+
+		auto l = renderer.createPointLight({36,12.6,-10.4}, glm::vec3{237.f, 37.f, 37.f} / 255.f, 20, 1);
+		renderer.setPointLightShadows(l, false);
+
+		renderer.createPointLight({66.1,10.2,-9.3}, glm::vec3{57.f, 221.f, 215.f} / 255.f, 20, 1);
+
+
+
+		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "helmet/helmet.obj", gl3d::TextureLoadQuality::maxQuality, 1.f);
 		//helmetModel = renderer.loadModel(PIKA_RESOURCES_PATH "/knight/uploads_files_1950170_Solus_the_knight.gltf", 1.f);
 
 
-		renderer.createDirectionalLight({-1,-0.5,-0.2});
+		//renderer.createDirectionalLight({-1,-0.5,-0.2});
 
-
-		gl3d::Transform t;
-		t.position = {0, 0, -3};
-		t.rotation = {1.5, 0 , 0};
-
-		helmetEntity = renderer.createEntity(helmetModel, t);
-		renderer.setEntityMeshMaterial(helmetEntity, 0, floorMaterial);
-
-		addNewCube({2,1,2}, {0,-1,0});
 
 
 		return true;
