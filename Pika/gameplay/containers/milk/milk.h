@@ -33,6 +33,10 @@ struct Milk: public Container
 	pika::gl3d::General3DEditor editor;
 	gl3d::Material floorMaterial;
 
+	gl3d::Model milkModel;
+	gl3d::Entity milkEntity;
+
+
 	Simulator simulator;
 
 	struct Cube
@@ -197,6 +201,9 @@ struct Milk: public Container
 
 
 		//renderer.createDirectionalLight({-1,-0.5,-0.2});
+
+		milkModel = renderer.loadModel(PIKA_RESOURCES_PATH "milk/milk.glb", gl3d::TextureLoadQuality::maxQuality, 1);
+		milkEntity = renderer.createEntity(milkModel, {{66.9,4.9,-9.5}}, false);
 
 
 
@@ -397,6 +404,23 @@ struct Milk: public Container
 				transform.position = found->second.position;
 				renderer.setEntityTransform(c.entity, transform);
 			}
+		}
+
+		{
+			static float timer = 0;
+			static glm::vec3 posOriginal = {};
+
+			auto t = renderer.getEntityTransform(milkEntity);
+
+			if (posOriginal == glm::vec3()) { posOriginal = t.position; }
+
+			t.rotation.x = 0.8;
+			t.rotation.y = timer * -0.5;
+			t.position.y = posOriginal.y + sin(timer * -0.6f);
+
+			timer += input.deltaTime * 1.4;
+
+			renderer.setEntityTransform(milkEntity, t);
 		}
 
 
