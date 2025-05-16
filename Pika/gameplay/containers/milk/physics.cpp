@@ -178,8 +178,8 @@ void positionalCorrection(PhysicsObject &A, PhysicsObject &B, glm::vec3 n,
 
 	glm::vec3 correction = (glm::max(penetrationDepth - slop, 0.0f) / (aInverseMass + bInverseMass)) * percent * n;
 
-	A.position -= aInverseMass * correction;
-	B.position += bInverseMass * correction;
+	if(aInverseMass) A.position -= aInverseMass * correction;
+	if(bInverseMass) B.position += bInverseMass * correction;
 };
 
 float pythagoreanSolve(float fA, float fB)
@@ -212,8 +212,8 @@ void applyFriction(PhysicsObject &A, PhysicsObject &B, glm::vec3 tangent, glm::v
 	}
 
 	// Apply
-	A.velocity -= (aInverseMass)*frictionImpulse;
-	B.velocity += (bInverseMass)*frictionImpulse;
+	if(aInverseMass) A.velocity -= (aInverseMass)*frictionImpulse;
+	if(bInverseMass) B.velocity += (bInverseMass)*frictionImpulse;
 
 };
 
@@ -238,8 +238,8 @@ void impulseResolution(PhysicsObject &A, PhysicsObject &B, glm::vec3 normal,
 
 	// Apply impulse
 	glm::vec3 impulse = j * normal;
-	A.velocity -= massInverseA * impulse;
-	B.velocity += massInverseB * impulse;
+	if(massInverseA) A.velocity -= massInverseA * impulse;
+	if(massInverseB) B.velocity += massInverseB * impulse;
 
 	positionalCorrection(A, B, normal, penetrationDepth, massInverseA, massInverseB);
 
@@ -668,6 +668,7 @@ void Simulator::update(float deltaTime)
 		//gravity
 		b.acceleration += glm::vec3{0, -9.81, 0};
 
+		if(b.mass != 0 && b.mass != INFINITY)
 		applyDrag(b);
 
 		//detect colisions

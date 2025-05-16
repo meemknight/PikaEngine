@@ -54,6 +54,9 @@ struct Milk: public Container
 
 	gl3d::Model createCubeModel(glm::vec3 size);
 
+	int playerPhysics = 0;
+	glm::vec3 playerSize = {0.5, 1.8, 0.5};
+
 
 	void addNewCube(glm::vec3 size, glm::vec3 position, glm::vec3 rotation = {})
 	{
@@ -148,6 +151,40 @@ struct Milk: public Container
 
 	}
 
+	void load(RequestedContainerInfo &requestedInfo)
+	{
+		sfs::SafeSafeKeyValueData loadedData;
+		std::vector<char> binaryData;
+
+		requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "milk/level.bin", binaryData);
+
+		loadedData.loadFromFileData(binaryData.data(), binaryData.size());
+
+		while (cubes.size())
+		{
+			deleteCube(cubes.size() - 1);
+		}
+
+		for (auto &e : loadedData.entries)
+		{
+			sfs::SafeSafeKeyValueData cube;
+
+			if (loadedData.getKeyValueData(e.first, cube) == sfs::noError)
+			{
+				glm::vec3 size = {};
+				glm::vec3 position = {};
+				glm::vec3 rotation = {};
+
+				cube.getVec3("size", size.x, size.y, size.z);
+				cube.getVec3("position", position.x, position.y, position.z);
+				cube.getVec3("rotation", rotation.x, rotation.y, rotation.z);
+
+				addNewCube(size, position, rotation);
+			}
+
+		}
+	}
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
 	
@@ -205,7 +242,24 @@ struct Milk: public Container
 		milkModel = renderer.loadModel(PIKA_RESOURCES_PATH "milk/milk.glb", gl3d::TextureLoadQuality::maxQuality, 1);
 		milkEntity = renderer.createEntity(milkModel, {{66.9,4.9,-9.5}}, false);
 
+		//optional make milk bottle shiny
+		//gl3d::MaterialValues mat;
+		//mat.roughness = 0.1;
+		//renderer.setEntityMeshMaterialValues(milkEntity, 0, mat);
+		//renderer.setEntityMeshMaterialValues(milkEntity, 1, mat);
 
+		load(requestedInfo);
+
+		{
+			auto box = createBox({0, 2, 0}, playerSize);
+			box.mass = 50;
+			box.bouncyness = 0;
+
+			playerPhysics = simulator.getIdAndIncrement();
+
+			simulator.bodies.insert({playerPhysics, box});
+		}
+		
 
 		return true;
 	}
@@ -230,7 +284,67 @@ struct Milk: public Container
 		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
 		
-		editor.update(requestedInfo.requestedImguiIds, renderer, input, 5, requestedInfo, {windowState.windowW,windowState.windowH});
+		editor.update(requestedInfo.requestedImguiIds, renderer, input, 0, requestedInfo, {windowState.windowW,windowState.windowH});
+
+		auto &playerObject = simulator.bodies[playerPhysics];
+
+		{
+			float speed = 10;
+			glm::vec3 dir = {};
+			if (input.buttons[pika::Button::W].held())
+			{
+				dir.z -= speed * input.deltaTime;
+			}
+			if (input.buttons[pika::Button::S].held())
+			{
+				dir.z += speed * input.deltaTime;
+			}
+
+			if (input.buttons[pika::Button::A].held())
+			{
+				dir.x -= speed * input.deltaTime;
+			}
+			if (input.buttons[pika::Button::D].held())
+			{
+				dir.x += speed * input.deltaTime;
+			}
+
+			//if (input.buttons[pika::Button::Q].held())
+			//{
+			//	dir.y -= speed * input.deltaTime;
+			//}
+			//if (input.buttons[pika::Button::E].held())
+			//{
+			//	dir.y += speed * input.deltaTime;
+			//}
+
+			if (dir.x != 0 || dir.y != 0 || dir.z != 0)
+			{
+				glm::vec3 viewDirection = glm::normalize(renderer.camera.viewDirection);
+
+				//forward
+				float forward = -dir.z;
+				float leftRight = dir.x;
+				float upDown = dir.y;
+
+				glm::vec3 move = {};
+
+				move += glm::vec3(0, 1, 0) * upDown;
+				move += glm::normalize(glm::cross(viewDirection, glm::vec3(0, 1, 0))) * leftRight;
+				move += viewDirection * forward;
+
+				playerObject.velocity += move;
+			}
+
+			if (input.buttons[pika::Button::Space].pressed())
+			{
+				playerObject.velocity.y += 10.f;
+			}
+
+		}
+
+		renderer.camera.position = playerObject.position + glm::vec3(0, 0.7, 0);
+
 
 		if (input.buttons[pika::Button::Escape].released())
 		{
@@ -295,37 +409,7 @@ struct Milk: public Container
 
 			if (ImGui::Button("Load"))
 			{
-				sfs::SafeSafeKeyValueData loadedData;
-				std::vector<char> binaryData;
-
-				requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "milk/level.bin", binaryData);
-
-				loadedData.loadFromFileData(binaryData.data(), binaryData.size());
-
-				while (cubes.size())
-				{
-					deleteCube(cubes.size() - 1);
-				}
-
-				for (auto &e : loadedData.entries)
-				{
-					sfs::SafeSafeKeyValueData cube;
-
-					if (loadedData.getKeyValueData(e.first, cube) == sfs::noError)
-					{
-						glm::vec3 size = {};
-						glm::vec3 position = {};
-						glm::vec3 rotation = {};
-
-						cube.getVec3("size", size.x, size.y, size.z);
-						cube.getVec3("position", position.x, position.y, position.z);
-						cube.getVec3("rotation", rotation.x, rotation.y, rotation.z);
-
-						addNewCube(size, position, rotation);
-					}
-
-				}
-
+				load(requestedInfo);
 			}
 
 			ImGui::Separator();
@@ -396,6 +480,17 @@ struct Milk: public Container
 
 
 		for (auto &c : physicsCubes)
+		{
+			auto found = simulator.bodies.find(c.physicsID);
+			if (found != simulator.bodies.end())
+			{
+				auto transform = renderer.getEntityTransform(c.entity);
+				transform.position = found->second.position;
+				renderer.setEntityTransform(c.entity, transform);
+			}
+		}
+
+		for (auto &c : cubes)
 		{
 			auto found = simulator.bodies.find(c.physicsID);
 			if (found != simulator.bodies.end())
