@@ -121,21 +121,49 @@ bool AABBvsAABB(PhysicsObject &a, PhysicsObject &b, float &penetration, glm::vec
 	// SAT test on x, y, and z axes
 	if (x_overlap > 0 && y_overlap > 0 && z_overlap > 0)
 	{
-		// Determine the axis of least penetration
 		if (x_overlap < y_overlap && x_overlap < z_overlap)
 		{
 			normal = (n.x < 0) ? glm::vec3(-1, 0, 0) : glm::vec3(1, 0, 0);
 			penetration = x_overlap;
+
+			// Side collision on X axis
+			a.collidesSide = true;
+			b.collidesSide = true;
+
+			a.collisionVector = -normal;
+			b.collisionVector = normal;
 		}
 		else if (y_overlap < z_overlap)
 		{
 			normal = (n.y < 0) ? glm::vec3(0, -1, 0) : glm::vec3(0, 1, 0);
 			penetration = y_overlap;
+
+			if (normal.y > 0)
+			{
+				// 'b' hit 'a' on its bottom
+				b.collidesBottom = true;
+				a.collidesSide = true;
+			}
+			else
+			{
+				// 'a' hit 'b' on its bottom
+				a.collidesBottom = true;
+				b.collidesSide = true;
+			}
+
+			// No collisionVector for bottom/top
 		}
 		else
 		{
 			normal = (n.z < 0) ? glm::vec3(0, 0, -1) : glm::vec3(0, 0, 1);
 			penetration = z_overlap;
+
+			// Side collision on Z axis
+			a.collidesSide = true;
+			b.collidesSide = true;
+
+			a.collisionVector = -normal;
+			b.collisionVector = normal;
 		}
 		return true;
 	}
@@ -667,6 +695,9 @@ void Simulator::update(float deltaTime)
 
 		//gravity
 		b.acceleration += glm::vec3{0, -9.81, 0};
+		b.collidesBottom = 0;
+		b.collidesSide = 0;
+		b.collisionVector = {};
 
 		if(b.mass != 0 && b.mass != INFINITY)
 		applyDrag(b);

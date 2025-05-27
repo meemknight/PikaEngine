@@ -203,6 +203,8 @@ struct Milk: public Container
 		renderer.init(1, 1, PIKA_RESOURCES_PATH "BRDFintegrationMap.png", requestedInfo.requestedFBO.fbo);
 
 		renderer.adaptiveResolution.useAdaptiveResolution = false;
+		renderer.frustumCulling = false;
+		
 
 		//renderer.skyBox = renderer.atmosfericScattering({0.2,1,0.3}, {0.9,0.1,0.1}, {0.4, 0.4, 0.8}, 0.8f); //todo a documentation
 		//todo api for skybox stuff
@@ -269,21 +271,21 @@ struct Milk: public Container
 	bool update(pika::Input input, pika::WindowState windowState,
 		RequestedContainerInfo &requestedInfo)
 	{
-	
+
 	#pragma region frame start stuff
 		renderer.setErrorCallback(&errorCallbackCustom, &requestedInfo);
 		renderer.fileOpener.userData = &requestedInfo;
 		renderer.fileOpener.readEntireFileBinaryCallback = readEntireFileBinaryCustom;
 		renderer.fileOpener.readEntireFileCallback = readEntireFileCustom;
 		renderer.fileOpener.fileExistsCallback = defaultFileExistsCustom;
-		
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 
-		
+
 		editor.update(requestedInfo.requestedImguiIds, renderer, input, 0, requestedInfo, {windowState.windowW,windowState.windowH});
 
 		auto &playerObject = simulator.bodies[playerPhysics];
@@ -336,12 +338,38 @@ struct Milk: public Container
 				playerObject.velocity += move;
 			}
 
-			if (input.buttons[pika::Button::Space].pressed())
+			if (input.buttons[pika::Button::Space].pressed() && playerObject.collidesBottom)
 			{
 				playerObject.velocity.y += 10.f;
 			}
 
 		}
+
+		if (playerObject.collidesSide && !playerObject.collidesBottom)
+		{
+			glm::vec3 moveVelocity = playerObject.velocity;
+			moveVelocity.y = 0;
+
+			float l = glm::length(moveVelocity);
+
+			if (l > 5.f)
+			{
+				playerObject.acceleration -= glm::vec3{0, -9.81, 0} *0.7f;
+			}
+
+			if (input.buttons[pika::Button::Space].pressed())
+			{
+				playerObject.velocity.y += 8.f;
+
+				float l = glm::length(playerObject.collisionVector);
+				if (l > 0)
+				{
+					playerObject.velocity += (playerObject.collisionVector / l) * 5.f;
+				}
+			}
+
+		}
+
 
 		renderer.camera.position = playerObject.position + glm::vec3(0, 0.7, 0);
 

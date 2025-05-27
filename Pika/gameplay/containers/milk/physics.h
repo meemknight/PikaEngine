@@ -25,6 +25,9 @@ struct PhysicsObject
 
 	glm::vec3 acceleration = {};
 
+	glm::vec3 collisionDir = {};
+
+
 	float mass = 1;
 	float bouncyness = 0.9;
 	int type = 0;
@@ -32,6 +35,9 @@ struct PhysicsObject
 
 	float dynamicFriction = 0.3;
 
+	bool collidesBottom = 0;
+	bool collidesSide = 0;
+	glm::vec3 collisionVector = {};
 
 	glm::vec3 getMin()
 	{
