@@ -779,6 +779,8 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		glBindBuffer(GL_ARRAY_BUFFER, renderer.buffers[Renderer2DBufferType::texturePositions]);
 		glBufferData(GL_ARRAY_BUFFER, renderer.texturePositions.size() * sizeof(glm::vec2), renderer.texturePositions.data(), GL_STREAM_DRAW);
 
+		bool use3D = false;
+
 		//todo 2 different shaders to properly optimize this
 		if (renderer.currentShader.u_viewProjection >= 0)
 		{
@@ -788,12 +790,28 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 				renderer.currentCamera3D.aspectRatio = 1;
 
 				glUniformMatrix4fv(renderer.currentShader.u_viewProjection, 1, GL_FALSE, &renderer.currentCamera3D.getViewProjectionMatrix()[0][0]);
+				use3D = true;
 			}
 			else
 			{
 				glUniformMatrix4fv(renderer.currentShader.u_viewProjection, 1, GL_FALSE, &glm::mat4(1.f)[0][0]);
 			}
 
+		}
+
+		GLint oldDepthFunc = 0;
+		GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+
+		if (use3D)
+		{
+			glEnable(GL_DEPTH_TEST);
+
+			glGetIntegerv(GL_DEPTH_FUNC, &oldDepthFunc);
+			glDepthFunc(GL_LEQUAL);
+		}
+		else
+		{
+			glDisable(GL_DEPTH_TEST);
 		}
 
 		//Instance render the textures
@@ -821,6 +839,15 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 			glDrawArrays(GL_TRIANGLES, pos * 6, 6 * (size - pos));
 
 			glBindVertexArray(0);
+		}
+
+		if (use3D)
+		{
+			glDepthFunc(oldDepthFunc);
+			if (depthTestEnabled)
+				glEnable(GL_DEPTH_TEST);
+			if (!depthTestEnabled)
+				glDisable(GL_DEPTH_TEST);
 		}
 
 		if (clearDrawData)
@@ -860,14 +887,14 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	//doesn't set the viewport
 	void renderQuadToScreenInternal(gl2d::Renderer2D &renderer)
 	{
-		static float positions[12] = {
-		-1, 1,
-		-1, -1,
-		1, 1,
+		static float positions[26] = {
+		-1, 1,0,1,
+		-1, -1,0,1,
+		1, 1,0,1,
 
-		1, 1,
-		-1, -1,
-		1, -1,};
+		1, 1,0,1,
+		-1, -1,0,1,
+		1, -1,0,1};
 
 		//not used
 		static float colors[6 * 4] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,};
@@ -881,6 +908,8 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 			1, 0,
 		};
 
+		enableNecessaryGLFeatures();
+		
 
 		glBindVertexArray(renderer.vao);
 
@@ -949,6 +978,11 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		FrameBuffer frameBuffer, bool clearDrawData)
 	{
 
+		if (frameBuffer.fbo == 0)
+		{
+			frameBuffer.fbo = defaultFBO;
+		}
+
 		if (postProcesses.empty())
 		{
 			if (clearDrawData)
@@ -958,7 +992,7 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 			}
 		}
 
-		if (!postProcessFbo1.fbo) { postProcessFbo1.create(0, 0); }
+		if (!postProcessFbo1.fbo) { postProcessFbo1.create(windowW, windowH); }
 
 		postProcessFbo1.resize(windowW, windowH);
 		postProcessFbo1.clear();
@@ -2159,11 +2193,21 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		GLfloat oldColor[4];
 		glGetFloatv(GL_COLOR_CLEAR_VALUE, oldColor);
 
+		GLfloat oldDepth;
+		glGetFloatv(GL_DEPTH_CLEAR_VALUE, &oldDepth);
+
 		glClearColor(color.r, color.g, color.b, color.a);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(1.0f); // Optional, sets the value to which the depth buffer is cleared
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Restore old state
 		glClearColor(oldColor[0], oldColor[1], oldColor[2], oldColor[3]);
+		glClearDepth(oldDepth);
 	#else
 		glClearBufferfv(GL_COLOR, 0, &color[0]);
+		GLfloat depthClearValue = 1.0f;
+		glClearBufferfv(GL_DEPTH, 0, &depthClearValue);
 	#endif
 
 	}

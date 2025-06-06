@@ -28,7 +28,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 //#include "containers/minecraftDungeons/mcDungeonsEditor.h"
 //#include "containers/minecraftDungeons/mcDungeonsgameplay.h"
 //#include "containers/minecraftDungeons/mcDungeonsMenu.h"
-//#include "containers/hollowknight/hollowknight.h"
+#include "containers/hollowknight/hollowknight.h"
 
 //#include "containers/marioKart/marioKartEditor.h"
 //#include "containers/marioKart/marioKart.h"
@@ -66,6 +66,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(ImmageViewer) \
 	PIKA_DECLARE_CONTAINER(ThreeDTest) \
 	PIKA_DECLARE_CONTAINER(ThreeDEditor) \
+	PIKA_DECLARE_CONTAINER(Holloknight)\
 	PIKA_DECLARE_CONTAINER(PikaTextEditor)
 	//PIKA_DECLARE_CONTAINER(ThreeDGameExample) \
 	//PIKA_DECLARE_CONTAINER(ThreeDGameMenu) \
@@ -73,7 +74,6 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	//PIKA_DECLARE_CONTAINER(MarioKart) \
 	//PIKA_DECLARE_CONTAINER(IsometricGameEditor) \
 	//PIKA_DECLARE_CONTAINER(Mario) \
-	//PIKA_DECLARE_CONTAINER(Holloknight)\
 	//PIKA_DECLARE_CONTAINER(Bezie)\
 	//PIKA_DECLARE_CONTAINER(PhysicsTest)\
 	//PIKA_DECLARE_CONTAINER(Logo)\

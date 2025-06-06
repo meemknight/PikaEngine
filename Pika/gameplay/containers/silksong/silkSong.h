@@ -20,10 +20,11 @@ struct SilkSong: public Container
 	gl2d::Renderer2D renderer;
 	gl2d::Texture sprites;
 	gl2d::TextureAtlasPadding atlas;
+	gl2d::FrameBuffer fbo;
 
 	b2World world{{0, 10}};
 
-	constexpr static int ASSETS_COUNT = 18;
+	constexpr static int ASSETS_COUNT = 27;
 
 	std::vector<const char*> assetsNames=
 	{
@@ -45,6 +46,18 @@ struct SilkSong: public Container
 		"block2.png",
 		"block3.png",
 		"block4.png",
+
+		"bush2.png",
+		"bush3.png",
+		"grassDecoration.png",
+		"grassDecorationBig.png",
+		"mushroom7.png",
+		"mushroom8.png",
+		"stones.png",
+		"stones2.png",
+		"background2.jpg",
+
+
 	};
 
 	gl2d::Texture assets[ASSETS_COUNT];
@@ -202,7 +215,7 @@ struct SilkSong: public Container
 		}
 	};
 
-	Block blocks[10];
+	//Block blocks[10];
 	b2Body *currentBodySelected = 0;
 	int currentSelectedSprite = 0;
 
@@ -227,24 +240,33 @@ struct SilkSong: public Container
 
 	struct GameSprite
 	{
-		glm::vec2 pos = {};
+		glm::vec3 pos = {};
 		float scale = 1;
 		int type = 0;
 		float rotation = 0;
 		bool flip = 0;
 		int layer = 0; //0 is background than 1 is objects than 2 is decoration than player than 3
+		glm::vec4 color = {1,1,1,1};
 	};
 
 	std::vector<GameSprite> gameSprites;
 
+	gl2d::ShaderProgram blurShader;
+
 	bool create(RequestedContainerInfo &requestedInfo, pika::StaticString<256> commandLineArgument)
 	{
-		
+
+		fbo.create(1, 1, true, true);
+
 		renderer.create(requestedInfo.requestedFBO.fbo);
 		renderer.currentCamera.zoom = 80.f;
 		renderer.currentCamera.position.x = -440;
 		renderer.currentCamera.position.y = -500;
 		renderer.currentCamera3D.position.z = 2;
+
+
+		blurShader = gl2d::createPostProcessShaderFromFile(PIKA_RESOURCES_PATH "hollowknight/blur.frag");
+
 
 		if (!requestedInfo.readEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
 			&inputMetrics, sizeof(inputMetrics)))
@@ -271,7 +293,7 @@ struct SilkSong: public Container
 		{
 			sfs::SafeSafeKeyValueData data;
 
-			pika::sfs::safeLoad(data, PIKA_RESOURCES_PATH "hollowknight/map", false);
+			pika::sfs::safeLoad(data, PIKA_RESOURCES_PATH "hollowknight/map2", false);
 
 			void *geometry = 0;
 			size_t s = 0;
@@ -279,10 +301,10 @@ struct SilkSong: public Container
 			{
 				SavedBlock *b = (SavedBlock*)geometry;
 
-				for (int i = 0; i < s / sizeof(SavedBlock); i++)
-				{
-					blocks[i].create(world, b[i].dimensions, b[i].rotation, b[i].type);
-				}
+				//for (int i = 0; i < s / sizeof(SavedBlock); i++)
+				//{
+				//	blocks[i].create(world, b[i].dimensions, b[i].rotation, b[i].type);
+				//}
 			}
 			else
 			{
@@ -295,7 +317,7 @@ struct SilkSong: public Container
 			{
 				GameSprite *loagedGameSprites = (GameSprite *)loadedSprites;
 
-				for (int i = 0; i < s / sizeof(SavedBlock); i++)
+				for (int i = 0; i < s / sizeof(GameSprite); i++)
 				{
 					gameSprites.push_back(loagedGameSprites[i]);
 				}
@@ -309,6 +331,11 @@ struct SilkSong: public Container
 		character.physicalBody.dynamicBody->SetFixedRotation(true);
 		characterJumpSensor = character.physicalBody.addSensor({0, 0.5, 0.55f, 0.1f});
 
+
+		Block floor;
+		floor.create(world, {-1000, 10, 2000, 1}, 0, b2BodyType::b2_staticBody);
+
+
 		return true;
 	}
 
@@ -318,11 +345,14 @@ struct SilkSong: public Container
 		RequestedContainerInfo &requestedInfo)
 	{
 	#pragma region clear stuff
-		glClear(GL_COLOR_BUFFER_BIT);
+		//glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
+		fbo.resize(windowState.windowW, windowState.windowH);
 	#pragma endregion
 
 	#pragma region input
+		requestedInfo.requestedFBO.depthTexture;
 
 		//::pika::gl2d::cameraController(renderer.currentCamera, input, 60 * (!followPlayer), 4);
 
@@ -475,7 +505,34 @@ struct SilkSong: public Container
 
 	#pragma region render
 
-		for (int i = 0; i < 4; i++)
+		//background
+
+		{
+			int index = 0;
+			for (auto &s : gameSprites)
+			{
+				if (s.layer == 0)
+				{
+		
+					if (currentSelectedSprite == index && selectType == 2)
+					{
+						renderer.renderRectangle({glm::vec2(s.pos), glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
+							assets[s.type], {1,0.7,0.7,1.0}, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
+					}
+					else
+					{
+						renderer.renderRectangle({glm::vec2(s.pos), glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
+							assets[s.type], s.color, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
+					}
+				}
+		
+				index++;
+			}
+		}
+		renderer.flushPostProcess({blurShader});
+
+
+		for (int i = 1; i < 4; i++)
 		{
 			//player
 			if (i == 3)
@@ -493,12 +550,12 @@ struct SilkSong: public Container
 					if (currentSelectedSprite == index && selectType == 2)
 					{
 						renderer.renderRectangle({glm::vec2(s.pos), glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
-							assets[s.type], {1,0.5,0.5,1.0}, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), index * 0.1);
+							assets[s.type], {1,0.7,0.7,1.0}, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
 					}
 					else
 					{
 						renderer.renderRectangle({glm::vec2(s.pos), glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
-							assets[s.type], Colors_White, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), index * 0.1);
+							assets[s.type], s.color, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
 					}
 				}
 
@@ -627,13 +684,13 @@ struct SilkSong: public Container
 		{
 			ImGui::Begin("Game Editor");
 
-			if (ImGui::Button("Spawn"))
-			{
-				for (int i = 0; i < 10; i++)
-				{
-					blocks[i].create(world, {1 + sin(i) * 5, -1.5 * i, 1,1}, 0, b2BodyType::b2_dynamicBody);
-				}
-			}
+			//if (ImGui::Button("Spawn"))
+			//{
+			//	for (int i = 0; i < 10; i++)
+			//	{
+			//		blocks[i].create(world, {1 + sin(i) * 5, -1.5 * i, 1,1}, 0, b2BodyType::b2_dynamicBody);
+			//	}
+			//}
 
 			ImGui::DragFloat2("Camera pos", &renderer.currentCamera.position[0], 0.001);
 			ImGui::DragFloat("Camera zoom", &renderer.currentCamera.zoom, 0.5, 10, 1000);
@@ -739,7 +796,7 @@ struct SilkSong: public Container
 				
 				}
 
-				ImGui::DragFloat2("Pos: ", &pos.x, 0.1);
+				ImGui::DragFloat3("Pos: ", &pos.x, 0.1);
 				ImGui::SliderAngle("Angle", &angle);
 
 				currentBodySelected->SetTransform(pos, angle);
@@ -758,6 +815,12 @@ struct SilkSong: public Container
 					gameSprites.push_back({});
 					currentSelectedSprite = gameSprites.size() - 1;
 				}
+
+				if (currentSelectedSprite > 0 && currentSelectedSprite < gameSprites.size())
+				if (ImGui::Button("Remove sprite"))
+				{
+					gameSprites.erase(gameSprites.begin() + currentSelectedSprite);
+				}
 				
 				ImGui::InputInt("Sprite", &currentSelectedSprite);
 
@@ -775,9 +838,11 @@ struct SilkSong: public Container
 
 					ImGui::DragFloat3("Pos", &s.pos[0], 0.01);
 
+					ImGui::ColorEdit4("Color", &s.color[0]);
+
 					ImGui::Checkbox("Flip", &s.flip);
 
-					ImGui::SliderAngle("Angle", &s.rotation);
+					ImGui::SliderFloat("Angle", &s.rotation, -360, 360, "%.00f deg");
 
 					ImGui::DragFloat("Scale", &s.scale, 0.01, 0.001, 100);
 
@@ -792,24 +857,23 @@ struct SilkSong: public Container
 
 			if (ImGui::Button("Save map"))
 			{
-				SavedBlock b[10];
-
-				for (int i = 0; i < 10; i++)
-				{
-					b[i].dimensions = glm::vec4(blocks[i].getPosTopLeft(), blocks[i].getSize());
-					b[i].rotation = blocks[i].getRotation();
-					b[i].type = blocks[i].dynamicBody->GetType();
-				}
+				//SavedBlock b[10];
+				//for (int i = 0; i < 10; i++)
+				//{
+				//	b[i].dimensions = glm::vec4(blocks[i].getPosTopLeft(), blocks[i].getSize());
+				//	b[i].rotation = blocks[i].getRotation();
+				//	b[i].type = blocks[i].dynamicBody->GetType();
+				//}
 
 				sfs::SafeSafeKeyValueData data;
 
-				data.setRawData("geometry", b, sizeof(b));
+				//data.setRawData("geometry", b, sizeof(b));
 
 				data.setRawData("sprites", gameSprites.data(), sizeof(GameSprite) *gameSprites.size());
 
 
 				pika::memory::pushCustomAllocatorsToStandard();
-				sfs::safeSave(data, PIKA_RESOURCES_PATH "hollowknight/map", false);
+				sfs::safeSave(data, PIKA_RESOURCES_PATH "hollowknight/map2", false);
 				pika::memory::popCustomAllocatorsToStandard();
 
 			}
@@ -818,8 +882,11 @@ struct SilkSong: public Container
 			ImGui::End();
 		}
 
-		requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
-			&inputMetrics, sizeof(inputMetrics));
+		//renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH}, fbo.texture);
+		//renderer.flushFBO(gl2d::FrameBuffer{requestedInfo.requestedFBO.fbo});
+
+		//requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
+		//	&inputMetrics, sizeof(inputMetrics));
 
 	#pragma endregion
 

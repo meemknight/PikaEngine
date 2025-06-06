@@ -407,6 +407,7 @@ namespace gl2d
 	{
 		FrameBuffer() {};
 		explicit FrameBuffer(int w, int h) { create(w, h); };
+		explicit FrameBuffer(unsigned int fbo):fbo(fbo) { };
 
 		unsigned int fbo = 0;
 		Texture texture = {};
