@@ -18,8 +18,8 @@ struct SilkSong: public Container
 {
 
 	gl2d::Renderer2D renderer;
-	gl2d::Texture sprites;
-	gl2d::TextureAtlasPadding atlas;
+	gl2d::Texture hornetSprite;
+	gl2d::TextureAtlasPadding hornetAtlas;
 	gl2d::FrameBuffer fbo;
 
 	b2World world{{0, 10}};
@@ -284,8 +284,8 @@ struct SilkSong: public Container
 
 
 
-		sprites = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "hollowknight/sprites.png", requestedInfo, 80);
-		atlas = gl2d::TextureAtlasPadding(12, 12, sprites.GetSize().x, sprites.GetSize().y);
+		hornetSprite = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "hollowknight/hornet.png", requestedInfo, 249);
+		hornetAtlas = gl2d::TextureAtlasPadding(8, 1, hornetSprite.GetSize().x, hornetSprite.GetSize().y);
 
 		world.SetAllowSleeping(true);
 		world.SetContinuousPhysics(true);
@@ -537,8 +537,31 @@ struct SilkSong: public Container
 			//player
 			if (i == 3)
 			{
-				renderer.renderRectangle(character.getRenderPos(), sprites, Colors_White, {}, 0, 
-					atlas.get(0, 0, movingLeft));
+				if (direction == 0)
+				{
+
+					renderer.renderRectangle(character.getRenderPos(), hornetSprite, Colors_White, {}, 0,
+						hornetAtlas.get(0, 0, !movingLeft));
+				}
+				else
+				{
+					static int animationPosition = 1;
+					static float animationTimer = 0;
+					
+					animationTimer += input.deltaTime;
+					if (animationTimer > 0.33)
+					{
+						animationTimer -= 33;
+						animationPosition++;
+					}
+					if (animationPosition >= 8) { animationPosition = 1; }
+
+
+					renderer.renderRectangle(character.getRenderPos(), hornetSprite, Colors_White, {}, 0,
+						hornetAtlas.get(animationPosition, 0, !movingLeft));
+				}
+
+
 			}
 
 			int index = 0;
@@ -550,7 +573,7 @@ struct SilkSong: public Container
 					if (currentSelectedSprite == index && selectType == 2)
 					{
 						renderer.renderRectangle({glm::vec2(s.pos), glm::vec2(assets[s.type].GetSize()) * s.scale * (1.f / 400.f)},
-							assets[s.type], {1,0.7,0.7,1.0}, {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
+							assets[s.type], glm::mix(glm::vec4{1,0.7,0.7,1.0}, s.color, 0.5f), {}, s.rotation, s.flip ? glm::vec4(1, 1, 0, 0) : glm::vec4(0, 1, 1, 0), s.pos.z);
 					}
 					else
 					{
@@ -816,7 +839,15 @@ struct SilkSong: public Container
 					currentSelectedSprite = gameSprites.size() - 1;
 				}
 
-				if (currentSelectedSprite > 0 && currentSelectedSprite < gameSprites.size())
+				if (currentSelectedSprite >= 0 && currentSelectedSprite < gameSprites.size())
+				if (ImGui::Button("Duplicate Sprite"))
+				{
+					auto s = gameSprites[currentSelectedSprite];
+					gameSprites.push_back(s);
+					currentSelectedSprite = gameSprites.size() - 1;
+				}
+
+				if (currentSelectedSprite >= 0 && currentSelectedSprite < gameSprites.size())
 				if (ImGui::Button("Remove sprite"))
 				{
 					gameSprites.erase(gameSprites.begin() + currentSelectedSprite);
@@ -882,8 +913,12 @@ struct SilkSong: public Container
 			ImGui::End();
 		}
 
+		//renderer.pushCamera3D();
+		//renderer.pushCamera();
 		//renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH}, fbo.texture);
 		//renderer.flushFBO(gl2d::FrameBuffer{requestedInfo.requestedFBO.fbo});
+		//renderer.popCamera();
+		//renderer.popCamera3D();
 
 		//requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
 		//	&inputMetrics, sizeof(inputMetrics));
