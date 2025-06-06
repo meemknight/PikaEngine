@@ -224,7 +224,7 @@ struct SilkSong: public Container
 
 	glm::vec2 draggedStart = {};
 
-	bool followPlayer = false;
+	bool followPlayer = true;
 	bool dragGeometry = false;
 	bool renderGeometry = true;
 	int selectType = 0;
@@ -262,7 +262,8 @@ struct SilkSong: public Container
 		renderer.currentCamera.zoom = 80.f;
 		renderer.currentCamera.position.x = -440;
 		renderer.currentCamera.position.y = -500;
-		renderer.currentCamera3D.position.z = 2;
+		renderer.currentCamera3D.position.z = 0.5;
+		renderer.currentCamera3D.position.y = 0.2;
 
 
 		blurShader = gl2d::createPostProcessShaderFromFile(PIKA_RESOURCES_PATH "hollowknight/blur.frag");
@@ -334,6 +335,19 @@ struct SilkSong: public Container
 
 		Block floor;
 		floor.create(world, {-1000, 10, 2000, 1}, 0, b2BodyType::b2_staticBody);
+
+		floor.create(world, {-5.1, -5, 4.2, 40}, 0, b2BodyType::b2_staticBody);
+		floor.create(world, {-1.0, 5.5, 3.85, 10}, 0, b2BodyType::b2_staticBody);
+
+
+		floor.create(world, {15.4, 8.3, 2.1, 0.53}, 0, b2BodyType::b2_staticBody);
+
+		floor.create(world, {17.5, 6.8, 6.2, 0.6}, 0, b2BodyType::b2_staticBody);
+
+		floor.create(world, {25.0, 6.8, 10.2, 0.6}, 0, b2BodyType::b2_staticBody);
+
+		floor.create(world, {32.3, 2.7, 6.2, 20.6}, 0, b2BodyType::b2_staticBody);
+
 
 
 		return true;
@@ -424,9 +438,16 @@ struct SilkSong: public Container
 			{
 				if (vel.x < 5) force = inputMetrics.speed;
 			}
+
+			float MAX = 4;
+			if (vel.x > MAX) { vel.x = MAX; }
+			if (vel.x < -MAX) { vel.x = -MAX; }
 		
 			character.physicalBody.dynamicBody->ApplyForce(b2Vec2(force, 0), 
 				character.physicalBody.dynamicBody->GetWorldCenter(), true);
+
+
+		
 		}
 
 		bool hitsGround = 0;
@@ -549,9 +570,9 @@ struct SilkSong: public Container
 					static float animationTimer = 0;
 					
 					animationTimer += input.deltaTime;
-					if (animationTimer > 0.33)
+					if (animationTimer > 0.11)
 					{
-						animationTimer -= 33;
+						animationTimer -= 0.11;
 						animationPosition++;
 					}
 					if (animationPosition >= 8) { animationPosition = 1; }
@@ -920,8 +941,8 @@ struct SilkSong: public Container
 		//renderer.popCamera();
 		//renderer.popCamera3D();
 
-		//requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
-		//	&inputMetrics, sizeof(inputMetrics));
+		requestedInfo.writeEntireFileBinary(PIKA_RESOURCES_PATH "hollowknight/inputMetrics.bin",
+			&inputMetrics, sizeof(inputMetrics));
 
 	#pragma endregion
 

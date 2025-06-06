@@ -1,8 +1,15 @@
-#2025-06-06 17:44:36[error]: Error reading map file
-#2025-06-06 17:44:36: Created container: SilkSong
-#2025-06-06 18:06:21: Destroyed continer: SilkSong #1
-#2025-06-06 18:08:17[warning]: Couldn't reloaded dll
-#2025-06-06 18:08:20: Reloaded dll
-#2025-06-06 18:08:45[error]: Error reading map file
-#2025-06-06 18:08:45: Created container: SilkSong
-#2025-06-06 18:09:32: Destroyed continer: SilkSong #2
+#2025-06-07 00:25:03[warning]: Couldn't reloaded dll
+#2025-06-07 00:25:04: Reloaded dll
+#2025-06-07 00:25:24[error]: Error reading map file
+#2025-06-07 00:25:24: Created container: SilkSong
+#2025-06-07 00:25:41: Destroyed continer: SilkSong #1
+#2025-06-07 00:25:47[warning]: Couldn't reloaded dll
+#2025-06-07 00:25:49: Reloaded dll
+#2025-06-07 00:26:00[error]: Error reading map file
+#2025-06-07 00:26:00: Created container: SilkSong
+#2025-06-07 00:26:15: Destroyed continer: SilkSong #2
+#2025-06-07 00:26:27[warning]: Couldn't reloaded dll
+#2025-06-07 00:26:29: Reloaded dll
+#2025-06-07 00:28:13[error]: Error reading map file
+#2025-06-07 00:28:13: Created container: SilkSong
+#2025-06-07 00:28:54: Destroyed continer: SilkSong #3
