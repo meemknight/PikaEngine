@@ -36,6 +36,8 @@ struct Milk: public Container
 	gl3d::Model milkModel;
 	gl3d::Entity milkEntity;
 
+	gl3d::Model gunModel;
+	gl3d::Entity gunEntity;
 
 	Simulator simulator;
 
@@ -244,6 +246,10 @@ struct Milk: public Container
 		milkModel = renderer.loadModel(PIKA_RESOURCES_PATH "milk/milk.glb", gl3d::TextureLoadQuality::maxQuality, 1);
 		milkEntity = renderer.createEntity(milkModel, {{66.9,4.9,-9.5}}, false);
 
+		gunModel = renderer.loadModel(PIKA_RESOURCES_PATH "milk/bananagun.glb", gl3d::TextureLoadQuality::maxQuality, 0.08);
+		gunEntity = renderer.createEntity(gunModel, {{0,0,0}}, false);
+		
+
 		//optional make milk bottle shiny
 		//gl3d::MaterialValues mat;
 		//mat.roughness = 0.1;
@@ -370,9 +376,53 @@ struct Milk: public Container
 
 		}
 
+		static float shootCulldown = 0;
 
-		renderer.camera.position = playerObject.position + glm::vec3(0, 0.7, 0);
+		if (shootCulldown <= 0)
+		{
+			if (input.lMouse.pressed())
+			{
+				shootCulldown = 1;
+			}
 
+
+		}
+		else
+		{
+			shootCulldown -= input.deltaTime * 1.5f;
+			shootCulldown = std::max(shootCulldown, 0.f);
+		}
+
+		//banana gun
+		{
+			renderer.camera.position = playerObject.position + glm::vec3(0, 0.7, 0);
+
+			glm::vec3 forward = glm::normalize(renderer.camera.viewDirection);
+
+			// Calculate yaw and pitch from the direction vector
+			float yaw = atan2(forward.x, forward.z);
+			float pitch = -asin(forward.y); // assuming Y is up in your coordinate system
+
+
+			// Use global up vector (adjust if your game uses a different "up")
+			glm::vec3 worldUp = glm::vec3(0, 1, 0);
+
+			// Compute right and corrected up vectors
+			glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
+			glm::vec3 up = glm::normalize(glm::cross(right, forward));
+
+			// Create the gun transform relative to camera
+			gl3d::Transform gunTransform;
+			gunTransform.position =
+				renderer.camera.position
+				+ forward * 0.5f     // in front
+				- up * 0.3f          // slightly down
+				+ right * 0.02f;      // slightly to the right
+
+			gunTransform.rotation = glm::vec3(pitch + shootCulldown * shootCulldown * glm::radians(360.f), yaw, 0.0f); // roll = 0
+
+			renderer.setEntityTransform(gunEntity, gunTransform);
+		}
 
 		if (input.buttons[pika::Button::Escape].released())
 		{

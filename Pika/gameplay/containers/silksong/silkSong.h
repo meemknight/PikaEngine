@@ -24,6 +24,8 @@ struct SilkSong: public Container
 
 	b2World world{{0, 10}};
 
+	bool blur = true;
+
 	constexpr static int ASSETS_COUNT = 27;
 
 	std::vector<const char*> assetsNames=
@@ -288,6 +290,9 @@ struct SilkSong: public Container
 		hornetSprite = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "hollowknight/hornet.png", requestedInfo, 249);
 		hornetAtlas = gl2d::TextureAtlasPadding(8, 1, hornetSprite.GetSize().x, hornetSprite.GetSize().y);
 
+		//hornetSprite = pika::gl2d::loadTextureWithPixelPadding(PIKA_RESOURCES_PATH "hollowknight/sprites.png", requestedInfo, 80);
+		//hornetAtlas = gl2d::TextureAtlasPadding(12, 12, hornetSprite.GetSize().x, hornetSprite.GetSize().y);
+
 		world.SetAllowSleeping(true);
 		world.SetContinuousPhysics(true);
 
@@ -338,15 +343,17 @@ struct SilkSong: public Container
 
 		floor.create(world, {-5.1, -5, 4.2, 40}, 0, b2BodyType::b2_staticBody);
 		floor.create(world, {-1.0, 5.5, 3.85, 10}, 0, b2BodyType::b2_staticBody);
-
-
+		
 		floor.create(world, {15.4, 8.3, 2.1, 0.53}, 0, b2BodyType::b2_staticBody);
+		
+		floor.create(world, {12.7, 5.5, 3.4, 0.73}, 0, b2BodyType::b2_staticBody);
 
 		floor.create(world, {17.5, 6.8, 6.2, 0.6}, 0, b2BodyType::b2_staticBody);
-
+		
 		floor.create(world, {25.0, 6.8, 10.2, 0.6}, 0, b2BodyType::b2_staticBody);
-
+		
 		floor.create(world, {32.3, 2.7, 6.2, 20.6}, 0, b2BodyType::b2_staticBody);
+
 
 
 
@@ -439,7 +446,7 @@ struct SilkSong: public Container
 				if (vel.x < 5) force = inputMetrics.speed;
 			}
 
-			float MAX = 4;
+			float MAX = 3;
 			if (vel.x > MAX) { vel.x = MAX; }
 			if (vel.x < -MAX) { vel.x = -MAX; }
 		
@@ -550,7 +557,8 @@ struct SilkSong: public Container
 				index++;
 			}
 		}
-		renderer.flushPostProcess({blurShader});
+
+		if(blur) renderer.flushPostProcess({blurShader});
 
 
 		for (int i = 1; i < 4; i++)
@@ -752,6 +760,9 @@ struct SilkSong: public Container
 			ImGui::InputFloat("Stop speed", &inputMetrics.stopSpeed);
 			ImGui::InputFloat("Jump timer", &inputMetrics.jumpTimer);
 			ImGui::InputFloat("Initial jump", &inputMetrics.initialJumpImpulse);
+
+			ImGui::Checkbox("Blur", &blur);
+
 
 			ImGui::Separator();
 

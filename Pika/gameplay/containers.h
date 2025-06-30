@@ -46,7 +46,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 //#include "containers/physicsTest/logo.h"
 
 //#include "containers/angryBirds/angryBirds.h"
-//#include "containers/milk/milk.h"
+#include "containers/milk/milk.h"
 
 #include "containers/silksong/silkSong.h"
 
@@ -67,6 +67,7 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	PIKA_DECLARE_CONTAINER(ThreeDTest) \
 	PIKA_DECLARE_CONTAINER(ThreeDEditor) \
 	PIKA_DECLARE_CONTAINER(Holloknight)\
+	PIKA_DECLARE_CONTAINER(Milk) \
 	PIKA_DECLARE_CONTAINER(PikaTextEditor)
 	//PIKA_DECLARE_CONTAINER(ThreeDGameExample) \
 	//PIKA_DECLARE_CONTAINER(ThreeDGameMenu) \
@@ -82,7 +83,6 @@ Container *getContainer(const char* name, pika::memory::MemoryArena *memoryArena
 	//PIKA_DECLARE_CONTAINER(MarioNeuralTrainer) \
 	//PIKA_DECLARE_CONTAINER(McDungeonsGameplay) \
 	//PIKA_DECLARE_CONTAINER(AngryBirds) \
-	//PIKA_DECLARE_CONTAINER(Milk) \
 	//PIKA_DECLARE_CONTAINER(MarioNeuralVizualizer) 
 	//PIKA_DECLARE_CONTAINER(McDungeonsEditor)
 	//PIKA_DECLARE_CONTAINER(McDungeonsMenu)

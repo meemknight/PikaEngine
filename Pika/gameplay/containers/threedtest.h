@@ -77,12 +77,11 @@ struct ThreeDTest: public Container
 
 
 		gl3d::Transform t;
-		t.position = {400'000, 0, -4};
+		//t.position = {400'000, 0, -4};
 		t.rotation = {1.5, 0 , 0};
 
 		helmetEntity = renderer.createEntity(helmetModel, t);
 	
-		renderer.camera.position.x = 400'000;
 
 
 		return true;
@@ -106,8 +105,11 @@ struct ThreeDTest: public Container
 		renderer.updateWindowMetrics(windowState.windowW, windowState.windowH);
 		renderer.camera.aspectRatio = (float)windowState.windowW / windowState.windowH; //todo do this in update
 		
+		static glm::dvec2 lastMousePos = {};
+		pika::gl3d::fpsInput(renderer, input, 5, lastMousePos, requestedInfo, {windowState.windowW, windowState.windowH});
+
+		if(0)
 		{
-			static glm::dvec2 lastMousePos = {};
 			if (input.rMouse.held())
 			{
 				glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};

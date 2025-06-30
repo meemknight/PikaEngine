@@ -413,7 +413,6 @@ void pika::gl3d::lightEditorSettingsWindow(int imguiId, ::gl3d::Renderer3D &rend
 	}
 
 
-
 	ImGui::PopID();
 }
 
@@ -458,10 +457,10 @@ void pika::gl3d::fpsInput(::gl3d::Renderer3D &renderer, pika::Input &input, floa
 
 			glm::dvec2 currentMousePos = {input.mouseX, input.mouseY};
 
-			float speed = 0.2f;
+			float speed = 0.2f * (1.f/60.f);
 
 			glm::vec2 delta = lastMousePos - currentMousePos;
-			delta *= speed * input.deltaTime;
+			delta *= speed; //* input.deltaTime;
 
 			renderer.camera.rotateCamera(delta);
 			lastMousePos = currentMousePos;
